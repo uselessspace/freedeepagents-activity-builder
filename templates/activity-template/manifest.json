@@ -1,0 +1,9 @@
+{
+  "activity_type_id": "template-activity",
+  "name": "模板活动",
+  "description": "一个由 DeepAgents 自主管理上下文的智能活动模板。",
+  "model": "deepseek:deepseek-v4-flash",
+  "skill_sources": ["skills"],
+  "entrypoint": "AGENTS.md",
+  "input_modes": ["text", "file", "image"]
+}

@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://freedeepagents.dev/schemas/card-template.schema.json",
+  "title": "FreeDeepAgents card template",
+  "description": "Validates activities/<id>/card_templates/<name>.json. Template files are OutputCard objects rendered by card_emit_template(template_id, variables, assignment_id). Mirrors app.models card block types: markdown / info / form / action / image / audio.",
+  "type": "object",
+  "required": ["assignment_id", "card"],
+  "properties": {
+    "assignment_id": {
+      "type": "string",
+      "description": "Stable logical card id. Reuse the same literal id for the same logical card across turns."
+    },
+    "card": {
+      "$ref": "#/$defs/MinimalAICard"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "MinimalAICard": {
+      "type": "object",
+      "required": ["version", "template", "blocks"],
+      "properties": {
+        "version": { "const": "1.0" },
+        "template": { "type": "string" },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/MarkdownBlock" },
+              { "$ref": "#/$defs/InfoBlock" },
+              { "$ref": "#/$defs/FormBlock" },
+              { "$ref": "#/$defs/ActionBlock" },
+              { "$ref": "#/$defs/ImageBlock" },
+              { "$ref": "#/$defs/AudioBlock" }
+            ]
+          }
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "MarkdownBlock": {
+      "type": "object",
+      "required": ["type", "content"],
+      "properties": {
+        "type": { "const": "markdown" },
+        "content": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "InfoBlock": {
+      "type": "object",
+      "required": ["type", "items"],
+      "properties": {
+        "type": { "const": "info" },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/InfoItem" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "InfoItem": {
+      "type": "object",
+      "required": ["label", "value"],
+      "properties": {
+        "label": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "FormBlock": {
+      "type": "object",
+      "required": ["type", "form_id", "fields"],
+      "properties": {
+        "type": { "const": "form" },
+        "form_id": { "type": "string" },
+        "submit_label": { "type": "string" },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FormField" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "FormField": {
+      "type": "object",
+      "required": ["name", "label"],
+      "properties": {
+        "name": { "type": "string" },
+        "label": { "type": "string" },
+        "input_type": { "enum": ["text", "textarea", "number", "file", "audio"] },
+        "required": { "type": "boolean" },
+        "placeholder": { "type": ["string", "null"] },
+        "default_value": { "type": ["string", "null"] },
+        "multiple": { "type": "boolean" },
+        "accept": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "ActionBlock": {
+      "type": "object",
+      "required": ["type", "actions"],
+      "properties": {
+        "type": { "const": "action" },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ActionItem" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ActionItem": {
+      "type": "object",
+      "required": ["id", "label", "action_type"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "action_type": { "type": "string" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ImageBlock": {
+      "type": "object",
+      "required": ["type", "images"],
+      "properties": {
+        "type": { "const": "image" },
+        "images": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ImageItem" }
+        },
+        "min_images": { "type": ["integer", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "ImageItem": {
+      "type": "object",
+      "required": ["read_url"],
+      "properties": {
+        "read_url": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "AudioBlock": {
+      "type": "object",
+      "required": ["type", "audios"],
+      "properties": {
+        "type": { "const": "audio" },
+        "audios": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AudioItem" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "AudioItem": {
+      "type": "object",
+      "required": ["read_url"],
+      "properties": {
+        "read_url": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

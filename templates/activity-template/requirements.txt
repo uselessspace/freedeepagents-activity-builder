@@ -1,0 +1,28 @@
+# Activity-specific Python dependencies for this activity.
+#
+# Declare ONLY the third-party packages your tools.py / dsl_builder.py /
+# handlers.py (and any helper modules they ship) import. One pinned
+# requirement per line, e.g.:
+#
+#     akshare==1.16.0
+#     pymupdf==1.24.10
+#
+# Do NOT declare:
+#   - Python stdlib (json, pathlib, datetime, ...)
+#   - platform baseline packages (langchain*, fastapi, pydantic, httpx, numpy,
+#     pandas, jinja2, ...) — full list:
+#     <package>/references/runtime-python-baseline.txt, where <package> is your
+#     freedeepagents-activity-builder install dir (NOT this activity dir)
+#   - first-party app.* imports
+#   - sibling modules you ship inside this activity
+#
+# Rules: pin with == ; lazy-import heavy deps inside the function that needs
+# them ; prefer the stdlib or a runtime capability (image / tts / read_document)
+# before adding a new dependency — the runtime shares ONE venv across all
+# activities. Full guidance: <package>/references/python-dependencies.md
+#
+# pip can't install system tools (ffmpeg, poppler, ...). If you shell out to
+# one, note it here as e.g.  `# system: ffmpeg`  so the host image provisions it.
+#
+# Leave this file all-comments (no active requirement lines) if the activity
+# uses no third-party packages.

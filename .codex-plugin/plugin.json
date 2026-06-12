@@ -1,0 +1,43 @@
+{
+  "name": "freedeepagents-activity-builder",
+  "version": "0.4.1",
+  "description": "Guides coding agents through designing, building, packaging, and verifying FDA intelligent activities.",
+  "author": {
+    "name": "Useless Space",
+    "email": "noreply@uselessspace.dev",
+    "url": "https://github.com/uselessspace/freedeepagents-activity-builder"
+  },
+  "homepage": "https://github.com/uselessspace/freedeepagents-activity-builder",
+  "repository": "https://github.com/uselessspace/freedeepagents-activity-builder",
+  "license": "MIT",
+  "keywords": [
+    "freedeepagents",
+    "fda",
+    "deepagents",
+    "activity",
+    "plugin",
+    "codex",
+    "claude",
+    "react",
+    "vite"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "FreeDeepAgents Activity Builder",
+    "shortDescription": "Design, build, package, and verify FDA intelligent activities.",
+    "longDescription": "Guides coding agents through activity brief capture, runtime classification, card or Static Preview implementation, frontend decisions, packaging, and install verification for FreeDeepAgents.",
+    "developerName": "Useless Space",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/uselessspace/freedeepagents-activity-builder",
+    "defaultPrompt": [
+      "帮我设计并生成一个 FDA 智能活动",
+      "Build a FreeDeepAgents activity and package it",
+      "Classify this activity idea into Card-only or Static Preview"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

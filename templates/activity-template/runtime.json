@@ -1,0 +1,5 @@
+{
+  "llm_timeout_seconds": 300,
+  "docker_timeout_seconds": 300,
+  "data_schema_enabled": true
+}

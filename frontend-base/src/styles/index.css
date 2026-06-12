@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* Activity-specific theme overrides should live in src/styles/theme.css */
+@import "./theme.css";
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB",
+      "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #f8fafc;
+    color: #0f172a;
+  }
+}
+
+/* Scrollbar — match the existing kinship-network/scene-engine treatment */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.18); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.32); }

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "default": {
+    "brief": {
+      "topic": "",
+      "constraints": ""
+    },
+    "working_notes": []
+  },
+  "properties": {
+    "brief": {
+      "type": "object",
+      "description": "用户在 intake 阶段填的目标与约束。",
+      "x-auto-inject": true,
+      "properties": {
+        "topic": {"type": "string"},
+        "constraints": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "working_notes": {
+      "type": "array",
+      "description": "working 阶段累积的中间笔记 / 草稿；终态时通常清空。",
+      "x-auto-inject": true,
+      "items": {"type": "string"}
+    }
+  }
+}

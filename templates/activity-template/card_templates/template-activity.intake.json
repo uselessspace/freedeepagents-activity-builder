@@ -1,0 +1,52 @@
+{
+  "assignment_id": "template-intake",
+  "card": {
+    "version": "1.0",
+    "template": "template-activity.intake",
+    "blocks": [
+      {
+        "type": "markdown",
+        "content": "## {{title}}\n\n{{body}}"
+      },
+      {
+        "type": "form",
+        "form_id": "template_activity_intake",
+        "submit_label": "提交信息",
+        "fields": [
+          {
+            "name": "topic",
+            "label": "目标",
+            "input_type": "textarea",
+            "required": true,
+            "placeholder": "你希望这个活动帮你完成什么？",
+            "default_value": "{{topic}}"
+          },
+          {
+            "name": "constraints",
+            "label": "限制或偏好",
+            "input_type": "textarea",
+            "required": false,
+            "placeholder": "例如时间、风格、预算、格式、不要做什么等。",
+            "default_value": "{{constraints}}"
+          }
+        ]
+      },
+      {
+        "type": "action",
+        "actions": [
+          {
+            "id": "restart",
+            "label": "重新开始",
+            "action_type": "input_text",
+            "payload": {
+              "input_text": "重新开始这个活动"
+            }
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "kind": "intake"
+    }
+  }
+}

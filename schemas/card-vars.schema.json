@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://freedeepagents.dev/schemas/card-vars.schema.json",
+  "title": "FreeDeepAgents card-template variable schema",
+  "description": "Validates activities/<id>/card_templates/<name>.vars.json — describes the variables that <name>.json's {{...}} placeholders accept. The runtime substitutes vars before rendering the card.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "properties"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "type": { "const": "object" },
+    "required": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "additionalProperties": { "type": "boolean" },
+    "properties": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": { "enum": ["string", "number", "integer", "boolean", "array", "object"] },
+          "description": { "type": "string" },
+          "format": { "enum": ["uri", "date", "datetime", "color"] },
+          "items": { "type": "object" },
+          "enum": { "type": "array" },
+          "default": {},
+          "minLength": { "type": "integer", "minimum": 0 },
+          "maxLength": { "type": "integer", "minimum": 0 },
+          "minItems": { "type": "integer", "minimum": 0 },
+          "maxItems": { "type": "integer", "minimum": 0 },
+          "minimum": { "type": "number" },
+          "maximum": { "type": "number" }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "type": "object",
+      "required": ["title", "image_url"],
+      "properties": {
+        "title": { "type": "string", "description": "Card title displayed above the image" },
+        "image_url": { "type": "string", "format": "uri", "description": "Generated image URL from image_generate / image_edit" },
+        "subtitle": { "type": "string", "description": "Optional one-liner under the title" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://freedeepagents.dev/schemas/output-artifact.schema.json",
+  "title": "FreeDeepAgents OutputArtifact",
+  "description": "Validates a single entry in ActivityAgentOutput.artifacts[]. Mirrors app.models.OutputArtifact.",
+  "type": "object",
+  "required": ["artifact_id", "kind", "title"],
+  "properties": {
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Non-empty stable id. Used by downstream consumers and live-update flows."
+    },
+    "kind": {
+      "enum": ["markdown", "file"],
+      "description": "Shared runtime artifact kind."
+    },
+    "title": {
+      "type": "string"
+    },
+    "path": {
+      "type": ["string", "null"],
+      "description": "Sandbox path, usually under /instance/."
+    },
+    "content": {
+      "type": ["string", "null"],
+      "description": "Inline text content, commonly markdown."
+    },
+    "mime_type": {
+      "type": ["string", "null"]
+    },
+    "description": {
+      "type": ["string", "null"]
+    },
+    "url": {
+      "type": ["string", "null"],
+      "description": "External or runtime-served URL."
+    }
+  },
+  "anyOf": [
+    {
+      "required": ["path"],
+      "properties": { "path": { "type": "string", "minLength": 1 } }
+    },
+    {
+      "required": ["content"],
+      "properties": { "content": { "type": "string" } }
+    },
+    {
+      "required": ["url"],
+      "properties": { "url": { "type": "string", "minLength": 1 } }
+    }
+  ],
+  "additionalProperties": false
+}

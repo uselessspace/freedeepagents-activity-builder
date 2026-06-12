@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://freedeepagents.dev/schemas/runtime.schema.json",
+  "title": "FreeDeepAgents activity runtime config",
+  "description": "Validates activities/<id>/runtime.json. Whitelist-only. Mirrors ALLOWED_RUNTIME_FIELDS in tools/activity_verifier.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "llm_timeout_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 600,
+      "description": "Per-turn LLM call timeout. Default 60. Bump to 180 for image-heavy activities."
+    },
+    "llm_max_output_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Per-turn LLM max_tokens override. Default comes from ACTIVITY_LLM_MAX_OUTPUT_TOKENS in .env. Raise for long-narrative activities (bedtime-story style)."
+    },
+    "docker_timeout_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1800,
+      "description": "Per-turn Docker sandbox timeout. Default 120. Raise only for activities that genuinely need long sandbox command execution."
+    },
+    "max_distinct_support_reads": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Cap on distinct support files (workflows/policies/references) the agent may read per turn. Default 3. 0 = unlimited. Files in manifest.skill_sources are exempt."
+    },
+    "data_schema_enabled": {
+      "type": "boolean",
+      "description": "Opt-in: enable the typed KV data store. When true, activities/<id>/data.schema.json must exist; the runtime exposes data_get / data_set / data_append / data_delete / data_list_keys tools and seeds /instance/data.json from the schema's default. See references/data-store-tools.md."
+    },
+    "write_todos": {
+      "type": "boolean",
+      "description": "Opt-in: expose the deepagents write_todos planner tool to the main agent. Default false (the tool is hidden). Enable only for activities whose typical turn is a genuinely complex multi-step pipeline (3+ steps with external evidence or artifact work); fixed-card or single-tool turns should leave it off. Enforced per call via TodoToolPolicyMiddleware. See app/deepagents_runtime.py."
+    },
+    "auto_memory_enabled": {
+      "type": ["boolean", "null"],
+      "description": "Per-activity override for the runtime's auto-memory layer (the one-line [auto] gist derived each turn; see app/auto_memory.py). When omitted or null, the global AUTO_MEMORY_ENABLED setting decides. Set false to turn it off for activities whose canonical card sequences look duplicated when echoed as gist. Mirrors app/models.py ActivityRuntimeConfig.auto_memory_enabled."
+    },
+    "sse_debug_view": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "SSE debug view config. Bridges trace tool/llm events onto the chat SSE stream when enabled. Required to be declared explicitly when data.schema.json has any field marked x-auto-inject:false (verifier rule), because trace payloads can carry hidden-field tool returns. Mirrors app/models.py SseDebugViewConfig.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Master switch. Default false (secure by default). Enable for activities without hidden state that want richer dev-time observability."
+        },
+        "include_tool_input": {
+          "type": "boolean",
+          "description": "When enabled, include tool input args in tool_invoked events. Default true."
+        },
+        "include_tool_output": {
+          "type": "boolean",
+          "description": "When enabled, include tool return values in tool_completed events. Default true."
+        },
+        "include_llm_messages": {
+          "type": "boolean",
+          "description": "Reserved. Even when enabled the first version keeps prompts/messages out of SSE — only model/token metadata flows. Authors who need full prompts should read trace.jsonl directly."
+        },
+        "redact_tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tool names whose start/end events still fire (so timing is visible) but with input/output replaced by \"<redacted>\". Use for activities that want progress indication without exposing hidden-field tool returns."
+        },
+        "payload_max_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Per-event input/output JSON byte cap. Oversized values are truncated and tagged truncated:true. Default 8192."
+        }
+      }
+    },
+    "image_generate_model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional per-activity override for image_generate's model id (wanxiang model name like 'wan2.7-image-pro' or 'wanx2.1-t2i-turbo'). Falls back to the global IMAGE_GEN_MODEL env var when omitted. The image provider (wanxiang / future) itself is NOT per-activity — only the model id."
+    },
+    "image_edit_model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional per-activity override for image_edit's model id. Falls back to the global IMAGE_EDIT_MODEL env var when omitted."
+    }
+  }
+}
