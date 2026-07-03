@@ -32,7 +32,7 @@
 |---|---|
 | `text` | 要朗读的文本（纯文本最佳，去 markdown 符号）。上限 `TTS_MAX_TEXT_CHARS`。|
 | `voice` | **预置音色名**（qwen 用，如 Serena）。留空用运行时默认音色。clone provider 忽略此参数。|
-| `reference_audio` | **仅 clone provider**：实例里的参考录音（`/preview/.../uploads/<name>.wav` URL）。qwen 不用，留空。|
+| `reference_audio` | **仅 clone provider**：实例里的参考录音（`/preview/.../uploads/<name>` URL）。可来自用户在预览页里自己录音上传——见 [user-upload.md](user-upload.md)。qwen 不用，留空。|
 | `prompt_text` | **仅 clone provider**：参考录音的转写。qwen 不用，留空。|
 | `store` | `auto`(默认) / `oss` / `sandbox`，语义权威见 [store-mode-table.md](store-mode-table.md)。|
 
@@ -49,7 +49,7 @@
 | `QWEN_TTS_VOICE` | `Serena` | qwen 默认音色（`voice` 留空时用）|
 | `TTS_ENDPOINT` | `http://192.168.1.225:50000/api/tts_once` | cosyvoice 克隆服务地址 |
 | `TTS_TIMEOUT` | `300` | 单次合成超时（秒）；qwen 也用作下载音频的超时 |
-| `TTS_MAX_PER_TURN` | `2` | 每轮合成次数上限 |
+| `TTS_MAX_PER_TURN` | `5` | 每轮合成次数上限 |
 | `TTS_DEFAULT_STORE` | `auto` | 结果存储：auto/oss/sandbox |
 | `TTS_MAX_TEXT_CHARS` | `6000` | 单次文本上限 |
 
@@ -62,6 +62,45 @@
 ```
 
 `audio_url` 为空字符串时该播放块自动隐藏——"配音失败"时把空串传进模板即可，无需在卡片里写条件分支。
+
+## Static Preview / SPA 喇叭按钮
+
+如果活动有 `site/`，不要让前端为了"点喇叭朗读"去发一轮特殊 turn（例如 `[TTS]` 标记）。在 Go 预览平面下，SPA 里的 origin-root `/v1/.../turns/stream` 路由可能不存在，容易表现为"调用 TTS 失败"。
+
+推荐做法是 handler-first：
+
+1. `manifest.json` 同时声明：
+
+```jsonc
+{
+  "capabilities": ["tts_generate"],
+  "handlers_module": "handlers"
+}
+```
+
+2. `handlers.py` 通过 runtime 注入的 `ctx.tts_generate` 合成语音：
+
+```python
+def make_handlers(ctx):
+    def tts(text: str = "") -> dict:
+        body = (text or "").strip()
+        if not body:
+            return {"ok": False, "error": "text is required"}
+        synth = getattr(ctx, "tts_generate", None)
+        if synth is None:
+            return {"ok": False, "error": "tts unavailable"}
+        result = synth(text=body, store="auto")
+        if not isinstance(result, dict) or result.get("error"):
+            return {"ok": False, "error": (result or {}).get("error", "tts failed")}
+        audio_url = (result.get("artifact") or {}).get("audio_url", "")
+        return {"ok": bool(audio_url), "audio_url": audio_url, "error": "" if audio_url else "tts returned no audio"}
+
+    return {"tts": tts}
+```
+
+3. 前端 POST 当前 preview 根路径下的 `api/tts`，例如用 `frontend-base/src/lib/api-base.ts` 的 `apiUrl('tts')`。不要硬编码 `/v1/...`，也不要用 `./api/tts` 依赖当前 SPA 子路由。
+
+**直接使用返回的 `audio_url`**（`new Audio(url)` 或 `<audio src={url}>`）——不要硬编码 `/v1/...`、也不要自己拼 URL，平台会让它在当前预览环境下可访问。
 
 ## 新增 provider
 

@@ -4,7 +4,9 @@ import argparse
 import ast
 import json
 import re
+import shutil
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -197,10 +199,37 @@ def verify_project(root: Path | str) -> list[VerificationIssue]:
     _verify_activity_instruction_shape(project_root, issues)
     _verify_skill_layering(project_root, issues)
     _verify_static_preview_contracts(project_root, issues)
+    _verify_frontend_file_dependencies(project_root, issues)
     _verify_doc_tool_references(project_root, issues)
     _verify_python_dependencies(project_root, issues)
 
     return issues
+
+
+def verify_activity_dir(activity_dir: Path | str, *, runtime_root: Path | str | None = None) -> list[VerificationIssue]:
+    """Verify one activity directory using the canonical project-root layout.
+
+    ``runtime_root`` is accepted for callers that run from a live runtime, but
+    verification is intentionally scoped to the uploaded activity. Generic
+    runtime scans belong to platform CI, not the dev-sync admission gate.
+    """
+    src = Path(activity_dir)
+    activity_id = src.name
+    manifest_path = src / "manifest.json"
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        candidate = payload.get("activity_type_id") or payload.get("activity_id")
+        if isinstance(candidate, str) and candidate:
+            activity_id = candidate
+    except (OSError, json.JSONDecodeError):
+        pass
+
+    with tempfile.TemporaryDirectory(prefix="fda-activity-verify-") as td:
+        root = Path(td)
+        dst = root / "activities" / activity_id
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, dst)
+        return verify_project(root)
 
 
 def _activity_ids(root: Path, issues: list[VerificationIssue]) -> set[str]:
@@ -1175,6 +1204,83 @@ def _verify_static_preview_contracts(root: Path, issues: list[VerificationIssue]
         data_schema_path = activity_dir / "data.schema.json"
         if data_schema_path.exists():
             _verify_data_schema_top_level_default(root, data_schema_path, issues)
+
+
+def _verify_frontend_file_dependencies(root: Path, issues: list[VerificationIssue]) -> None:
+    """Activity frontends must be self-contained when using npm ``file:`` deps.
+
+    The runtime sync API uploads only the activity directory. A dependency like
+    ``file:../../../packages/foo`` works inside the monorepo but fails on a
+    remote runtime, so every ``file:`` target must resolve inside the activity
+    directory itself (for example ``file:vendor/foo``).
+    """
+    sections = ("dependencies", "devDependencies", "peerDependencies", "optionalDependencies")
+    for package_path in sorted((root / "activities").glob("*/site/package.json")):
+        activity_dir = package_path.parents[1]
+        site_dir = package_path.parent
+        try:
+            payload = json.loads(package_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            issues.append(_issue("error", root, package_path, f"site/package.json is unreadable: {exc}"))
+            continue
+        if not isinstance(payload, dict):
+            issues.append(_issue("error", root, package_path, "site/package.json must be a JSON object"))
+            continue
+        for section in sections:
+            deps = payload.get(section)
+            if deps is None:
+                continue
+            if not isinstance(deps, dict):
+                issues.append(_issue("error", root, package_path, f"site/package.json {section} must be an object"))
+                continue
+            for name, spec in sorted(deps.items()):
+                if not isinstance(spec, str) or not spec.startswith("file:"):
+                    continue
+                target_text = spec[len("file:") :]
+                target_path = Path(target_text)
+                if target_path.is_absolute():
+                    issues.append(
+                        _issue(
+                            "error",
+                            root,
+                            package_path,
+                            f"frontend file: dependency {name!r} uses absolute path {target_text!r}; "
+                            "vendor it inside the activity directory instead",
+                        )
+                    )
+                    continue
+                raw_target = site_dir / target_path
+                try:
+                    resolved_activity = activity_dir.resolve(strict=True)
+                    resolved_target = raw_target.resolve(strict=True)
+                except OSError:
+                    issues.append(
+                        _issue(
+                            "error",
+                            root,
+                            package_path,
+                            f"frontend file: dependency {name!r} target {target_text!r} does not exist",
+                        )
+                    )
+                    continue
+                if not _is_relative_to(resolved_target, resolved_activity):
+                    issues.append(
+                        _issue(
+                            "error",
+                            root,
+                            package_path,
+                            f"frontend file: dependency {name!r} target {target_text!r} escapes activity directory; "
+                            "use an activity-local vendor path such as file:vendor/<package>",
+                        )
+                    )
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
 
 
 def _verify_tools_module(

@@ -15,7 +15,7 @@
 | `tts_generate` | `tts_generate` (langchain @tool) | `app/tools/tts_gen.py` + `app/providers/tts/*` |
 | `read_document` | `read_document` (langchain @tool) | `app/tools/doc_ingest.py` + `app/providers/document/*` |
 
-`image_generate` / `image_edit` 共享 wanxiang provider 实例与同一 `IMAGE_GEN_MAX_PER_TURN` per-turn 计数器（详见 [`references/image-tools.md`](../references/image-tools.md)）。`tts_generate` 把文本合成语音、结果上传 object storage、返回播放 URL（配 `audio` 卡片块）；后端是可插拔 provider（`TTS_PROVIDER`：`qwen` 预置音色，默认 / `cosyvoice` 录音克隆），详见 [`references/tts-tools.md`](../references/tts-tools.md)。`read_document` 把上传的 PDF / Word / PowerPoint / Excel / HTML / CSV / JSON 转成 Markdown 供 agent 阅读（转换在 host 侧跑，复用 `ImageSourceResolver` 的 SSRF / 路径穿越 / 字节上限保护），详见 [`references/document-tools.md`](../references/document-tools.md)。
+`image_generate` / `image_edit` 共享 wanxiang provider 实例与同一 `IMAGE_GEN_MAX_PER_TURN` per-turn 计数器（详见 [`references/image-tools.md`](../references/image-tools.md)）。`tts_generate` 把文本合成语音、结果上传 object storage、返回播放 URL（配 `audio` 卡片块）；后端是可插拔 provider（`TTS_PROVIDER`：`qwen` 预置音色，默认 / `cosyvoice` 录音克隆），详见 [`references/tts-tools.md`](../references/tts-tools.md)。`read_document` 把上传的 PDF / Word / PowerPoint / Excel / HTML / CSV / JSON 转成 Markdown 供 agent 阅读（与图片源一致的 SSRF / 路径穿越 / 字节上限防护），详见 [`references/document-tools.md`](../references/document-tools.md)。
 
 后续可能增加：`image_describe`、`image_variation`、`asr`。
 
@@ -39,32 +39,18 @@ manifest.json：
 
 不声明 = 工具不存在。LLM 即使被告知"调 `image_generate`"也会得到"tool not found"错误。
 
+> **同一 capability，两类入口**：声明 `image_generate` / `image_edit`（或 `tts_generate`）后，runtime 不只在 turn 内注入 LangChain `@tool`，还会在 `make_tools(ctx)` / `make_handlers(ctx)` 构建的 ctx 上注入对应的 **`ctx.image_generate` / `ctx.image_edit` / `ctx.tts_generate` helper**（同 kwargs、同返回形状），供工具内部或 static-preview / SPA handler **直连**使用——后者是"预览页直接生图 / 改图 / 朗读"的官方路径，见 [`references/image-tools.md`](../references/image-tools.md) 的 *Static Preview* 章节与 [`references/tts-tools.md`](../references/tts-tools.md)。注意 `read_document` 目前**仅** turn `@tool`，ctx 上没有对应 helper。这与上面"不是 capability 的能力（`ctx.llm`，无条件注入）"不同：这些 helper 的存在仍由 `manifest.capabilities` 门控。
+
 ---
 
-## 工作机制
+## 优雅降级（声明 ≠ 一定可用）
 
-```
-manifest.capabilities=["image_generate"]
-            │
-            ▼
-runner._build_capability_tools(manifest)
-   │
-   ├── create_image_provider(settings)
-   │       │ 检查 IMAGE_GEN_ENABLED + IMAGE_GEN_PROVIDER + DASHSCOPE_API_KEY
-   │       │ 全部就位 → 返回 WanxiangImageProvider
-   │       │ 任一缺失 → 返回 None
-   │       ▼
-   ├── if provider is None:
-   │       trace.log("capability_unavailable", ...)
-   │       不注入工具（agent 看到工具不存在）
-   │
-   └── if provider is not None:
-       make_image_generate_tool(...) 返回 langchain @tool
-       trace.log("capability_enabled", ...)
-       附加到 agent tools 列表
-```
+声明 capability 是 opt-in；平台据此注入对应的 turn `@tool` 与 ctx helper。但若**平台没为该 capability 配好后端**（provider 未启用 / 凭证缺失），该工具与 helper 会**静默缺席**——声明不等于一定可用。活动代码必须能降级：
 
-**Graceful degradation**：声明 capability 但 runtime 未配置 → 工具静默缺席。LLM 看不到工具，必须回退到纯文本回复。trace 里 `capability_unavailable` event 告诉运维"为什么没图"。
+- **turn 内**：LLM 看不到该工具，自然回退到纯文本回复，无需特殊处理。
+- **handler / static-preview**：`getattr(ctx, "image_generate", None)` 为 `None` → 返回 `{"ok": False, "error": "...unavailable"}` 之类的优雅错误，别假设它一定存在。
+
+哪些 env / 凭证决定可用性见各 capability 的 reference 文档；配没配好属运维侧，活动侧只管"拿不到就降级"。
 
 ---
 

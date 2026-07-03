@@ -16,7 +16,7 @@
 #                                            site/ frontend if present)
 #
 # What it excludes:
-#   node_modules, dist, .DS_Store, .git, .env*, *.log, build artifacts.
+#   node_modules, site/dist, .DS_Store, .git, .env*, *.log, build artifacts.
 #   node_modules are re-installed and Static Preview dist/ is rebuilt on the
 #   receiving host via install-activity.sh.
 
@@ -60,7 +60,7 @@ OUT_TGZ="$ROOT/$OUT_DIR/${ACTIVITY_ID}-${TIMESTAMP}.fda.tgz"
 
 EXCLUDES=(
   --exclude='node_modules'
-  --exclude='dist'
+  --exclude="activities/$ACTIVITY_ID/site/dist"
   --exclude='.DS_Store'
   --exclude='.git'
   --exclude='.env'

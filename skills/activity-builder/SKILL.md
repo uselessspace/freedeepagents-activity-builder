@@ -23,6 +23,8 @@ Use the package assets relative to this skill:
 - `../../workflows/03-image-tooling.md` when `image_axis` is not `none`.
 - `../../workflows/04-derive-frontend.md` when `frontend_axis` is
   `static-preview`.
+- `../../references/user-upload.md` when the preview SPA must let end-users
+  upload + persist their own images / voice recordings (`POST api/upload`).
 - `../../workflows/06-verify-and-ship.md` for verification expectations.
 - `../../workflows/07-migrate-existing.md` when the user wants to fork an
   existing activity.
@@ -83,3 +85,5 @@ code activity-neutral.
 
 Do not claim done from this skill. Route to `../activity-packager/SKILL.md` for
 `.fda.tgz` packaging, install validation, and smoke evidence.
+
+- **可选自审**：agent 定义写完/改完后，可先跑 `../activity-review/SKILL.md` 做语义体检（找指令自相矛盾、卡片编排不成立、承诺与能力错配等逻辑冲突）；有 CONFLICT 再回来改。不是完工硬门禁，打包流程不依赖它。

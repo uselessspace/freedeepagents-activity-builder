@@ -55,81 +55,28 @@ prewarm_template() {
     x86_64|amd64)  arch_flag="--platform linux/amd64" ;;
   esac
 
-  # Detect npm file: dependencies that point outside site/ (e.g. activities
-  # using vendored monorepo packages like packages/scenex/). When present,
-  # mount the whole packages/ tree into the container at the same relative
-  # path the host uses, so `file:../../../packages/foo` resolves correctly
-  # during `npm install`. Activities that don't use file: deps incur no
-  # overhead.
-  #
-  # An activity with file: deps is by design only installable from the FDA
-  # monorepo (pack-activity.sh does NOT bundle packages/ into .fda.tgz).
-  # If $root/packages doesn't contain every referenced target, fail fast
-  # with a clear message so a missing-vendor situation is obvious rather
-  # than surfacing as a generic npm ENOENT.
-  local needs_packages_mount=0
+  # npm file: dependencies must be self-contained under the activity site
+  # (enforced by activity_verifier.py). When present, use --install-links so
+  # the warm cache receives copied packages rather than symlinks back into the
+  # temporary build tree.
+  local use_install_links=0
   if grep -q '"file:' "$tpl_src/package.json" 2>/dev/null; then
-    needs_packages_mount=1
-  fi
-
-  local pkg_mount_arg=""
-  if [ "$needs_packages_mount" = 1 ]; then
-    # Resolve every file: dep relative to $tpl_src and check it exists
-    # under $root/packages. site is always at activities/<id>/site/, so
-    # file:../../../packages/foo → $root/packages/foo. We sed out the
-    # ../../../ prefix anchored to the activity layout; anything else
-    # we can't auto-validate, just leave it to npm.
-    local missing_targets=""
-    while IFS= read -r target; do
-      # target is the raw file: URL value, e.g. ../../../packages/scenex/engine
-      local abs="$tpl_src/$target"
-      if [ ! -d "$abs" ]; then
-        missing_targets="$missing_targets\n  - $target  (resolved to $abs)"
-      fi
-    done < <(.venv/bin/python -c "
-import json, sys
-pkg = json.load(open('$tpl_src/package.json'))
-for section in ('dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'):
-    for name, spec in (pkg.get(section) or {}).items():
-        if isinstance(spec, str) and spec.startswith('file:'):
-            print(spec[len('file:'):])
-" 2>/dev/null)
-
-    if [ -n "$missing_targets" ]; then
-      echo "prewarm[$tpl]: ❌ file: dependency target(s) missing:" >&2
-      printf "$missing_targets\n" >&2
-      echo "" >&2
-      echo "This activity is only installable from a full FDA monorepo checkout." >&2
-      echo "If you received it as a standalone .fda.tgz, ask the author to send" >&2
-      echo "the matching packages/ tree (or re-vendor it into the activity)." >&2
-      return 1
-    fi
-
-    pkg_mount_arg="-v $root/packages:/work/packages:ro"
-    echo "prewarm[$tpl]: detected file: deps — mounting $root/packages → /work/packages (ro)"
+    use_install_links=1
   fi
 
   echo "prewarm[$tpl]: running npm install in node:20-slim ($(uname -m)) → $cache"
   docker run --rm $arch_flag \
     -v "$tpl_src:/src:ro" \
-    $pkg_mount_arg \
     -v "$cache:/out:rw" \
     -e FDA_ACTIVITY_ID="$tpl" \
-    -e FDA_USE_INSTALL_LINKS="$needs_packages_mount" \
+    -e FDA_USE_INSTALL_LINKS="$use_install_links" \
     node:20-slim \
     sh -lc '
       set -eux
-      # Mirror the host repo layout inside the container so relative `file:`
-      # paths in site/package.json resolve to /work/packages/<pkg> exactly as
-      # they would on the host. /work/packages is a bind-mount when
-      # needs_packages_mount=1; otherwise it does not exist, which is fine
-      # for activities without file: deps.
       mkdir -p /work/activities/$FDA_ACTIVITY_ID/site
-      cp /src/package.json /work/activities/$FDA_ACTIVITY_ID/site/
-      if [ -f /src/package-lock.json ]; then
-        cp /src/package-lock.json /work/activities/$FDA_ACTIVITY_ID/site/
-      fi
+      cp -a /src/. /work/activities/$FDA_ACTIVITY_ID/site/
       cd /work/activities/$FDA_ACTIVITY_ID/site
+      rm -rf node_modules dist
 
       # --install-links forces `file:` deps to be copied into node_modules
       # rather than symlinked. Needed so the warm cache is portable across

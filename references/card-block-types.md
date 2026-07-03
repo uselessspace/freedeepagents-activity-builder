@@ -79,7 +79,7 @@
 |---|---|---|
 | `name` | string | 必填 |
 | `label` | string | 必填 |
-| `input_type` | `text` / `textarea` / `number` / `file` / `audio` 之一 | 仅这五种；`audio` 渲染浏览器内录音控件（getUserMedia + WAV 编码），录音作为同 turn upload 提交，与 `file` 走同一通道 |
+| `input_type` | `text` / `textarea` / `number` / `file` / `audio` / `hidden` 之一 | 仅这六种；`audio` 渲染浏览器内录音控件（getUserMedia + WAV 编码），录音作为同 turn upload 提交，与 `file` 走同一通道；`hidden` 不渲染输入控件，但提交时会把 `default_value` 一起序列化 |
 | `required` | bool | default false |
 | `placeholder` | string \| null | |
 | `default_value` | string \| null | |
@@ -90,6 +90,8 @@
 
 1. **text + placeholder 提示**（最简单）：`{"input_type":"text","label":"性别（男/女/留空）","placeholder":"M / F / UNKNOWN"}`，host workflow 把自由文本映射到枚举。
 2. **ActionBlock 按钮组替代 form**：每个枚举值做成一个 `action_type=input_text` 的按钮，用户点按钮就等于"选了这个值"。
+
+`hidden` 字段只用于提交时携带非敏感上下文 ID（如 `memory_id`、`record_id`、`assignment_id`），让下一轮能把用户输入归属到正确对象。它不是安全边界：字段值仍存在于卡片 JSON、前端状态与提交文本中，不能放密钥、权限 token、隐私原文等敏感数据。活动 handler / skill 仍必须在服务端按当前实例状态校验这些 ID 是否有效。
 
 ### 4. ActionBlock — 按钮组
 

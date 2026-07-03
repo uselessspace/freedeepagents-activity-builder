@@ -23,8 +23,8 @@ All fields are optional; omit `runtime.json` entirely if you need no overrides.
 | `write_todos` | bool | `false` | Opt into the deepagents `write_todos` planner — only for genuinely multi-step (3+) pipeline turns. See [subagents.md](subagents.md). |
 | `auto_memory_enabled` | bool \| null | `null` (follow global `AUTO_MEMORY_ENABLED`) | Set `false` to disable the one-line `[auto]` gist for activities whose canonical card sequences look duplicated when echoed. See `app/auto_memory.py`. |
 | `sse_debug_view` | object | secure-off | Bridge trace tool/llm events onto the chat SSE stream. **Required** (declare it explicitly, even as `{}`) when `data.schema.json` has any `x-auto-inject:false` field. Fields below. |
-| `image_generate_model` | string | env `IMAGE_GEN_MODEL` | Per-activity override of `image_generate`'s wanxiang model id (e.g. `wan2.7-image-pro`). Provider stays global; only the model id is overridable. |
-| `image_edit_model` | string | env `IMAGE_EDIT_MODEL` | Per-activity override of `image_edit`'s model id. |
+| `image_generate_model` | string | env `IMAGE_GEN_MODEL` | Per-activity override of `image_generate`'s model id. Accepts a Wanxiang model (e.g. `wan2.7-image-pro`) **or** a Doubao/Seedream model (e.g. `doubao-seedream-5-0-260128`); the platform routes to the right backend by model name. You pick the model — nothing else. |
+| `image_edit_model` | string | env `IMAGE_EDIT_MODEL` | Per-activity override of `image_edit`'s model id. Same Wanxiang-or-Doubao routing by model name. |
 
 ### `sse_debug_view` sub-fields
 
@@ -55,4 +55,12 @@ All fields are optional; omit `runtime.json` entirely if you need no overrides.
 ```jsonc
 // Turn off the auto-memory gist for a canonical-card activity
 { "auto_memory_enabled": false }
+```
+
+```jsonc
+// Use Doubao/Seedream for this activity's image generation + editing
+{
+  "image_generate_model": "doubao-seedream-5-0-260128",
+  "image_edit_model": "doubao-seedream-5-0-260128"
+}
 ```

@@ -36,7 +36,7 @@ expect.
 | 4 | **typed KV data store wiring** | `runtime.data_schema_enabled: true` requires `data.schema.json` to exist | add `data.schema.json`, or flip the flag back to false (新活动默认开启) |
 | 5 | **typed KV top-level default** | `data.schema.json` exists but defaults are only under `properties.*.default` | add a schema-level `default` object |
 | 6 | Contract files exist | orphan card template missing `.vars.json` | add the missing vars file (or delete orphan template) |
-| 6a | **Card template schema conformance** | `card_templates/*.json` violates `<package>/schemas/card-template.schema.json` — e.g. ImageItem written as `url`/`alt` (must be `read_url`/`title`/`description`), FormField `input_type: "select"` (only `text`/`textarea`/`number`/`file`/`audio` exist) | fix the template; the error message carries the exact `$.card.blocks[i]…` path. A template that fails here is rejected 1:1 by the runtime's OutputCard validation at emit time |
+| 6a | **Card template schema conformance** | `card_templates/*.json` violates `<package>/schemas/card-template.schema.json` — e.g. ImageItem written as `url`/`alt` (must be `read_url`/`title`/`description`), FormField `input_type: "select"` (only `text`/`textarea`/`number`/`file`/`audio`/`hidden` exist) | fix the template; the error message carries the exact `$.card.blocks[i]…` path. A template that fails here is rejected 1:1 by the runtime's OutputCard validation at emit time |
 | 6b | **Vars schema conformance** | `*.vars.json` violates `<package>/schemas/card-vars.schema.json` (wrong top-level shape, unknown var `type`, …) | fix the vars file; `{{var}}` placeholders in the template are validated against it at render time |
 | 7 | Static Preview module contracts | `tools_module` / `dsl_builder_module` points at missing file or missing `make_tools` / `build` callable | add the module or remove the manifest field |
 | 8 | Static Preview site exists | `dsl_builder_module` set but no `site/` directory | create frontend project and build it |
@@ -52,6 +52,7 @@ expect.
 | 18 | **`activity_type_id` / `activity_id` mismatch** | a manifest carries both keys and they differ | make them equal, or keep only `activity_type_id` |
 | 19 | **No relative imports in `tools.py`** | `tools.py` / helpers use `from . import x` — the runtime loads them by file path (no package context), so relative imports `ImportError` | load siblings via the file-path loader (see `references/activity-python-modules.md`) |
 | 20 | **DeepAgents skill-loading integrity** (companion to #12) | `app/runner` reintroduces a `_skill_instruction_text` helper or globs/rglobs `SKILL.md` itself — both bypass native progressive disclosure | keep skills flowing through `create_deep_agent(skills=...)` |
+| 21 | **Static Preview frontend `file:` dependency boundary** | `site/package.json` has `file:` dependencies that are missing, absolute, or resolve outside `activities/<id>/` (for example `file:../../../packages/...`) | vendor the dependency inside the activity, such as `file:vendor/<package>`, so the activity package installs without the Runtime monorepo |
 
 ## Soft warnings (advisory — record in Ship Verification, ship proceeds)
 

@@ -53,6 +53,6 @@ activities/project-map/
 
 ## Boundary
 
-- Frontend code stays inside `activities/<id>/site/`; runtime carries no sidecar services.
+- Frontend code stays inside `activities/<id>/site/`; the activity ships only static assets — no backend services of its own.
 - Activity-private state lives in `data.schema.json` and is read through the activity's `dsl_builder.py` output, not from `frontend-src/`.
 - Activity decisions stay in the activity's host SKILL.md + tools.py; generic runtime code remains activity-neutral.

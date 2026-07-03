@@ -50,6 +50,7 @@ In `activities/<id>/site/`, edit activity-owned files. The final app should:
 - fetch `dsl.json` from `/preview/<activity_type_id>/<activity_id>/api/dsl.json` when using `dsl_builder_module`
 - subscribe to `/preview/<activity_type_id>/<activity_id>/api/dsl/stream` when live updates are needed
 - avoid dev-server-only `/api/*` plugin routes in production code
+- let end-users upload their own images / voice recordings (and persist them) via `POST api/upload` — see [user-upload.md](../references/user-upload.md)
 
 Typical files:
 

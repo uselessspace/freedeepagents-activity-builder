@@ -104,47 +104,9 @@ build_static_preview() {
   local arch_flag
   arch_flag="$(docker_arch_flag)"
 
-  # If site/package.json uses npm file: deps (e.g. vendored packages/scenex/),
-  # mount the whole repo packages/ tree at the same relative path the host
-  # uses, so any tooling that re-resolves bare imports during build (vite
-  # dev server, esbuild, tsc paths, etc.) still finds them. Activities using
-  # file: are by design only installable from a full FDA monorepo checkout
-  # — pack-activity.sh does NOT bundle packages/ into .fda.tgz. We validate
-  # every file: target up-front so a missing-vendor situation produces a
-  # clear message instead of a generic ENOENT from npm or vite.
-  local pkg_mount_arg=""
-  if grep -q '"file:' "$site_dir/package.json" 2>/dev/null; then
-    local missing_targets=""
-    while IFS= read -r target; do
-      local abs="$site_dir/$target"
-      if [ ! -d "$abs" ]; then
-        missing_targets="$missing_targets\n  - $target  (resolved to $abs)"
-      fi
-    done < <(.venv/bin/python -c "
-import json
-pkg = json.load(open('$site_dir/package.json'))
-for section in ('dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'):
-    for name, spec in (pkg.get(section) or {}).items():
-        if isinstance(spec, str) and spec.startswith('file:'):
-            print(spec[len('file:'):])
-" 2>/dev/null)
-
-    if [ -n "$missing_targets" ]; then
-      echo "error: file: dependency target(s) missing for activity '$activity_id':" >&2
-      printf "$missing_targets\n" >&2
-      echo "" >&2
-      echo "This activity is only installable from a full FDA monorepo checkout." >&2
-      exit 1
-    fi
-
-    pkg_mount_arg="-v $ROOT/packages:/work/packages:ro"
-    echo "    detected file: deps — mounting $ROOT/packages → /work/packages (ro)"
-  fi
-
   docker run --rm $arch_flag \
     -v "$site_dir:/work/activities/$activity_id/site:rw" \
     -v "$cache_dir/node_modules:/work/activities/$activity_id/site/node_modules:rw" \
-    $pkg_mount_arg \
     -w "/work/activities/$activity_id/site" \
     node:20-slim \
     sh -lc 'set -eux; npm run build'

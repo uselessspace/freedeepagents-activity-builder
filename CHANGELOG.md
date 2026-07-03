@@ -1,5 +1,249 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.14 (2026-06-29)
+
+补 `ctx.user_name` 作者文档：调用者显示名，来自 `X-FDA-User-Name` 头（percent-decoded），仅用于界面展示 / 署名；身份校验、归属鉴权、配额管理仍须用 `ctx.user_id`；best-effort，头缺席时为 `None`，使用前须判空（平台 commit 8fa5f580，2026-06-23 上线）。
+
+- **`references/user-upload.md`**：在「归属：平台不管业务」一节的 `ctx.user_id` 说明后紧接补充 `ctx.user_name` 三要点注记。
+
+## 0.4.13 (2026-06-29)
+
+新增 `activity-review` skill——编码阶段的语义级 Agent 质量自审，由在场编码 agent 执行，
+专抓确定性 verifier 查不出的"逻辑冲突"（指令自相矛盾、卡片编排不成立、承诺↔能力错配）。
+
+- **`skills/activity-review/`**：新独立工具（家族第 4 个：verify 查契约 → review 看自洽 →
+  smoke 验运行）。非阻塞、不调外部服务、不做发布门槛；只对照活动**自身声明的意图** + 插件
+  `policies/`，不引入外部"好活动"参照、不复判 verify 契约。`references/review-rubric.md`
+  六维清单 + `examples/seed-defect-activity/` 验收 fixture（非可发布、勿入 `activities/`）。
+- **`.claude-plugin/plugin.json`**：`skills[]` 登记 `skills/activity-review`（`.codex-plugin`
+  目录扫描自动发现）。
+- **根 `SKILL.md` / `INSTALL.md` / `README.md`**：按需工具清单补 `/activity-review`。
+- **`skills/activity-builder/SKILL.md`**：Done Criteria 增加**可选** `/activity-review` 自审
+  hand-off（明确非完工门禁、打包流程不依赖）。
+
+## 0.4.12 (2026-06-29)
+
+补齐 `FormField.input_type="hidden"` 的活动作者契约，并同步 builder schema。
+
+- **`schemas/card-template.schema.json`**：`FormField.input_type` 枚举加入 `hidden`，与运行时
+  `OutputCard` 模型保持一致。
+- **`references/card-block-types.md` / `policies/llm-output-discipline.md`**：说明 `hidden` 字段
+  不渲染输入控件，但表单提交时会把 `default_value` 一起序列化；适合携带非敏感上下文 ID
+  （如 `memory_id` / `record_id` / `assignment_id`），不是安全边界，活动侧仍要校验归属。
+- **`references/verifier-checks.md`**：更新卡片模板 schema 校验示例，避免把 `hidden` 误判成非法
+  input type。
+
+## 0.4.11 (2026-06-25)
+
+补齐 `api/upload` 的跨平面回取说明，并让 `frontend-base` 覆盖 Go developer preview 挂载。
+
+- **`references/user-upload.md`**：新增「`resource_ref` 端到端」配方，明确 `dsl_builder` 不投影、
+  投影发生在 Go 预览代理；说明可投影字段闭集
+  `read_url / file_url / image_url / thumbnail_url / audio_url / trace_url`，以及聚合对象的
+  `resource_refs` 语义。
+- **`frontend-base/src/lib/api-base.ts` / `asset-url.ts`**：除 `/preview/<aid>/<iid>/` 与
+  `/dev/preview/<aid>/<iid>/` 外，支持
+  `/api/v1/developer/activity-types/<aid>/activities/<iid>/preview/`，让 `apiUrl()` 与
+  `resolveAssetUrl()` 在 Go developer proxy 下保持同一 preview 前缀。
+
+## 0.4.10 (2026-06-25)
+
+文档化一个**新的 turn 输入契约：`current_datetime`**（**纯文档**；注入由平台实现）。
+LLM API 没有时钟、裸调用不知道"今天"，平台现在每轮在 turn 输入里注入 `current_datetime`
+（墙上时钟 + 星期，时区由部署的 `ACTIVITY_CLOCK_TZ` 定、默认东八区）。活动要把用户的相对时间
+（「昨天」「上周五」「去年」）解析成绝对日期，据此字段算即可，不要让模型自己猜今天。
+
+- **`references/host-skill-template.md`**：「当前状态」节加 `current_datetime` 字段说明
+  （来源 / 时区 / 用途：解析相对时间；不需要的活动可忽略）。
+
+## 0.4.9 (2026-06-25)
+
+把「handler 产出的图怎么落进 uploads」讲成**两条可选路径**，让活动开发者按交互模型自己选
+（**纯文档**；两条路平台都支持）。区别只在**字节何时落盘**：**A 即时**（`ctx.save_upload`，
+生成即落、返回 uploads URL）适合生成即定稿 / 非交互流程；**B 延迟提交**（handler 返回图片
+字节如 base64 data URL、前端本地预览，用户**确认**时才走 `api/upload` 落盘）适合交互式编辑器
+——编辑期是纯页面草稿，换图 / 重生成 / 放弃都不触碰存储、不产孤儿。
+
+- **`references/image-tools.md`**：原「把 handler 产出的图变成『用户上传』」一节改写为
+  「把 handler 产出的图落进 uploads —— 两条路，按交互模型选」：加 A/B 对比表（落盘时机 /
+  handler 返回 / 预览来源 / 孤儿 / 典型场景）+ B 路径代码示例；A 的 `ctx.save_upload` /
+  `ctx.read_upload` 签名表保留。URL 示例由写死 `/preview/...` 改为挂载无关的 `<preview-root>/...`。
+- **`references/user-upload.md`**：handler 写入命名空间的交叉引用同步为「A 即时 / B 延迟提交」两条路。
+
+## 0.4.8 (2026-06-25)
+
+图像 capability 的 **handler / SPA 用法补全**（**纯文档**；运行时能力在平台侧实现）。
+`image_edit` 现在也暴露 ctx helper（此前只有 `image_generate`），预览页可不经 agent turn
+直接修复 / 改图；新增 `source_upload`（用预览页上传产物作 `image_edit` 的 source）与
+`ctx.save_upload` / `ctx.read_upload`（把 handler 产出的图写进 / 读回「用户上传」命名空间，
+与 `POST api/upload` 同形）。
+
+- **`references/image-tools.md`**：「Static Preview / SPA 图像按钮」段覆盖 `ctx.image_generate`
+  + `ctx.image_edit` 两个 helper；新增「改图：编辑预览页上传的照片（`source_upload`）」与
+  「把 handler 产出的图变成『用户上传』（`save_upload`/`read_upload`）」两节；source 引用表
+  加 `source_upload`（共 6 种引用方式）。删去「只有 image_generate 暴露 ctx helper」的旧注。
+- **`references/user-upload.md`**：补 handler 经 `ctx.save_upload` 写入上传命名空间的说明。
+
+## 0.4.7 (2026-06-23)
+
+生图新增**火山引擎方舟 Doubao/Seedream** 后端。开发者契约：`image_generate_model` /
+`image_edit_model` 现在既可填 Wanxiang 模型（`wan2.x-*`）也可填 Doubao 模型
+（`doubao-seedream-*`），平台**按模型名自动路由**到对应后端——活动只挑模型，不配
+provider、不碰 key。generate 与 edit（图生图）都按各自模型字段路由。**纯文档**（运行时
+能力在平台侧实现，凭证由运维在服务端配置）。
+
+- **`references/runtime-config.md`**：`image_generate_model` / `image_edit_model` 说明
+  改为「Wanxiang 或 Doubao，按模型名路由」，加 Doubao 示例。
+- **`references/image-tools.md`**：「活动级模型覆盖」加「模型即后端」段 + Doubao 示例 +
+  Seedream 尺寸提示（倾向更大 size）。
+
+## 0.4.6 (2026-06-23)
+
+补齐**终端用户在预览页里上传 + 持久化自己的图像 / 录音**这条平台能力的开发者契约
+（绘本工坊自己读绘本录音、记忆档案馆传照片）。平台早已提供 `POST api/upload`，但插件此前
+未把它讲成一条契约级能力，开发者不知道可以用。**纯文档。**
+
+口径仍遵循「只讲契约、不展开运行时 / 平台机制」：写端点、格式、大小、持久化保证、归属分工与降级，
+不讲对象存储 / Go URL 投影 / 计费等内部链路。
+
+- **新增 `references/user-upload.md`**：`POST <preview-root>/api/upload`（`multipart` 单
+  `file` 字段，用 `apiUrl('upload')`、走原生 `fetch`+`FormData` 而非强制 JSON 的 `request()`）；
+  允许格式 = 图像 `png/jpeg/webp/gif` + 音频 `wav/webm/mp4/mpeg/ogg`（浏览器 `MediaRecorder` 的
+  `audio/webm;codecs=opus`、`audio/mp4` 直接可传，无需前端转码；HTML/SVG/JS 一律拒）；返回
+  `{url, resource_ref, sha256, content_type, byte_size}`，`url` 为 **opaque（默认可能 redirect、
+  别解析、别假设同源）**，内容寻址幂等；回取用 `resolveAssetUrl()`、`?proxy=true` 可同源拉字节；
+  与产物同级耐久、随实例硬删清除；**归属分工**——平台只存字节发 ref，"谁传的 / 放哪"由 handler
+  用 `ctx.user_id` 写进 `data.json`；录音可直接喂 `tts_generate(reference_audio=…)` 克隆朗读。
+- **交叉链接**：`workflows/04-derive-frontend.md`（SPA api/* 面）、`references/tts-tools.md`
+  （`reference_audio` 录音来源）、`skills/activity-builder/SKILL.md`（static-preview 阅读清单）。
+
+## 0.4.5 (2026-06-23)
+
+补齐 Static Preview 活动的 **生图 handler-first 用法**说明（0.4.4 TTS 喇叭按钮的生图对应版）。
+平台早已在 ctx 上提供 `ctx.image_generate`（仅 `image_generate` capability 声明时存在），但插件
+此前只教 turn 内 `@tool`，缺"预览页直接生图"这条路。**纯文档**。
+
+口径原则：面向活动开发者只讲**契约**（怎么声明、调什么、返回什么形状、怎么降级、约束是什么），
+不展开运行时 / 背后平台的实现机制（URL 投影、计费链路、内部计数器等）——那些对开发者既不可操作、
+也是冗余上下文。
+
+- **`references/image-tools.md`**：新增 *Static Preview / SPA 生图按钮* 章节。声明
+  `image_generate` capability + `handlers_module` → `handlers.py` 里 `getattr(ctx,
+  "image_generate", None)` 判空 → `ctx.image_generate(prompt=…, size=…, store="auto")` →
+  取 `result["artifacts"][0]["file_url"]`，失败回 `{"ok": False, "error": …}`，写 typed-KV 后
+  `ctx.notify_dsl_update()`；前端 `apiUrl('<handler>')`、直接用返回的 `image_url`、不硬编码
+  `/v1/...`。约束：每次 handler 调用累计受 `IMAGE_GEN_MAX_PER_TURN`、失败不占名额、超额优雅降级；
+  计费归因平台自理。范例引「婚礼爱情档案」`image_helpers.py`。
+- **`policies/capabilities.md`**：「用法」段补"同一 capability，两类入口"——`image_generate` /
+  `tts_generate` 声明后同时可用 turn `@tool` 与 `ctx.*` helper；`image_edit` / `read_document`
+  仅 turn `@tool`；`ctx.image_generate` 仍由 `manifest.capabilities` 门控（区别于无条件注入的
+  `ctx.llm`）。
+- **`references/ctx-llm.md`**：选型表拆行——主 turn 生成/编辑图片（`@tool`）vs 预览页按钮直连生图
+  （`ctx.image_generate`）。
+- **`references/tts-tools.md`**：喇叭按钮的资产 URL 说明改为开发者口径"直接用返回的 `audio_url`、
+  不硬编码 `/v1/...`、平台保证当前预览环境可访问"，不再描述内部改写 / 投影机制。
+- **同口径清理既有泄露点**（非本次新增，一并降到契约高度）：
+  - `references/ctx-llm.md`「计费与归因」段 → 「计费、归因与限额」：只讲"平台自理、活动不传身份参数、
+    不碰 provider key、无 per-call 上限、`timeout` 语义"，删 LiteLLM spend log / Go token /
+    `custom_auth` / `spend_logs_metadata` / media-proxy sidecar 等内部链路。
+  - `policies/capabilities.md`「工作机制」内部流程图（`runner._build_capability_tools` /
+    `create_image_provider` / `make_image_generate_tool` / `trace.log`）→ 契约级「优雅降级」：
+    声明 ≠ 一定可用，turn 内 LLM 看不到工具自然降级、handler 里 `getattr(ctx,…,None)` 判空降级；
+    并软化同段 `ImageSourceResolver` 类名引用。
+  - `references/ctx-llm.md` 模型路由 / 排错表：去掉"网关开 / 关、hard mode、LiteLLM `config.yaml`、
+    Go token、provider key"等措辞，改为"模型名写法随部署而定、拿不准用默认、必要时找运维确认"。
+  - `examples/static-preview.md` 边界句：`runtime carries no sidecar services` → 描述活动自身
+    "只含静态资源、不自带后端服务"。
+  - 全量 grep 复扫确认开发者侧文档（references / policies / examples / workflows / schemas /
+    templates）已无运行时 / Go 平台内部词。
+- **版本**：Codex / Claude plugin manifest 0.4.4 → **0.4.5**。
+
+## 0.4.4 (2026-06-22)
+
+补齐 Static Preview 活动的 **TTS handler-first 用法**说明，面向"前端喇叭按钮朗读"这类即时交互。
+
+- **`references/tts-tools.md`**：新增 Static Preview / SPA 喇叭按钮章节。明确不要用 `[TTS]`
+  标记驱动一轮 turn，也不要在前端硬编码 `/v1/...`；应在 `manifest.capabilities` 声明
+  `tts_generate`，声明 `handlers_module`，在 `handlers.py` 里通过 `ctx.tts_generate(text=..., store="auto")`
+  合成，并由前端 POST 当前预览根路径下的 `api/tts`。
+- **`frontend-base/src/lib/api-base.ts`**：注释同步到当前 `/preview/...` 与
+  `/dev/preview/...` 预览挂载口径；模板本身已经动态解析当前 preview 根路径，避免深层 SPA
+  子路由把 `./api/tts` 解析到错误位置。
+- **版本**：Codex / Claude plugin manifest 0.4.3 → **0.4.4**。
+
+## 0.4.3 (2026-06-17)
+
+跟进 runtime 新增的 **`image_edit` 多图输入**能力（runtime commit `00298b40`：`image_edit`
+从"恰好 1 张 source"扩成"1..N 张有序 source"，wan2.x 的融合 / 多参考 / 局部编辑全靠
+prompt 表达、不需 mask 或角色字段）。**本次是文档同步**——补齐插件对该能力的契约描述；
+runtime 行为以源码为准（`app/tools/image_edit.py` `sources` 参数 + `app/image_sources.py`
+`resolve_many` + `app/settings.py` `IMAGE_EDIT_MAX_SOURCES` 默认 5）。
+
+- **`references/image-tools.md`**：`image_edit` 签名加 `sources: list[str] | None`；"source 二选一"
+  规则（`sources` 多图 vs 4 个单数参数恰 1 个，整体互斥；`sources` 有序，图1=sources[0]）；
+  成功返回补 `source_kinds` / `source_refs`（仅 `len(sources)>1` 时出现）；失败返回补
+  `too many source images` / `pass either sources … not both`；重要约束补多图节（每张各自
+  受字节上限 + SSRF，计费按产出）；Image Source 表加 `sources` 行（前缀自动识别）；选源伪
+  逻辑加多图首分支；env 表加 `IMAGE_EDIT_MAX_SOURCES`（默认 5，模型上限 9）；诊断表加 3 行。
+- **`workflows/03-image-tooling.md`**：决策树加 step 0「本轮需要 2+ 张输入图（融合 / 多参考）→
+  `image_edit(sources=[…])`」机械接线分支。
+- **`examples/card-image.md`**：Flow 第 2 步注明多图用有序 `sources=[…]`。
+- **不动** `references/runtime-config.md` / `schemas/runtime.schema.json`：`IMAGE_EDIT_MAX_SOURCES`
+  是运维 env、不是 `runtime.json` 字段（`ALLOWED_RUNTIME_FIELDS` 无此键），放进去会语义错位。
+  verifier 无 image-param 规则，亦无需改。
+
+## 0.4.2 (2026-06-12)
+
+外部活动开发者 round-4 反馈（针对 0.4.1；round-3 的 23 项实测 CLOSED 20 / PARTIAL 3 /
+OPEN 0）：5 项残留/漂移 + 1 个新问题，逐条闭环。**全部为文档 / 口径修复，无运行时或
+schema 行为变化**——已核 runtime 源码，行为本就正确，缺的是文档把它说清楚。
+
+### 修了 0.4.1 自己的"声明 vs 实物"漂移（P1）
+
+- **CHANGELOG 承诺随包的 `docs/feedback/v0.4.1-audit-findings.md` 实际未入包**（外部 114
+  文件机扫确认无 `docs/`，本仓库 `find` 复核一致）——这恰是 0.4.1 宣称要消灭的 bug 类。
+  4 维复扫存档属过程产物、本不该入包，故**删除该声明行**（不补文件）。
+
+### 文档口径补全（PARTIAL 残口收尾）
+
+- **`references/image-tools.md` 失败配额语义对称**（P3）：runtime 两侧本就对称——
+  `app/tools/image_gen.py` 与 `app/tools/tts_gen.py` 失败都走 `rollback_reserved()`——
+  但只有 `tts-tools.md` 写了"失败回滚配额"。image 失败节补对称句：失败**不占**
+  `IMAGE_GEN_MAX_PER_TURN`、generate / edit 共享计数器同语义。
+- **`policies/output-protocol.md`「两个 phase 命名空间」补三点**（Q9，把口径从
+  `host-skill-template.md` 的括号注提升为权威，据 `app/card_system/state_derivation.py`）：
+  ① derived phase 派生改写为准确的 **carry-forward** 语义（本轮无卡声明 `meta.phase` 时
+  沿用上一轮、不清空），纠正原"每轮整体覆写"的误导措辞；② 补 derived phase **初始值**
+  （首个声明 phase / runtime 传入的 `default_phase`，否则 `None`）；③ 补**分歧裁决**——
+  两份 phase 不一致时工具守卫 / 路由以 typed-KV 业务 phase 为准，host SKILL 据此路由是
+  对的。`references/host-skill-template.md` 同步加一行路由权威指针。
+- **`schemas/README.md` 新增「Bundle 与 runtime 版本窗口」节**（Q10）：明确创作期
+  （bundled schema + verifier）vs 加载期（runtime `app.models`，最终权威）分工、bundle
+  落后 / 领先各自行为、安装重装的校验侧，以及"插件包与目标 runtime release 同档 pin"建议。
+
+### 新问题：legacy `activity_id` 改名安全窗口（verifier W8）
+
+- **`references/manifest-fields.md` 新增改名安全窗口子节**：区分改*值*（slug，断路由 /
+  实例目录）与改*键名*（`activity_id` → `activity_type_id`，安全前向迁移）。据 runtime
+  `ActivityManifest.normalize_legacy_activity_id`（`mode="before"`）说明 `activity_type_id`
+  是 canonical、`activity_id` 是加载前归一化的**永久兼容别名**（当前无 sunset、不会自动
+  升 ERROR）；实例数据按 slug **值**而非 manifest **键名**关联，故改键名**无需平台侧
+  配合、不必重建实例**。唯一前提：目标 runtime 已把 `activity_type_id` 作 canonical
+  （当前 runtime 即是；本仓库 runtime 未打版本 tag，不确定生产版本时先在目标 runtime
+  验证一个改名后的 manifest 能加载再批量改）。
+
+### 交接物增强（Q11）
+
+- **`workflows/06-verify-and-ship.md` 的 Ship Verification 块**加可选
+  `Suggested smoke inputs:` 行（随包指定必测路径，如"大纲 turn 同 turn 出封面"这类历史
+  事故线），并明示 maintainer runtime smoke / fda-logs 回传**可按需重复**、已发
+  `fda-dev` token 时开发者用共享 dev runtime 自助复跑是等价替代。
+
+### 版本
+
+- `plugin.json`（claude + codex）+ `schemas/README.md` Bundle version 0.4.1 → **0.4.2**
+  （`check_schema_sync.py` 的版本行提醒据此对齐）。
+
 ## 0.4.1 (2026-06-12)
 
 0.4.0 后的全维度复扫（4 个并行审计 + 实跑 scaffold→verifier→testkit→pack）发现的
@@ -60,7 +304,6 @@
 - activity-frontend 的 Implementation Guidance：通用视觉栈的 polish budget /
   motion 范例 / 截图细节收敛为指向 workflow 05 的指针（保留测试契约要求的
   自包含栈提及）。
-- 随包附 `docs/feedback/v0.4.1-audit-findings.md`（本轮 4 维复扫的存档记录）。
 
 ## 0.4.0 (2026-06-11)
 

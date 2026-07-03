@@ -22,6 +22,11 @@ npm run lint         # tsc --noEmit
 npm run build        # production bundle to dist/
 ```
 
+If this frontend uses npm `file:` dependencies, keep those packages inside this
+activity directory (for example `file:vendor/<package>`). Runtime installs only
+receive the activity package, so `file:../../../packages/...` and other paths
+outside the activity are rejected by the verifier.
+
 When the host `package.json` changes (you added/removed a dep), re-run
 `packages/freedeepagents-activity-builder/tools/setup-runtime.sh {{ACTIVITY_ID}} --force` so packaged/runtime
 builds use the new deps.

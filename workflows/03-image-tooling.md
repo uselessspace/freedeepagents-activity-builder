@@ -7,6 +7,12 @@ Engaged when manifest declares `capabilities: ["image_generate"]` or `["image_ge
 ## Decision tree (which tool, which source)
 
 ```
+0. Does this turn need 2+ input images (fusion / multi-reference / 把 A 放进 B)?
+   YES → image_edit(sources=[ref1, ref2, …], prompt="… 图1 … 图2 …")
+         (sources 有序：prompt 的 图1/图2 必须跟列表顺序对齐；每项可混用
+          artifact_id / file_id / sandbox 路径 / URL。最多 IMAGE_EDIT_MAX_SOURCES 张。)
+   NO  → continue ↓
+
 1. Does state have reference_artifact_id?
    YES → image_edit(source_artifact_id=state.reference_artifact_id, prompt="...")
          (Never re-generate — style will drift.)

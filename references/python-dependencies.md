@@ -116,7 +116,7 @@ The runtime venv has no `pip` module, so installs go through **uv**
 | Path | When | Mechanism |
 |---|---|---|
 | `POST /dev/sync` upload | on every upload where `requirements.txt` changed | `uv pip install -p <interpreter> -r requirements.txt` into the host venv, pip fallback (`app/dev_sync.py::_py_install_cmd`) |
-| Docker image build | image build | uv installs each `activities/*/requirements.txt` (`Dockerfile`) |
+| Runtime startup | when host activities already exist | uv installs changed `activities/*/requirements.txt` into the running interpreter and records `runtime/activity-dependencies.json` |
 | `tools/install-activity.sh` | local `.fda.tgz` install | uv (pip fallback) installs the activity's `requirements.txt` after extraction |
 
 `pack-activity.sh` bundles `requirements.txt` automatically (it lives under

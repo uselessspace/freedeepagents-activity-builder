@@ -133,13 +133,14 @@ Before the Ship Verification block: every "ready" / "完成" claim must sit imme
 - **Testkit smoke**: `python <package>/testkit/fda_testkit.py activities/<id>` → <paste result line>
 - **Runtime setup/build**: `bash <package>/tools/setup-runtime.sh <id>` and, for Static Preview, `npm run build` or `bash <package>/tools/install-activity.sh <pkg>` → `site/dist/index.html` exists
 - **E2E smoke**: <method> <url> → <status>; events: <list>; output_card "<title>" emitted. *(Platform-runtime step — if you don't have the runtime, record "deferred to maintainer runtime smoke" and the maintainer pastes it.)*
+- **Suggested smoke inputs** *(optional)*: <随包指定的必测输入，如 "大纲 turn 同 turn 出封面" 这类历史事故线>；maintainer 跑 E2E 时照此复现。
 - **Warnings acknowledged**: <reason for accepting / planned remediation>
 - **Files changed**: <git diff --stat output>
 
 Activity <id> is ready to ship.
 ```
 
-No Ship Verification block = no completion claim. The **verifier + testkit smoke lines are always required** (both run with no platform repo); the runtime E2E line is required when you have the runtime, otherwise it's deferred to a maintainer and noted as such — never silently dropped.
+No Ship Verification block = no completion claim. The **verifier + testkit smoke lines are always required** (both run with no platform repo); the runtime E2E line is required when you have the runtime, otherwise it's deferred to a maintainer and noted as such — never silently dropped. maintainer 的 runtime smoke / fda-logs 回传可按需重复——交接不是一次性的；若开发者已拿到 `fda-dev` token，用共享 dev runtime 自己复跑即是等价替代（见 [../references/dev-agent-cli.md](../references/dev-agent-cli.md)）。
 
 ## Done
 

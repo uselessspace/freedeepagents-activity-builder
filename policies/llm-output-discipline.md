@@ -90,7 +90,8 @@
 每个 block / 字段都是 pydantic **StrictModel**：只接受类定义里的字段，多写一个未定义字段会触发 `OutputValidationError`。设计模板前对照随包分发的 [`schemas/card-template.schema.json`](../schemas/card-template.schema.json) 对应 `$defs` 确认字段表（与运行时模型由 `check_schema_sync` 守卫一致）。
 
 - 当前支持的 6 种 block：`MarkdownBlock` / `InfoBlock` (+ `InfoItem`) / `FormBlock` (+ `FormField`) / `ActionBlock` (+ `ActionItem`) / `ImageBlock` (+ `ImageItem`) / `AudioBlock` (+ `AudioItem`)；加上 `OutputCard` / `MinimalAICard` / `OutputArtifact`
-- `FormField.input_type` 取值为 `text` / `textarea` / `number` / `file` / `audio` 之一（`audio` 为浏览器录音控件）；枚举式选择改用 `ActionBlock` 按钮组
+- `FormField.input_type` 取值为 `text` / `textarea` / `number` / `file` / `audio` / `hidden` 之一（`audio` 为浏览器录音控件；`hidden` 不渲染输入控件，但提交时会把 `default_value` 一起序列化）；枚举式选择改用 `ActionBlock` 按钮组
+- `hidden` 字段只能携带非敏感上下文 ID（如 `memory_id` / `record_id` / `assignment_id`），不是安全边界；不要把密钥、权限 token、隐私原文放进 hidden field，活动侧仍要校验提交 ID 的归属
 - card-system 工具会在调用入参时按 pydantic 校验整个 card 对象；字段错了会即时 `ToolMessage(error=...)`，按报错改正参数 retry
 
 ---

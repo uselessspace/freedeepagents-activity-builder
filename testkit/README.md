@@ -32,9 +32,9 @@ python testkit/fda_testkit.py path/to/activities/<id>
 ```
 
 ```
-==> smoking bedtime-story
-  make_tools(): ok — 7 tool(s): ['clear_today_brief', 'delete_story', ...]
-  dsl_builder.build(): ok — returned dict with keys ['archive', 'source', 'tonight', ...]
+==> smoking my-activity
+  make_tools(): ok — 7 tool(s): ['add_note', 'delete_note', ...]
+  dsl_builder.build(): ok — returned dict with keys ['archive', 'source', 'today', ...]
 ✓ smoke clean
 ```
 

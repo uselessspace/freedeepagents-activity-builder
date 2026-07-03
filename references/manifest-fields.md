@@ -17,8 +17,16 @@ Schema: `<package>/schemas/manifest.schema.json`. This doc explains each field w
 - Pattern: `^[a-z][a-z0-9-]{1,30}$`
 - Must equal the `activities/<id>/` directory name
 - Used in URLs (`/preview/<activity_type_id>/...`), Static Preview routing, and the in-process activity registry
-- **Don't rename after deployment** — breaks all routing and instance dirs
-- Legacy manifests may still use `activity_id` for this value during migration, but new manifests must use `activity_type_id`.
+- **不要在部署后改这个*值*（slug）** — 路由和实例目录都按它的值寻址（`activities/<activity_type_id>/<activity_id>/…`），改值会断掉一切。
+
+### legacy `activity_id` → `activity_type_id` 改名安全窗口（verifier W8）
+
+旧 manifest 可能仍用 `activity_id` 承载这个值；新 manifest 必须用 `activity_type_id`。verifier 对前者发 [W8](verifier-checks.md) 警告。关于"改名会不会装不上"：
+
+- **把*键名*从 legacy `activity_id` 改成 `activity_type_id`（值不变）是安全的前向迁移**：runtime 的 `ActivityManifest` 以 `activity_type_id` 为 canonical 字段，`activity_id` 是加载前就被归一化掉的 legacy 别名（`normalize_legacy_activity_id`，`mode="before"`）。所以改名是"往规范名靠"，不是引入新字段。
+- **双轨现状**：两者并存且*不等* → 加载报错 / verifier ERROR（[#18](verifier-checks.md)）；只留 legacy `activity_id` → runtime 仍按别名接受、verifier 仅 W8 警告；只留 `activity_type_id` → 正路。**当前 runtime 对 `activity_id` 无 sunset 计划、不会自动升级成 ERROR**——它是永久兼容别名。
+- **改键名不需要平台侧配合**：实例数据按 `activity_type_id` 的*值*关联（存储路径就是该值），不按 manifest 里的键名；值不变则关联不变，无需重建实例。
+- **唯一前提**：你部署的 runtime 版本已把 `activity_type_id` 作为 canonical（当前 runtime 即是）。本仓库的平台 runtime 未打版本 tag，若不放心生产版本，**先在目标 runtime 上验证一个改名后的 manifest 能正常加载，再批量改**即可。
 
 ## name (required)
 

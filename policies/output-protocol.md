@@ -100,7 +100,7 @@ data_get("hidden_key")  # 读 x-auto-inject:false 字段
 | | **runtime-derived phase** | **typed-KV 业务 phase** |
 |---|---|---|
 | 住在哪 | `instance.data`（state.json），与 `turn_count` / `card_count` / `artifact_count` / `last_card_id` / `last_artifact_id` / `last_artifact_url` 共 7 个 runtime 字段 | `/instance/data.json`，由活动自己在 `data.schema.json` 声明（如 `enum: ["intake","drafting","completed"]`） |
-| 谁写 | **只有 runtime**：turn 末从本轮最后一张 emit 卡的 `meta.phase` 派生（`app/card_system/state_derivation.py`），每轮整体覆写 | **只有活动**：@tools / `data_set` 直写 |
+| 谁写 | **只有 runtime**：turn 末取本轮最后一张带 `meta.phase` 的 emit 卡覆写；**本轮没有任何卡声明 `meta.phase` 时，沿用上一轮的值**（不会被清空），见 `app/card_system/state_derivation.py` | **只有活动**：@tools / `data_set` 直写 |
 | 谁读 | 前端 transport / SSE / preview 的状态展示 | 活动 @tools 的相位守卫、AGENTS.md 路由判断（`x-auto-inject` 后注入 system prompt） |
 | 互相影响 | **无**。runtime 的派生覆写只发生在 `instance.data`，**从不触碰** typed-KV 里任何键——包括名为 `phase` 的业务键 | 同左 |
 
@@ -109,6 +109,8 @@ data_get("hidden_key")  # 读 x-auto-inject:false 字段
 - 在 `data.schema.json` 里声明自己的 `phase` 字段并用活动 @tools 直写推进，是**合法且官方推荐**的模式——多阶段活动需要工具侧相位守卫时（"当前 phase 不是 X 就拒绝调用"），这是唯一被验证过、能让 LLM 行为可控的做法。runtime 不会覆写它。是否分相、分几相，完全是活动自己的设计。
 - 文档里"不要写 phase、没有写入工具"这条红线，指的**只是** `instance.data` 里那份 runtime-derived phase——它确实没有写入工具，emit 卡的 `meta.phase` 是影响它的唯一途径。
 - 两份 phase 各管一摊：`meta.phase` 决定**前端看到的阶段**；typed-KV phase 决定**工具守卫与路由**。多数活动应当两个都用，且让它们语义一致（emit 卡时顺手把 `meta.phase` 设成与业务 phase 同值）。
+- **derived phase 的初始值**：首轮、且从未有任何卡声明过 `meta.phase` 时，runtime 取活动首个声明的 phase 作初值（state schema 的首个枚举值，由 runtime 以 `default_phase` 传入 `state_derivation`）；活动完全没声明 phase 时它保持 `None`。此后每轮只在"本轮有卡带 `meta.phase`"时才覆写，否则沿用上一轮——它不会被自动清空。
+- **两份 phase 分歧时信哪份**：当活动同时维护两份且出现分歧，**工具相位守卫 / 业务路由以 typed-KV 业务 phase 为准**（它是活动自管、能被 @tool 守卫直接读取的真理），runtime-derived phase 只反映前端展示阶段。在 host SKILL 把路由建立在 typed-KV 业务 phase 上是**正确**的；两者应保持同步，持续分歧应视为活动 bug。不维护业务 phase 的简单活动则直接读 runtime-derived `current_instance_state.data.phase`，此时只有一份、不存在分歧。
 - 其余 6 个 runtime 字段名（`turn_count` 等）同理：在 typed-KV 里征用同名做业务字段**不会冲突**，但为可读性建议避开。
 
 ---

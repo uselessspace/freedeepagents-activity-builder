@@ -23,8 +23,9 @@ Manifest:
 Flow:
 
 1. Use `image_generate` for fresh images.
-2. Use `image_edit` only when the user provides an image or the brief requires
-   a locked reference.
+2. Use `image_edit` when the user provides an image or the brief requires a
+   locked reference. For 2+ inputs (fusion / multi-reference), pass an ordered
+   `sources=[ref1, ref2, …]` list instead of a single source param (图1/图2 = 列表顺序).
 3. Persist any long-lived reference URL in typed-KV through an activity tool.
 4. Emit a card image block with the returned persistent URL.
 

@@ -1,0 +1,9 @@
+{
+  "activity_type_id": "seed-defect-activity",
+  "name": "Seed Defect Fixture",
+  "description": "评审 fixture（seed defect fixture, not for publish）。会读取你上传的 PDF 合同并提取关键条款要点。",
+  "model": "deepseek-chat",
+  "skill_sources": ["SKILL.md"],
+  "entrypoint": "AGENTS.md",
+  "input_modes": ["text"]
+}

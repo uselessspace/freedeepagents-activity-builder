@@ -41,7 +41,9 @@ This activity runs in **card-system mode**. When done, just stop; the runtime as
 ## 当前状态
 
 - `current_instance_state.data.phase` — runtime-derived phase from this turn's emitted card meta (or last turn's if no card emitted phase yet).
+  - 若活动在 `data.schema.json` 自管一个业务 `phase`（用于工具相位守卫），**那份才是路由 / 守卫的权威**；本行这份 runtime-derived 值供前端展示，二者应保持同步——见 [output-protocol.md「两个 phase 命名空间」](../policies/output-protocol.md)。
 - `current_instance_state.data` 还包含 turn / card / artifact 计数器与 `last_*_id` 指针（runtime 派生）。
+- `current_datetime` — turn 输入顶层字段，本轮的墙上时钟（如 `2026-06-25 周四 14:30 (Asia/Shanghai)`，时区由部署的 `ACTIVITY_CLOCK_TZ` 定，默认东八区）。**LLM 没有时钟**：要把用户的相对时间（「昨天」「上周五」「去年」）解析成绝对日期，**只能据此字段算**，别凭模型自己"猜今天"。不需要解析相对时间的活动可忽略。
 - Business data 通过 `data.schema.json` 中标了 `x-auto-inject: true` 的字段自动注入到 system prompt 顶部，可以直接读。隐藏字段（`x-auto-inject: false`，如谜底 / 评分细则）需要显式 `data_get(key)`。
 
 ## Phase 路由

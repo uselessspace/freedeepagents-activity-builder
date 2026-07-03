@@ -93,7 +93,7 @@
       "properties": {
         "name": { "type": "string" },
         "label": { "type": "string" },
-        "input_type": { "enum": ["text", "textarea", "number", "file", "audio"] },
+        "input_type": { "enum": ["text", "textarea", "number", "file", "audio", "hidden"] },
         "required": { "type": "boolean" },
         "placeholder": { "type": ["string", "null"] },
         "default_value": { "type": ["string", "null"] },

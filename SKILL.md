@@ -34,7 +34,7 @@ license: MIT
 4. [`/activity-frontend`](skills/activity-frontend/SKILL.md) — **仅** static-preview 或更丰富前端时。
 5. [`/activity-packager`](skills/activity-packager/SKILL.md) — 打包 `.fda.tgz` + 安装 + 冒烟取证。
 
-**按需工具**（独立于上面链路，随时单独调）：[`/activity-verify`](skills/activity-verify/SKILL.md) 静态校验（<5s 不调 LLM）· [`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查。
+**按需工具**（独立于上面链路，随时单独调）：[`/activity-verify`](skills/activity-verify/SKILL.md) 静态校验（<5s 不调 LLM）· [`/activity-review`](skills/activity-review/SKILL.md) 语义自审（找逻辑冲突，调在场 LLM）· [`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查。
 
 > **改完想立刻在线上 dev runtime 测一轮?** `fda-dev` CLI 一条命令完成 同步→跑 turn→读事件流→拉日志（`message --sync-first --new --events`）。用法：[`references/dev-agent-cli.md`](references/dev-agent-cli.md)。
 

@@ -43,6 +43,7 @@ packages/freedeepagents-activity-builder/
 |   |-- activity-frontend/SKILL.md
 |   |-- activity-packager/SKILL.md
 |   |-- activity-verify/SKILL.md     # static verify (verifier + strict-tool-schema)
+|   |-- activity-review/SKILL.md     # semantic self-audit (logic conflicts; in-session LLM)
 |   |-- activity-smoke/SKILL.md      # runtime SSE smoke test
 |   `-- activity-diagnostician/SKILL.md  # error-class triage
 |-- workflows/                       # deeper build procedures

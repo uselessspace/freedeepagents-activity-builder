@@ -92,25 +92,16 @@ text = ctx.llm.vision(
 ## 模型路由
 
 - `ctx.llm` **不读** `manifest.model` / `manifest.graph_model`。不传 `model=` 时用平台默认模型（`ACTIVITY_DEFAULT_MODEL`，当前默认 `deepseek:deepseek-v4-flash`）。
-- 按调用传 `model=` 即可换模型——这正是"主模型纯文本、VL 单独指定"的设计内用法：
-  - **网关开启时**（生产/hard mode）：模型名按 LiteLLM 网关别名解析（如 `qwen-vl-plus`）；`provider:` 前缀会被剥掉只留模型名。
-  - **网关关闭时**（本地直连，过渡期）：`"deepseek:xxx"` 路由 deepseek，`"dashscope:xxx"` 或裸名路由 dashscope 兼容端点。
+- 按调用传 `model=` 即可换模型——这正是"主模型纯文本、VL 单独指定"的设计内用法。模型名的写法随部署而定：托管部署用平台配置的模型别名（如 `qwen-vl-plus`，`provider:` 前缀会被忽略）；本地直连用 `provider:model` 形式（如 `deepseek:...` / `dashscope:...`）。拿不准就不传 `model=`，用平台默认。
 - `vision()` 的 `model` 默认就是 `qwen-vl-plus`，通常不用动。
 
 ---
 
-## 计费与归因
+## 计费、归因与限额
 
-网关链路上每次调用都带完整归因，LiteLLM spend log 自动记账：
-
-- **bearer**：本次请求经验证的 Go token（hard mode；LiteLLM `custom_auth` 复核），dev 环境回落到平台网关 key。活动代码**接触不到任何 provider key**。
-- **spend 主体**：`user` = 活动实例 id；`spend_logs_metadata` 附 `fda_user_id`（终端用户）+ `fda_activity_slug`（活动类型）。
-- **media 同理**：`image_generate` / `tts_generate` 工具经 media-proxy sidecar，转发同一 Go token 计账。
-
-限额相关的事实：
-
-- `ctx.llm` 当前**没有独立的 per-turn 调用次数上限**（图像/TTS 有各自的 per-turn 计数器）。成本治理在网关侧（LiteLLM 预算/限速），不在活动侧。
-- `timeout=` 是本次 HTTP 调用自己的超时，**与 `runtime.json` 的 `llm_timeout_seconds` 无关**（后者管主 turn loop 的模型调用）。注意工具整体耗时仍占用 turn 的墙钟时间，长链路请自行控制调用次数。
+- **计费 / 归因平台自理**：每次 `ctx.llm` 调用由平台自动记账并归因到当前活动实例与终端用户——活动**不传任何身份 / 计费参数**，也**接触不到任何 provider key**（`image_generate` / `tts_generate` 同理）。
+- **无独立 per-call 上限**：`ctx.llm` 自身不设调用次数上限（不像图像 / TTS 有 per-turn 计数器），成本治理在平台侧。但工具整体耗时仍占用 turn 的墙钟时间，长链路请自行控制调用次数。
+- **`timeout=`** 是本次调用自己的超时，**与 `runtime.json` 的 `llm_timeout_seconds` 无关**（后者管主 turn loop 的模型调用）。
 
 ---
 
@@ -122,8 +113,9 @@ text = ctx.llm.vision(
 | 工具内一次性文本生成 / JSON 结构化 | `ctx.llm.chat` / `ctx.llm.chat_json` |
 | 看图（场景图、扫描件、照片理解） | `ctx.llm.vision` |
 | 文本层文档抽取（PDF/Word/PPT/Excel/HTML/CSV/JSON → Markdown） | `read_document` capability（见 [document-tools.md](document-tools.md)）——有文字层就别走 VL |
-| 文生图 / 图生图 | `image_generate` / `image_edit` capability（见 [image-tools.md](image-tools.md)） |
-| 文本转语音 | `tts_generate` capability（见 [tts-tools.md](tts-tools.md)） |
+| 主 turn 里生成 / 编辑图片 | `image_generate` / `image_edit` capability（见 [image-tools.md](image-tools.md)） |
+| SPA handler / 预览页按钮直连生图 | `ctx.image_generate`（同 capability、handler 路径），见 [image-tools.md](image-tools.md) 的 *Static Preview* 章节 |
+| 文本转语音 | `tts_generate` capability（见 [tts-tools.md](tts-tools.md)）；SPA 喇叭按钮走 `ctx.tts_generate` handler |
 
 经验法则：文档**有文字层**用 `read_document`（便宜、确定性强）；**纯图像内容**（扫描件、手绘、场景图）才用 `vision`。两者可以组合：先 `read_document` 拿正文，对嵌入图片单独 `vision`。
 
@@ -161,7 +153,6 @@ with activity_harness(activity_dir) as ctx:
 | 现象 | 常见原因 |
 |---|---|
 | 永远 `None`，trace 无 LLM 痕迹 | ctx 没拿到 settings（测试 ctx）→ `ctx.llm is None`，先判空 |
-| 网关模式下 `None` | 模型名不是网关别名（让平台运维确认 LiteLLM `config.yaml` 里有该 `model_name`）；或 Go token 失效（401） |
-| 直连模式下 `None` | 平台未配该 provider 的 key（过渡期配置），或模型名拼错 |
+| 配好却总 `None` | 模型名平台不认（确认用的是平台支持的模型名 / 别名，必要时找运维确认）；或鉴权 / 配置问题（平台侧） |
 | `chat_json` 为 `None` 但 `chat` 正常 | 模型输出不是合法 JSON——加强 system 里的格式约束，或降 temperature |
 | 偶发 `None` | 传输超时——调大 `timeout=`，或缩小 `max_tokens` / 输入体积 |
