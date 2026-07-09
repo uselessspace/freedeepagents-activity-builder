@@ -20,7 +20,7 @@ edit files until the brief is clear enough to classify.
 
 Capture the smallest useful brief:
 
-- `activity_id`: kebab-case candidate, or `unknown` if not chosen yet.
+- `activity_type_id`: kebab-case candidate, or `unknown` if not chosen yet.
 - `display_name`: human-facing activity name.
 - `target_user`: who uses it and in what setting.
 - `core_loop`: what the user provides, what the agent returns, and what repeats.
@@ -55,7 +55,7 @@ End this stage with a block named exactly:
 
 ```markdown
 ## Activity Brief
-- activity_id:
+- activity_type_id:
 - display_name:
 - target_user:
 - core_loop:

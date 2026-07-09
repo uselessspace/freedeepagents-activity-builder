@@ -16,7 +16,7 @@ This activity runs in **card-system mode** (the runtime's only mode) with **type
 ## Always Apply（必读，每轮先过一遍）
 
 - **工具调用纪律**：activity-builder 包的 `<package>/policies/llm-output-discipline.md` 列出常踩的坑（assignment_id / artifact_id / kind / 沙箱路径）—— 写完 SKILL 时强烈建议引用
-- 卡片协议见 `/activity/skills/<activity_id>-cards/SKILL.md`
+- 卡片协议见 `/activity/skills/<activity_type_id>-cards/SKILL.md`
 - 详细规则变长时，拆到 skill-local supporting files：
   - `workflows/<flow>.md`
   - `policies/<policy>.md`
@@ -36,7 +36,7 @@ This activity runs in **card-system mode** (the runtime's only mode) with **type
 
 ## Fast Paths（典型路由表）
 
-复制本模板后，把 `<id>` 改成你的 `activity_id`，照表执行即可覆盖大部分输入。复杂分支请下沉到 `workflows/`。
+复制本模板后，把 `<id>` 改成你的 `activity_type_id`，照表执行即可覆盖大部分输入。复杂分支请下沉到 `workflows/`。
 
 **关键**：`phase` 由 runtime 从每张卡的 `meta.phase` 字段自动派生——你**不**手动写 phase，而是在 `card_templates/<id>.<name>.json` 里给每张卡硬编码 `meta.phase`（welcome 卡写 `"phase": "welcome"`，result 卡写 `"phase": "completed"`，依此类推）。emit 卡片 *是* phase 转换的动作。
 > **typed-KV 命名空间注脚**：上面说的是 runtime 派生的 `instance.data.phase`。它和你在 `data.schema.json` 里**自己声明的业务 `phase`**（typed-KV，用活动 @tool 直写推进、配相位守卫）是互不干扰的两个命名空间——后者合法且是官方推荐模式。模板卡不带 `meta.phase` 也合法（裁决后形态）。详见 `policies/output-protocol.md`「两个 phase 命名空间」。
@@ -109,7 +109,7 @@ artifact_emit({
 ## 其他硬约束（HARD）
 
 - **撤销机制**：同 turn 内可调 `card_retract(card_id)` / `artifact_retract(id)` / `memory_retract(id)` / `status_retract(id)`；跨 turn 不可撤。仅在确实察觉刚发错时调用，不要无目的反复撤回。业务数据写错了：直接用对应 @tool 提供的"修改"路径（如 `update_brief` / `delete_note`）或 `data_set(key, value)` 覆盖；typed-KV 写入幂等。
-- **沙箱路径**：容器内**扁平挂载**——SKILL 路径 `/activity/skills/<skill-name>/SKILL.md`（**不是** `/activity/activities/<activity_id>/skills/...`），card_templates `/activity/card_templates/<name>.json`，turn 历史 `/instance/turns/<turn_id>/...` (ro)，工作区 `/instance/workspace/...` (rw)，业务数据 `/instance/data.json`（runtime 管理，不直接 read_file）。
+- **沙箱路径**：容器内**扁平挂载**——SKILL 路径 `/activity/skills/<skill-name>/SKILL.md`（**不是** `/activity/activities/<activity_type_id>/skills/...`），card_templates `/activity/card_templates/<name>.json`，turn 历史 `/instance/turns/<turn_id>/...` (ro)，工作区 `/instance/workspace/...` (rw)，业务数据 `/instance/data.json`（runtime 管理，不直接 read_file）。
 - **记忆**：`memory_add(text)` 每轮 0-3 条，写短自然语言（`"用户输入 X；关键输出 Y"`），不要写 JSON / schema / 完整产物。已在 data.json / artifact 里的信息跳过。
 - **简单 turn 工具白名单**：使用 `card_emit_template` / `card_emit` / `card_retract` / `artifact_emit` / `memory_add` / `mark_status` / 活动 @tools / `data_*` 通用工具及其撤销变体即可；`write_todos` / `execute` / `task` 留给复杂多步流水线，简单 turn 不调。
 

@@ -46,7 +46,7 @@ runtime APIs.
 In `activities/<id>/site/`, edit activity-owned files. The final app should:
 
 - set Vite `base: './'`
-- parse `activity_id` / `instance_id` from `window.location.pathname`
+- parse `activity_type_id` / `activity_id` from `window.location.pathname`
 - fetch `dsl.json` from `/preview/<activity_type_id>/<activity_id>/api/dsl.json` when using `dsl_builder_module`
 - subscribe to `/preview/<activity_type_id>/<activity_id>/api/dsl/stream` when live updates are needed
 - avoid dev-server-only `/api/*` plugin routes in production code

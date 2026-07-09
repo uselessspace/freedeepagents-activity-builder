@@ -163,6 +163,8 @@ def make_handlers(ctx):
 3. 前端 POST 当前 preview 根路径下的 `api/<handler>`，用 `frontend-base/src/lib/api-base.ts` 的 `apiUrl('generate_illustration')`（或活动自己的 `apiCall` 封装）。**直接使用返回的 `image_url`**（`<img src={url}>`）——不要硬编码 `/v1/...`、也不要自己拼 URL，平台会让它在当前预览环境下可访问。
 
 > **约束**：每次 handler 调用累计最多 `IMAGE_GEN_MAX_PER_TURN` 张（generate + edit 共享），失败不占名额；超出额度时返回 `{"error": ...}`，照常优雅降级即可。
+>
+> **例外**：用户余额不足（计费拦截）时，`ctx.image_generate` / `ctx.image_edit` / `ctx.tts_generate` 会**抛异常并终止本轮**，不走 `{"error": ...}` 返回值——handler 不要用宽 `except Exception` 把它吞掉，让它自然上浮即可。
 
 ### 改图：编辑用户在预览页上传的照片（`ctx.image_edit` + `source_upload`）
 

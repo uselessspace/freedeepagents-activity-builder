@@ -122,7 +122,7 @@ def _check_schema(name: str, schema: dict) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     g = ap.add_mutually_exclusive_group(required=True)
-    g.add_argument("--activity", help="activity_id; tools.py looked up under <repo>/activities/<id>/")
+    g.add_argument("--activity", help="activity_type_id; tools.py looked up under <repo>/activities/<id>/")
     g.add_argument("--tools-py", help="explicit path to a tools.py file")
     ap.add_argument("--repo", help="repo root override (default: git rev-parse --show-toplevel)")
     args = ap.parse_args()

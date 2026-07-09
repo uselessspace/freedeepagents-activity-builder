@@ -34,7 +34,7 @@ fda-dev --folder activities/<id> ping
 ```
 
 `--folder` points at the activity you're working on (its basename is the default
-`activity_id`; override with `--activity <id>`).
+`activity_type_id`; override with `--activity <id>`).
 
 ## Commands
 

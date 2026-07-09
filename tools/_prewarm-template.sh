@@ -19,7 +19,7 @@ prewarm_template() {
   local tpl="$1"
   local force="${2:-}"
   if [ -z "$tpl" ]; then
-    echo "prewarm_template: missing activity_id" >&2
+    echo "prewarm_template: missing activity_type_id" >&2
     return 2
   fi
 

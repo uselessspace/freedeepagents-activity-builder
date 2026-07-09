@@ -60,7 +60,7 @@ For in-place edits, keep these stable so existing instances keep working:
 
 | Field / shape | Preservation rule |
 |---|---|
-| `manifest.activity_id` | keep the existing id (routing + instance dirs depend on it) |
+| `manifest.activity_type_id` | keep the existing id (routing + instance dirs depend on it) |
 | `output.schema` field types | keep the same types the frontend renderer expects |
 | `data.schema.json` typed-KV field types | keep types stable so existing `data.json` values validate |
 | Optional typed-KV fields | leave optional unless you also migrate existing values |

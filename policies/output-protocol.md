@@ -121,7 +121,7 @@ emit 一张固定模板：
 
 ```text
 card_emit_template(
-    "<activity_id>.intake",
+    "<activity_type_id>.intake",
     {"title": "...", "prompt_text": "..."},
     "<literal-assignment-id>",
 )
