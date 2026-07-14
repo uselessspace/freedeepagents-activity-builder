@@ -1,7 +1,7 @@
 {
   "name": "freedeepagents-activity-builder",
   "displayName": "FreeDeepAgents Activity Builder",
-  "version": "0.4.14",
+  "version": "0.4.15",
   "description": "Codex + Claude plugin with activity-building workflow skills that guide users and coding agents through designing, building, packaging, and verifying FDA activities end-to-end.",
   "author": {
     "name": "Useless Space",

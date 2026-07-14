@@ -1,5 +1,13 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.15 (2026-07-14)
+
+欢迎卡对齐服务器同步与前端直出契约。
+
+- scaffold 新增固定文件 `card_templates/<id>.welcome.json` 与空变量 schema；欢迎卡只含静态文案，运行时以空 variables 发出。
+- verifier 新增硬检查：欢迎卡必须按 `<activity_type_id>.welcome.json` 精确命名、不得含任何 `{{...}}`，对应 vars 必须为空且拒绝额外变量。
+- activity-builder、backend workflow、卡片参考与模板 Skills 同步说明：欢迎卡会在 dev sync 时原样持久化供前端展示，用户/实例/实时内容应放到后续普通卡片。
+
 ## 0.4.14 (2026-06-29)
 
 补 `ctx.user_name` 作者文档：调用者显示名，来自 `X-FDA-User-Name` 头（percent-decoded），仅用于界面展示 / 署名；身份校验、归属鉴权、配额管理仍须用 `ctx.user_id`；best-effort，头缺席时为 `None`，使用前须判空（平台 commit 8fa5f580，2026-06-23 上线）。
