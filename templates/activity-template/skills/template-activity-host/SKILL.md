@@ -43,10 +43,10 @@ This activity runs in **card-system mode** (the runtime's only mode) with **type
 
 | 触发条件 | 工具调用序列 | 终态信号 |
 |---|---|---|
-| state 为空 / 首次进入 | `card_emit_template("<id>.welcome", {...}, "<id>-welcome")` → 停 | 默认 `running`（不调 mark_status）|
+| state 为空 / 首次进入 | `card_emit_template("<id>.welcome", {}, "<id>-welcome")` → 停；welcome 必须是无变量静态卡 | 默认 `running`（不调 mark_status）|
 | phase=intake 且用户已填关键字段 | 调本活动 @tools 写业务字段（如 `set_brief(topic=..., constraints=...)`）<br>→ **同 turn 内继续执行业务流水线** | （见下行）|
 | phase=working → 业务完成 | 调业务工具 / 调 `image_generate` / 写 `artifact_emit`<br>`card_emit_template("<id>.result", {...}, "<id>-result")` *(result 卡的 meta.phase="completed" 会自动派生 phase)*<br>→ `mark_status("completed")` → 停 | 终态 `completed`（显式 mark_status）|
-| 用户说"再来 / 重做 / 换一个" | 调 reset @tool 清空业务字段 → `card_emit_template("<id>.welcome", {...}, "<id>-welcome")` *(welcome 卡 meta.phase="welcome" 自动重置 phase)* → 停 | 默认 `running` |
+| 用户说"再来 / 重做 / 换一个" | 调 reset @tool 清空业务字段 → `card_emit_template("<id>.welcome", {}, "<id>-welcome")` *(welcome 卡 meta.phase="welcome" 自动重置 phase)* → 停 | 默认 `running` |
 | 工具失败（content filter / source 404） | **不改业务数据**；`card_emit_template("<id>.error", {reason: "..."}, "<id>-error")` 或 ad-hoc `card_emit(...)` → 停（一般保持 running 让用户重试）；不可恢复时 `mark_status("failed")` | 默认 `running`；不可恢复时 `failed` |
 | 用户输入和上述都不匹配（闲聊兜底） | 只 emit 一张文本卡解释当前可做什么 → 停 | 默认 `running` |
 

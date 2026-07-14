@@ -58,6 +58,12 @@ Create or update only the activity folder:
 - `activities/<activity_type_id>/card_templates/*.vars.json`
 - optional `activities/<activity_type_id>/tools.py`
 
+The exact `card_templates/<activity_type_id>.welcome.json` file is mandatory.
+It is persisted during server sync and displayed directly by the frontend, so
+it must be fully static: no `{{...}}` placeholders anywhere. Its paired
+`.welcome.vars.json` must declare zero variables (`properties: {}` and
+`additionalProperties: false`).
+
 Use card-system output, typed-KV state, and a thin `AGENTS.md`. Put business
 policy in activity skills and supporting files.
 

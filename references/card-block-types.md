@@ -221,6 +221,15 @@ artifact 是持久化的"文件"（markdown 报告、PDF、生成的图片等）
 
 有 `card_templates/` 的活动**优先用模板**而不是手拼 cards。runtime 加载模板、用 vars 替换 `{{var_name}}`、渲染后进本轮汇编。工具签名 + 典型调用 + 错误形态的权威：[card-system-tools.md](card-system-tools.md)。
 
+### 欢迎卡是静态同步契约（HARD）
+
+每个活动必须提供 `card_templates/<activity_type_id>.welcome.json`。dev sync 会读取并原样存储这张卡，前端可在 activity turn 尚未运行时直接展示，因此它不是普通的运行时模板：
+
+- JSON 任意位置都不得出现 `{{...}}` 模板占位符，所有欢迎文案、按钮和图片地址都必须是固定值。
+- 同名 `<activity_type_id>.welcome.vars.json` 仍须存在以满足模板文件配对契约，但必须声明 `properties: {}`、无 `required` 项，且 `additionalProperties: false`。
+- 运行时需要再次发出欢迎卡时，调用 `card_emit_template("<id>.welcome", {}, "<id>-welcome")`，variables 只能传空对象。
+- 用户相关、实例相关或实时生成的内容放进后续 intake / result 等普通模板，不要放进欢迎卡。
+
 ---
 
 ## 输出契约（要点回顾）

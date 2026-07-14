@@ -30,14 +30,9 @@ If the user's input is a bare greeting (`你好` / `hi` / `在吗` / `?` / empty
 
 ```text
 card_emit_template(
-    "template-activity.intake",
-    {
-        "title": "请补充活动信息",
-        "body": "告诉我你的目标、偏好和限制。",
-        "topic": "",
-        "constraints": "",
-    },
-    "template-intake",
+    "template-activity.welcome",
+    {},
+    "template-welcome",
 )
 ```
 

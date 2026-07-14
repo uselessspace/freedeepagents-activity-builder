@@ -365,15 +365,86 @@ def _verify_activity_contract_files(root: Path, issues: list[VerificationIssue])
     for activity_dir in sorted((root / "activities").glob("*")):
         if not activity_dir.is_dir():
             continue
+        manifest_path = activity_dir / "manifest.json"
+        activity_type_id: str | None = None
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            candidate = manifest.get("activity_type_id") or manifest.get("activity_id")
+            if isinstance(candidate, str) and candidate:
+                activity_type_id = candidate
+        except (OSError, json.JSONDecodeError, AttributeError):
+            pass  # manifest errors are reported by _activity_ids
+
         template_dir = activity_dir / "card_templates"
-        if not template_dir.exists():
+        if template_dir.exists():
+            for template_path in sorted(template_dir.glob("*.json")):
+                if template_path.name.endswith(".vars.json"):
+                    continue
+                vars_path = template_path.with_name(f"{template_path.stem}.vars.json")
+                if not vars_path.exists():
+                    issues.append(_issue("error", root, vars_path, "card template is missing variables schema"))
+
+        if activity_type_id is None:
             continue
-        for template_path in sorted(template_dir.glob("*.json")):
-            if template_path.name.endswith(".vars.json"):
-                continue
-            vars_path = template_path.with_name(f"{template_path.stem}.vars.json")
-            if not vars_path.exists():
-                issues.append(_issue("error", root, vars_path, "card template is missing variables schema"))
+        welcome_path = template_dir / f"{activity_type_id}.welcome.json"
+        welcome_vars_path = template_dir / f"{activity_type_id}.welcome.vars.json"
+        if not welcome_path.exists():
+            issues.append(
+                _issue(
+                    "error",
+                    root,
+                    welcome_path,
+                    "mandatory static welcome card is missing; dev sync stores this exact card "
+                    "for the frontend activity catalog",
+                )
+            )
+            continue
+
+        try:
+            welcome = json.loads(welcome_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue  # file-integrity/schema checks report the malformed JSON
+        if _contains_welcome_placeholder(welcome):
+            issues.append(
+                _issue(
+                    "error",
+                    root,
+                    welcome_path,
+                    "welcome card cannot contain template placeholders; replace every "
+                    "{{variable}} with fixed copy because the card is stored and displayed "
+                    "without runtime rendering",
+                )
+            )
+
+        try:
+            welcome_vars = json.loads(welcome_vars_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue  # missing/malformed vars is reported by the existing checks
+        if (
+            welcome_vars.get("properties") != {}
+            or welcome_vars.get("required", []) != []
+            or welcome_vars.get("additionalProperties") is not False
+        ):
+            issues.append(
+                _issue(
+                    "error",
+                    root,
+                    welcome_vars_path,
+                    "welcome card variables schema must declare no variables: use empty "
+                    "properties, no required entries, and additionalProperties=false",
+                )
+            )
+
+
+def _contains_welcome_placeholder(value: object) -> bool:
+    """Mirror dev-sync's deliberately conservative static-card check."""
+    if isinstance(value, str):
+        return "{{" in value or "}}" in value
+    if isinstance(value, list):
+        return any(_contains_welcome_placeholder(item) for item in value)
+    if isinstance(value, dict):
+        return any(_contains_welcome_placeholder(item) for item in value.values())
+    return False
 
 
 def _verify_generic_runtime_references(root: Path, activity_ids: set[str], issues: list[VerificationIssue]) -> None:

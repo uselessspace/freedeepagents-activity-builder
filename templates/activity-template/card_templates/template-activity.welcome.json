@@ -1,0 +1,29 @@
+{
+  "assignment_id": "template-welcome",
+  "card": {
+    "version": "1.0",
+    "template": "template-activity.welcome",
+    "blocks": [
+      {
+        "type": "markdown",
+        "content": "## 欢迎使用模板活动\n\n在这里说明活动能帮助用户完成什么，以及用户可以如何开始。"
+      },
+      {
+        "type": "action",
+        "actions": [
+          {
+            "id": "start",
+            "label": "开始",
+            "action_type": "input_text",
+            "payload": {
+              "input_text": "开始这个活动"
+            }
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "phase": "welcome"
+    }
+  }
+}
