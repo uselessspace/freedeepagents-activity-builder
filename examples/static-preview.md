@@ -48,7 +48,11 @@ activities/project-map/
    `site/`.
 4. The SPA fetches `/preview/project-map/<activity_id>/api/dsl.json` and renders
    the dashboard, graph, canvas, timeline, or form workflow.
-5. Packaging produces `.fda.tgz`; `bash <package>/tools/install-activity.sh <pkg>` rebuilds
+5. Optionally, after a successful activity operation, the backend calls
+   `ctx.emit_preview_navigation({...})`; the SPA receives `preview_navigate` on
+   the same DSL stream and focuses the relevant item. This event is transient,
+   user-scoped UX—not durable state or a manifest capability.
+6. Packaging produces `.fda.tgz`; `bash <package>/tools/install-activity.sh <pkg>` rebuilds
    `site/dist/` when needed.
 
 ## Boundary
@@ -56,3 +60,5 @@ activities/project-map/
 - Frontend code stays inside `activities/<id>/site/`; the activity ships only static assets — no backend services of its own.
 - Activity-private state lives in `data.schema.json` and is read through the activity's `dsl_builder.py` output, not from `frontend-src/`.
 - Activity decisions stay in the activity's host SKILL.md + tools.py; generic runtime code remains activity-neutral.
+- Agent navigation payload semantics stay in the activity; durable selection or
+  workflow state still belongs in typed-KV and the DSL.

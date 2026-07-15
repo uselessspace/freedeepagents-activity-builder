@@ -30,7 +30,7 @@ bash <package>/tools/derive-frontend.sh <activity-id> --name "<English Name>" --
 | `src/lib/api-base.ts` | `BASE_PREFIX`、`BASE`、`apiUrl()` |
 | `src/lib/asset-url.ts` | `resolveAssetUrl()` |
 | `src/hooks/useApi.ts` | `{ data, error, loading, retry }` |
-| `src/hooks/useDsl.ts` | Static Preview DSL fetch + SSE 订阅 |
+| `src/hooks/useDsl.ts` | Static Preview DSL fetch + SSE 订阅；返回最新 `preview_navigate` 事件 |
 | `src/components/{ErrorBoundary,LoadingSpinner,ApiErrorBanner}.tsx` | 通用 UI 原语 |
 
 ## 活动定制（你写）
@@ -42,6 +42,8 @@ bash <package>/tools/derive-frontend.sh <activity-id> --name "<English Name>" --
 | `src/lib/mock-dsl.ts` | 本地 Vite dev 的 mock DSL |
 | `src/components/...` | 你的业务 UI |
 | `src/hooks/...` | 你的业务 hooks |
+
+若活动启用 Agent → SPA 导航，使用 `useDsl()` 返回的 `navigation`，在活动代码里校验私有字段后执行选中 / 滚动 / 聚焦。它复用 DSL EventSource，不要再开第二条 SSE；完整契约见 [`references/preview-navigation.md`](../references/preview-navigation.md)。
 
 ## 与现有前端活动的关系
 

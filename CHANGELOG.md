@@ -1,5 +1,27 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.16 (2026-07-15)
+
+补齐 Agent 操控 Static Preview 内部导航的活动开发契约与派生模板。
+
+- 新增 `references/preview-navigation.md`：定义
+  `ctx.emit_preview_navigation(payload)`、运行时补充的 `event_id` / `turn_id`、
+  `preview_navigate` SSE、按用户与实例隔离、best-effort 且不持久化/不重放等边界。
+- Brief / Classification 新增 `agent_navigation` 与 `navigation_axis`；明确
+  `agent-to-preview` 只适用于 Static Preview，并且不是 manifest capability。
+- `frontend-base` 在原 DSL EventSource 上监听 `preview_navigate`，`useDsl()` 暴露最新
+  `navigation`；异常导航事件不会中断持久 DSL 更新。
+- testkit `FakeCtx` 支持记录并 JSON 校验导航 payload，strict schema fake 同步补齐；新增
+  文档、模板与离线 ctx 回归测试。
+
+## 0.4.15 (2026-07-14)
+
+欢迎卡对齐服务器同步与前端直出契约。
+
+- scaffold 新增固定文件 `card_templates/<id>.welcome.json` 与空变量 schema；欢迎卡只含静态文案，运行时以空 variables 发出。
+- verifier 新增硬检查：欢迎卡必须按 `<activity_type_id>.welcome.json` 精确命名、不得含任何 `{{...}}`，对应 vars 必须为空且拒绝额外变量。
+- activity-builder、backend workflow、卡片参考与模板 Skills 同步说明：欢迎卡会在 dev sync 时原样持久化供前端展示，用户/实例/实时内容应放到后续普通卡片。
+
 ## 0.4.14 (2026-06-29)
 
 补 `ctx.user_name` 作者文档：调用者显示名，来自 `X-FDA-User-Name` 头（percent-decoded），仅用于界面展示 / 署名；身份校验、归属鉴权、配额管理仍须用 `ctx.user_id`；best-effort，头缺席时为 `None`，使用前须判空（平台 commit 8fa5f580，2026-06-23 上线）。

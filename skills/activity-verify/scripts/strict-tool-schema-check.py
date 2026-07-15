@@ -53,6 +53,9 @@ class _FakeCtx:
     def notify_dsl_update(self) -> None:
         pass
 
+    def emit_preview_navigation(self, payload: dict) -> None:
+        pass
+
 
 def _find_repo_root(explicit: str | None) -> pathlib.Path:
     if explicit:

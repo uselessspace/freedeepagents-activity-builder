@@ -25,6 +25,9 @@ Use the package assets relative to this skill:
   `static-preview`.
 - `../../references/user-upload.md` when the preview SPA must let end-users
   upload + persist their own images / voice recordings (`POST api/upload`).
+- `../../references/preview-navigation.md` when `navigation_axis` is
+  `agent-to-preview`; it defines the ctx helper, SSE, isolation, and transient
+  delivery contract.
 - `../../workflows/06-verify-and-ship.md` for verification expectations.
 - `../../workflows/07-migrate-existing.md` when the user wants to fork an
   existing activity.
@@ -58,6 +61,12 @@ Create or update only the activity folder:
 - `activities/<activity_type_id>/card_templates/*.vars.json`
 - optional `activities/<activity_type_id>/tools.py`
 
+The exact `card_templates/<activity_type_id>.welcome.json` file is mandatory.
+It is persisted during server sync and displayed directly by the frontend, so
+it must be fully static: no `{{...}}` placeholders anywhere. Its paired
+`.welcome.vars.json` must declare zero variables (`properties: {}` and
+`additionalProperties: false`).
+
 Use card-system output, typed-KV state, and a thin `AGENTS.md`. Put business
 policy in activity skills and supporting files.
 
@@ -74,6 +83,11 @@ the frontend into `site/dist/`. The SPA consumes only its activity DSL from
 `/preview/<activity_type_id>/<activity_id>/api/dsl.json`.
 
 Route Static Preview UI decisions to `../activity-frontend/SKILL.md`.
+
+When `navigation_axis` is `agent-to-preview`, emit activity-private navigation
+payloads from successful activity tools/handlers with
+`ctx.emit_preview_navigation(...)`; never encode that policy in generic runtime
+or manifest fields.
 
 ## Tool Boundaries
 

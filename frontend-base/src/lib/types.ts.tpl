@@ -16,3 +16,10 @@ export interface AppDsl {
   updated_at?: string;
   [key: string]: unknown;
 }
+
+/** Runtime envelope plus activity-private Agent navigation fields. */
+export interface PreviewNavigationEvent {
+  event_id: string;
+  turn_id: string;
+  [key: string]: unknown;
+}

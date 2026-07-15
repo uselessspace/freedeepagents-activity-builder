@@ -41,6 +41,11 @@ builds use the new deps.
 | `src/hooks/` | Activity-specific hooks (the base ships `useDsl`) |
 | `src/lib/mock-dsl.ts` | Local mock DSL for `npm run dev`; production uses `dsl_builder.py` |
 
+`useDsl()` also returns the latest `navigation` event when the Agent emits a
+runtime `preview_navigate` signal. Validate your activity-private fields before
+selecting, scrolling, or focusing. It shares the DSL EventSource and is not
+available from the local mock server.
+
 ## Shared base modules — do not edit
 
 These came from `<package>/frontend-base/` and are kept in sync across all derived activities:

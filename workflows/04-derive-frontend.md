@@ -37,6 +37,9 @@ Required backend/frontend alignment:
 - `src/lib/types.ts` mirrors that `AppDsl` shape.
 - `src/lib/api-client.ts` fetches `/api/dsl.json` and subscribes to
   `/api/dsl/stream` when `refresh_model` needs live updates.
+- When `navigation_axis` is `agent-to-preview`, `useDsl()` also exposes the
+  latest named `preview_navigate` event as `navigation`; validate its private
+  fields before selecting, scrolling, focusing, or switching views.
 
 Do not make the SPA read activity-private state from `frontend-src/` or generic
 runtime APIs.
@@ -49,6 +52,7 @@ In `activities/<id>/site/`, edit activity-owned files. The final app should:
 - parse `activity_type_id` / `activity_id` from `window.location.pathname`
 - fetch `dsl.json` from `/preview/<activity_type_id>/<activity_id>/api/dsl.json` when using `dsl_builder_module`
 - subscribe to `/preview/<activity_type_id>/<activity_id>/api/dsl/stream` when live updates are needed
+- reuse that same EventSource for `preview_navigate`; never open a navigation-only stream
 - avoid dev-server-only `/api/*` plugin routes in production code
 - let end-users upload their own images / voice recordings (and persist them) via `POST api/upload` — see [user-upload.md](../references/user-upload.md)
 
@@ -66,6 +70,10 @@ Typical files:
 
 The runtime serves `site/dist/`. Local `npm run dev` uses `src/lib/mock-dsl.ts`
 as a fallback only; production data must come from `dsl_builder.py`.
+
+Agent navigation is also runtime-only in local Vite dev. Unit-test how a sample
+payload changes selection/focus, then verify real delivery through an installed
+preview. Full contract: [preview-navigation.md](../references/preview-navigation.md).
 
 ## Step 5: smoke build (local host loop — fast)
 
@@ -116,6 +124,8 @@ Re-open `activities/<id>/manifest.json` and confirm:
 - `tools_module` is set only when `tools.py` exists and exports `make_tools(ctx)`
 - `site/dist/index.html` exists after `npm run build`
 - `vite.config.ts` uses `base: './'`
+- when enabled, `preview_navigate` moves the intended view, duplicate events are
+  idempotent, and a second user on the same instance receives no event
 
 [02-author-backend.md](02-author-backend.md) Step 3 has the canonical manifest fields.
 

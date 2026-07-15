@@ -304,6 +304,9 @@ class FakeCtx:
         self.instance_dir = Path(instance_dir)
         self.turn_files: list = []
         self.dsl_updates = 0
+        # Records the activity-authored payload before production adds its
+        # event_id / turn_id envelope and publishes it on preview_navigate.
+        self.preview_navigation_events: list[dict[str, Any]] = []
         # Offline ctx has no LLM gateway: ctx.llm is None, exactly like a
         # minimal runtime ctx built without settings — your None-fallback
         # branch gets exercised for free. To test LLM-dependent paths,
@@ -313,6 +316,12 @@ class FakeCtx:
 
     def notify_dsl_update(self) -> None:
         self.dsl_updates += 1
+
+    def emit_preview_navigation(self, payload: dict[str, Any]) -> None:
+        if not isinstance(payload, dict):
+            raise TypeError("preview navigation payload must be a dict")
+        # Prove offline that the payload can cross the runtime JSON boundary.
+        self.preview_navigation_events.append(json.loads(json.dumps(payload)))
 
 
 def _install_stub_modules() -> None:

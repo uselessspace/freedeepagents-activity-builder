@@ -11,10 +11,11 @@ This activity runs in **card-system mode**. Emit fixed templates via the `card_e
 
 ## 模板字典（template_id → assignment_id）
 
-复制本模板后请按你的活动改造本表。新增模板：在 `card_templates/` 下放一对 `<id>.<name>.json` + `<id>.<name>.vars.json`，然后在本表加一行。
+复制本模板后请按你的活动改造本表。`<id>.welcome.json` 是同步到服务器并由前端直接展示的静态欢迎卡，文件名固定，卡片内不得出现任何 `{{变量}}`，对应 vars 必须为空。其他新增模板仍在 `card_templates/` 下放一对 `<id>.<name>.json` + `<id>.<name>.vars.json`，然后在本表加一行。
 
 | template_id | assignment_id（字面） | 何时调用 | 必需变量 |
 |---|---|---|---|
+| `template-activity.welcome` | `template-welcome` | 首次进入 / 问候 / 重置完成 | **无；只能传 `{}`** |
 | `template-activity.intake` | `template-intake` | state 为空 / phase=intake / 用户输入信息不足 | `title`, `body`, `topic`, `constraints` |
 | `template-activity.result`（**示例位**，模板尚未提供该文件，请按真实活动添加）| `template-result` | phase=working 业务完成 | （由你的活动决定）|
 | `template-activity.error`（**示例位**，按需添加）| `template-error` | 工具失败 / 不可救场景兜底 | `reason`（用户可读的一句话）|
@@ -22,6 +23,12 @@ This activity runs in **card-system mode**. Emit fixed templates via the `card_e
 调用样式（与上表一一对应）：
 
 ```text
+card_emit_template(
+    "template-activity.welcome",
+    {},
+    "template-welcome",
+)
+
 card_emit_template(
     "template-activity.intake",
     {
@@ -35,6 +42,8 @@ card_emit_template(
 ```
 
 ## 变量
+
+`template-activity.welcome` **不支持任何变量**。服务器同步时会把该 JSON 原样存储为活动类型的欢迎卡，前端不会经过 runtime 模板渲染就直接展示；因此 JSON 的任何位置都不得出现 `{{...}}`，`template-activity.welcome.vars.json` 必须保持 `properties: {}` 且 `additionalProperties: false`。
 
 `template-activity.intake` 支持：
 

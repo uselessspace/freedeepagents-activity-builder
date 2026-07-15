@@ -36,6 +36,12 @@ Read the `Activity Brief` and produce a fixed classification before build work.
 - `generate+edit-locked` when user/reference images must stay visually locked
   across edits.
 
+`navigation_axis`:
+
+- `none` when the Agent never needs to move the user's open preview.
+- `agent-to-preview` when a successful Agent read/action should select, scroll,
+  focus, or switch the current Static Preview.
+
 `delivery_target` defaults to `.fda.tgz`.
 
 `runtime_mode` is derived from `frontend_axis`, not chosen independently:
@@ -47,6 +53,8 @@ Read the `Activity Brief` and produce a fixed classification before build work.
   optional activity-owned tools.
 - Static Preview activities must generate `site/`, `dsl_builder.py`, and
   optional `tools.py`, then build to `site/dist/`.
+- `agent-to-preview` requires `frontend_axis: static-preview`. It uses the
+  runtime context helper and existing DSL SSE; it is not a manifest capability.
 - **No half-preview mode.** Ship either a complete Card-only activity or a
   complete Static Preview one — never a partial frontend.
 - External services and business decisions live in activity-owned tools and
@@ -66,6 +74,7 @@ End this stage with a block named exactly:
 - frontend_axis:
 - tool_axis:
 - image_axis:
+- navigation_axis:
 - runtime_mode:
 - delivery_target: .fda.tgz
 - implementation_notes:

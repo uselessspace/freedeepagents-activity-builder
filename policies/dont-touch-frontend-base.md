@@ -29,3 +29,7 @@ Currently no automated check (the verifier focuses on `app/` boundary, not `acti
 Adding files in `src/components/`, `src/hooks/`, `src/lib/types.ts`,
 `src/lib/api-client.ts`, `src/lib/mock-dsl.ts`, or `data/<id>.json` — that's
 the **point** of derivation. Just keep the shared base files untouched.
+
+`useDsl.ts` owns the shared DSL EventSource and exposes the latest
+`preview_navigate` event. Activities should interpret that event in their own
+components/hooks; do not fork `useDsl.ts` or open a second SSE connection.

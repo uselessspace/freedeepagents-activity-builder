@@ -25,6 +25,8 @@ FreeDeepAgents repo with `bash <package>/tools/install-activity.sh`.
   activity-owned tools.
 - Builds Static Preview activities with `site/`, `dsl_builder.py`, optional
   `tools.py`, and `site/dist/`.
+- Wires optional Agent-driven SPA selection, scroll, focus, or view switching
+  through the user-scoped `preview_navigate` event on the existing DSL stream.
 - Packages the final activity as `.fda.tgz`.
 - Verifies install and runtime smoke behavior before calling the activity ready.
 
@@ -66,7 +68,7 @@ the same stages:
 1. `activity-brief` asks who the activity serves, what the core loop is, which
    UI and tool capabilities are needed, and what success looks like.
 2. `activity-classifier` writes the fixed Activity Classification:
-   `frontend_axis`, `tool_axis`, `image_axis`, `runtime_mode`, and
+   `frontend_axis`, `tool_axis`, `image_axis`, `navigation_axis`, `runtime_mode`, and
    `delivery_target` (+ free-form `implementation_notes`).
 3. `activity-builder` scaffolds and implements activity-owned files.
 4. `activity-frontend` guides Static Preview UI choices without vendoring
@@ -86,6 +88,11 @@ The plugin includes a lightweight frontend guidance skill instead of copying
 external UI skills. It covers Tailwind, motion, lucide, shadcn-style component
 patterns, and UI archetypes such as dashboards, games, canvas tools, timelines,
 graphs, pet/avatar experiences, and form workflows.
+
+Static Preview activities may also use Agent-driven navigation: successful
+activity tools/handlers call `ctx.emit_preview_navigation(...)`, and the SPA
+consumes the named `preview_navigate` event from its existing DSL EventSource.
+See [references/preview-navigation.md](references/preview-navigation.md).
 
 Optional shadcn MCP examples or local UI skills may be used when available.
 They are not required by this package.

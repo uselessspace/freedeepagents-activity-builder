@@ -61,8 +61,13 @@ def test_tool_writes_validate():
 `activity_harness` installs the stubs, seeds a temp instance from
 `data.schema.json`'s top-level `default`, and yields a `FakeCtx`
 (`instance_dir` / `activity_dir` / `notify_dsl_update` / `turn_files` /
-`llm` — always `None` offline; assign a duck-typed fake to test
+`emit_preview_navigation` + recorded `preview_navigation_events` / `llm` —
+always `None` offline; assign a duck-typed fake to test
 LLM-dependent paths, see [references/ctx-llm.md](../references/ctx-llm.md)).
+
+The navigation fake records the activity payload before the production runtime
+adds `event_id` / `turn_id`. It also JSON-round-trips the payload so non-JSON
+values fail during an offline test.
 
 The `update_data` stub mirrors the platform contract exactly: the mutator
 may return a plain `dict` **or** a `(dict, side_info)` tuple — both are

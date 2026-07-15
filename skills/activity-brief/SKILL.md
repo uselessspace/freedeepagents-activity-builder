@@ -29,6 +29,8 @@ Capture the smallest useful brief:
   or a combination.
 - `frontend_need`: no dedicated frontend, static preview, visual canvas,
   dashboard, game-like interaction, timeline, graph, or other.
+- `agent_navigation`: whether a successful Agent read/action should select,
+  scroll, focus, or switch the user's open Static Preview; otherwise `none`.
 - `image_need`: none, generate fresh images, or edit user/reference images.
 - `external_capabilities`: APIs, databases, browser/search, files, payments,
   models, or other services.
@@ -48,6 +50,8 @@ Good prompts:
 - "Is a card-only flow enough, or does this need a persistent visual view?"
 - "Does the activity need generated images, edited images, third-party APIs, or
   long-term private data?"
+- "After the Agent finds or changes something, should the open SPA navigate to
+  that exact item automatically?"
 
 ## Output Contract
 
@@ -62,6 +66,7 @@ End this stage with a block named exactly:
 - success_experience:
 - interaction_model:
 - frontend_need:
+- agent_navigation: none
 - image_need:
 - external_capabilities:
 - persistence:

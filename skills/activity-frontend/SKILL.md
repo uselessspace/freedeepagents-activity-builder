@@ -40,6 +40,9 @@ Choose one primary UI type:
   works.
 - The frontend reads private activity DSL from `/api/dsl.json` and can subscribe
   to `/api/dsl/stream` for refreshes.
+- Agent-driven focus/navigation arrives as a named `preview_navigate` event on
+  that same stream; it is transient and activity-private. See
+  `../../references/preview-navigation.md`.
 - `dsl_builder.py` owns the DSL shape by reading typed-KV data declared in
   `data.schema.json`.
 - `tools.py` owns user-semantic writes when the preview needs interaction.
@@ -58,6 +61,7 @@ Before coding, write:
 - data_sources: data.schema.json keys and artifacts used
 - interaction_tools: tools.py functions, or none
 - refresh_model: initial fetch only / SSE / manual reload
+- agent_navigation: none / event fields and resulting select-scroll-focus behavior
 - build_checks: npm run lint, npm run build, screenshots
 ```
 
@@ -70,6 +74,9 @@ Contract-wiring (unique to this step):
 - Keep `src/lib/types.ts` aligned with the dict returned by `dsl_builder.py`.
 - Keep `src/lib/api-client.ts` as the single client for `/api/dsl.json` and
   `/api/dsl/stream`.
+- When navigation is enabled, consume the `navigation` value returned by
+  `useDsl()`; validate private payload fields and keep duplicate/missing events
+  harmless.
 - Before editing derived shared files, read
   `../../policies/dont-touch-frontend-base.md`.
 
