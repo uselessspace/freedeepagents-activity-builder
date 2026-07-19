@@ -52,6 +52,7 @@ ALLOWED_RUNTIME_FIELDS = {
     "llm_max_output_tokens",
     "docker_timeout_seconds",
     "max_distinct_support_reads",
+    "skill_egress_similarity_threshold",
     "data_schema_enabled",
     # SSE debug view config — see app/models.py SseDebugViewConfig.
     # THIS package module is the canonical whitelist; the repo-root

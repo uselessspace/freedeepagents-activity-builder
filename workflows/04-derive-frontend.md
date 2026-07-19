@@ -55,6 +55,7 @@ In `activities/<id>/site/`, edit activity-owned files. The final app should:
 - reuse that same EventSource for `preview_navigate`; never open a navigation-only stream
 - avoid dev-server-only `/api/*` plugin routes in production code
 - let end-users upload their own images / voice recordings (and persist them) via `POST api/upload` — see [user-upload.md](../references/user-upload.md)
+- keep `asset_id` / `resource_ref` with business records and reclaim only zero-reference assets after discard/replace/delete — see [asset-lifecycle.md](../references/asset-lifecycle.md)
 
 Typical files:
 

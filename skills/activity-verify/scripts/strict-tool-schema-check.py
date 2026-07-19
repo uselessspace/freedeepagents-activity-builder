@@ -56,6 +56,12 @@ class _FakeCtx:
     def emit_preview_navigation(self, payload: dict) -> None:
         pass
 
+    def promote_turn_file(self, file_id: str) -> dict:
+        return {"asset_id": "0" * 64 + ".png", "upload_name": "0" * 64 + ".png"}
+
+    def delete_asset(self, *, upload_name: str, purge_origin: bool = False) -> dict:
+        return {"ok": True, "deleted": True, "pending": False, "upload_name": upload_name}
+
 
 def _find_repo_root(explicit: str | None) -> pathlib.Path:
     if explicit:

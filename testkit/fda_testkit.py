@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import importlib.util
 import json
 import re
@@ -303,6 +304,8 @@ class FakeCtx:
         self.activity_dir = Path(activity_dir)
         self.instance_dir = Path(instance_dir)
         self.turn_files: list = []
+        self.promoted_turn_file_ids: list[str] = []
+        self.deleted_asset_requests: list[dict[str, Any]] = []
         self.dsl_updates = 0
         # Records the activity-authored payload before production adds its
         # event_id / turn_id envelope and publishes it on preview_navigate.
@@ -322,6 +325,50 @@ class FakeCtx:
             raise TypeError("preview navigation payload must be a dict")
         # Prove offline that the payload can cross the runtime JSON boundary.
         self.preview_navigation_events.append(json.loads(json.dumps(payload)))
+
+    def promote_turn_file(self, file_id: str) -> dict[str, Any]:
+        """Return a JSON-safe instance asset handle and record the promotion.
+
+        Offline tests do not persist media bytes. The deterministic handle is
+        sufficient for exercising activity reference migration and cleanup
+        policy without a platform storage backend.
+        """
+        if not isinstance(file_id, str) or not file_id:
+            raise AppError("file_id must be a non-empty string", status_code=400)
+        digest = hashlib.sha256(file_id.encode("utf-8")).hexdigest()
+        upload_name = f"{digest}.png"
+        self.promoted_turn_file_ids.append(file_id)
+        activity_type_id = self.activity_dir.name
+        activity_id = self.instance_dir.name
+        return {
+            "asset_id": upload_name,
+            "upload_name": upload_name,
+            "url": f"/preview/{activity_type_id}/{activity_id}/uploads/{upload_name}",
+            "content_type": "image/png",
+            "byte_size": 0,
+            "sha256": digest,
+            "resource_ref": {
+                "kind": "upload",
+                "activity_type_id": activity_type_id,
+                "activity_id": activity_id,
+                "upload_name": upload_name,
+            },
+        }
+
+    def delete_asset(self, *, upload_name: str, purge_origin: bool = False) -> dict[str, Any]:
+        """Record an instance-scoped cleanup request for offline assertions."""
+        if not isinstance(upload_name, str) or re.fullmatch(r"[0-9a-f]{64}\.[a-z0-9]+", upload_name) is None:
+            raise AppError("upload_name must be a content-addressed asset name", status_code=400)
+        request = {"upload_name": upload_name, "purge_origin": bool(purge_origin)}
+        self.deleted_asset_requests.append(request)
+        return {
+            "ok": True,
+            "deleted": True,
+            "pending": False,
+            "upload_name": upload_name,
+            "reclaimed_bytes": 0,
+            "origins_deleted": 1 if purge_origin else 0,
+        }
 
 
 def _install_stub_modules() -> None:

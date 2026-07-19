@@ -25,6 +25,8 @@ Use the package assets relative to this skill:
   `static-preview`.
 - `../../references/user-upload.md` when the preview SPA must let end-users
   upload + persist their own images / voice recordings (`POST api/upload`).
+- `../../references/asset-lifecycle.md` when uploaded media can be replaced,
+  discarded, or deleted, or when Agent turn files must become durable assets.
 - `../../references/preview-navigation.md` when `navigation_axis` is
   `agent-to-preview`; it defines the ctx helper, SSE, isolation, and transient
   delivery contract.

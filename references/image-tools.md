@@ -213,10 +213,12 @@ saved = ctx.save_upload(content=data, content_type=art["mime_type"])
 
 | helper | 签名 | 返回 |
 |---|---|---|
-| `ctx.save_upload` | `(*, content: bytes, content_type: str)` | `{url, upload_name, resource_ref, content_type, byte_size, sha256}`（与 `POST api/upload` 同形）|
+| `ctx.save_upload` | `(*, content: bytes, content_type: str)` | `{url, upload_name, resource_ref, content_type, byte_size, sha256}`（进入同一个实例 assets/uploads 生命周期）|
 | `ctx.read_upload` | `(upload_name: str) -> bytes \| None` | 读回一个已登记上传的字节；未登记 / 不可读 → `None` |
+| `ctx.promote_turn_file` | `(file_id: str) -> dict` | 把当前 Agent turn 附件提升成 `{asset_id, upload_name, url, resource_ref, ...}` |
+| `ctx.delete_asset` | `(*, upload_name: str, purge_origin: bool = False) -> dict` | 删除当前实例的零引用资产；失败可返回 `pending: true` 进入 GC |
 
-> 两个 helper 在平台 `storage` 就绪时即可用（不需要额外 capability）；允许的 `content_type` 与 `api/upload` 一致（图像 + wav）。
+> 这些 helper 在平台 `storage` 就绪时即可用（不需要额外 capability）；允许的 `content_type` 与 `api/upload` 一致（图像 + wav）。删除前的全实例引用扫描属于活动业务，详见 [asset-lifecycle.md](asset-lifecycle.md)。
 
 **B — 返回字节，前端确认时才落盘**
 

@@ -19,6 +19,7 @@ All fields are optional; omit `runtime.json` entirely if you need no overrides.
 | `llm_max_output_tokens` | int ≥1 | env `ACTIVITY_LLM_MAX_OUTPUT_TOKENS` | Long-narrative activities (long-form story output). |
 | `docker_timeout_seconds` | int 1–1800 | 120 | Activities that genuinely run long sandbox commands. |
 | `max_distinct_support_reads` | int ≥0 | 3 (`0` = unlimited) | Cap distinct workflow/policy/reference reads per turn. `skill_sources` files are exempt. |
+| `skill_egress_similarity_threshold` | number 0.0–1.0 | 0.60 | Reject output windows whose character n-gram containment against one protected non-card Skill reaches this threshold. Dedicated `cards` / `*-cards` skills are excluded. |
 | `data_schema_enabled` | bool | `false` | Opt into the typed-KV data store. Requires `data.schema.json`. See [data-store-tools.md](data-store-tools.md). |
 | `write_todos` | bool | `false` | Opt into the deepagents `write_todos` planner — only for genuinely multi-step (3+) pipeline turns. See [subagents.md](subagents.md). |
 | `auto_memory_enabled` | bool \| null | `null` (follow global `AUTO_MEMORY_ENABLED`) | Set `false` to disable the one-line `[auto]` gist for activities whose canonical card sequences look duplicated when echoed. See `app/auto_memory.py`. |

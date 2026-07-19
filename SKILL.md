@@ -22,6 +22,7 @@ license: MIT
 | 生成 / 编辑图片 | + image 能力 | [examples/card-image.md](examples/card-image.md) |
 | 一块持久、可检视的可视化界面 | → static-preview | [examples/static-preview.md](examples/static-preview.md) |
 | Agent 完成读取/操作后让 SPA 自动定位 | static-preview + navigation | [references/preview-navigation.md](references/preview-navigation.md) |
+| 上传媒体、从会话附件入库，并在零引用时回收 | + asset lifecycle | [references/asset-lifecycle.md](references/asset-lifecycle.md) |
 
 > **名词速查**：**card-system** = 用工具发卡片的输出模式（新活动默认）· **typed-KV** = 活动的结构化业务存储（`data.schema.json` + `data_*` 工具）· **static-preview** = 活动自带的一块 React 前端页面（`site/` + `dsl_builder.py`）。
 

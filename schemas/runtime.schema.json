@@ -28,6 +28,13 @@
       "minimum": 0,
       "description": "Cap on distinct support files (workflows/policies/references) the agent may read per turn. Default 3. 0 = unlimited. Files in manifest.skill_sources are exempt."
     },
+    "skill_egress_similarity_threshold": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.6,
+      "description": "Protected-skill output containment threshold. 0.6 means 60% of a candidate output window's character n-grams match one non-card skill. Dedicated cards / *-cards skills are excluded."
+    },
     "data_schema_enabled": {
       "type": "boolean",
       "description": "Opt-in: enable the typed KV data store. When true, activities/<id>/data.schema.json must exist; the runtime exposes data_get / data_set / data_append / data_delete / data_list_keys tools and seeds /instance/data.json from the schema's default. See references/data-store-tools.md."

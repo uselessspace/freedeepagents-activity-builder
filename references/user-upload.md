@@ -5,7 +5,7 @@
 
 ## 一句话
 
-让**使用预览页的终端用户**把自己产生的图像 / 录音上传并持久化（绘本工坊自己读绘本录的音、记忆档案馆传的照片）。SPA `POST` 到当前预览根的 `api/upload`，拿到一个 opaque URL + `resource_ref`；平台负责持久化与回取，"谁传的、放在哪"由你的活动数据自己记。
+让**使用预览页的终端用户**把自己产生的图像 / 录音上传并持久化（绘本工坊自己读绘本录的音、记忆档案馆传的照片）。SPA `POST` 到当前预览根的 `api/upload`，拿到一个 opaque URL + `resource_ref` + `asset_id`；平台负责持久化与回取，"谁传的、放在哪、何时已无引用"由你的活动数据自己判断。完整删除契约见 [asset-lifecycle.md](asset-lifecycle.md)。
 
 ## 和其它"上传 / 产物"的区别
 
@@ -41,6 +41,8 @@
 {
   // opaque：默认可能 redirect 到对象存储（取决于部署的存储后端）。当不透明 URL 用，别解析、别假设同源。
   "url": "<preview-root>/uploads/<sha256>.<ext>",
+  "asset_id": "<sha256>.<ext>",
+  "upload_name": "<sha256>.<ext>",
   "resource_ref": { "kind": "upload", "activity_type_id": "…", "activity_id": "…", "upload_name": "<sha256>.<ext>" },
   "sha256": "…",
   "content_type": "audio/webm",
@@ -49,9 +51,11 @@
 ```
 
 - **内容寻址**：相同字节重复上传是幂等 no-op（同一个 `url`）。
+- **资产标识**：`asset_id` 当前与 `upload_name` 相同；业务代码把它当 opaque ID，不要据此拼对象存储 key。
 - **回取（URL 快速路）**：把 `url` 当 opaque 直接喂 `<img src>` / `<audio src>`（先过 `resolveAssetUrl()` 归一化前缀）。默认服务端可能 redirect 到存储后端；要同源拉字节加 `?proxy=true`。
 - **持久化**：与产物同级耐久；实例硬删时随实例一起清除。
 - **`resource_ref`**：跨平面 / 权限无关的引用。要支持同一实例跨 dev / 正式平面回放，优先把它和业务位置一起存进 `data.json`；`url` 可同时存作老客户端 / 本地调试兜底。
+- **删除**：业务对象删除或换图后，先扫描完整实例确认资产已零引用，再调用 `ctx.delete_asset(upload_name=asset_id, purge_origin=True)`；失败会进入平台 GC。不要只删 URL 引用后留下孤儿，也不要在仍有其他引用时删物理文件。
 
 ## resource_ref 端到端
 

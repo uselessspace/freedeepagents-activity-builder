@@ -1,5 +1,23 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.17 (2026-07-19)
+
+补齐实例级媒体资产的完整生命周期契约，与平台新增的统一删除能力同步。
+
+- 新增 `references/asset-lifecycle.md`：把 SPA `api/upload`、Agent 会话附件
+  `ctx.promote_turn_file(file_id)`、handler `ctx.save_upload` 归一为同一个实例资产模型；规定
+  活动先提交业务删除、再扫描完整实例引用、只对零引用资产调用
+  `ctx.delete_asset(upload_name=..., purge_origin=True)`，并说明实例隔离、内容寻址共享引用、
+  GC pending、来源附件墓碑和用户无感的交互口径。
+- `references/user-upload.md` 同步 `api/upload` 新增的 `asset_id` / `upload_name` 响应字段和
+  删除责任；`references/image-tools.md` 补齐 promote/delete helper 签名；Builder 与前端工作流
+  在存在上传、替换、丢弃或 Agent 附件入库时路由到新参考。
+- 离线 testkit `FakeCtx` 与 strict-tool fake 新增 `promote_turn_file` / `delete_asset`，活动作者
+  可在无平台存储后端时测试引用迁移和清理请求；新增对应回归测试。
+- 同步 0.4.16 发布后平台已提交的 `skill_egress_similarity_threshold` runtime schema、verifier
+  白名单与参考文档，保证 0.4.17 bundle 和当前 runtime 模型继续逐字段一致。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.17**。
+
 ## 0.4.16 (2026-07-15)
 
 补齐 Agent 操控 Static Preview 内部导航的活动开发契约与派生模板。
