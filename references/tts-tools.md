@@ -36,7 +36,7 @@
 | `prompt_text` | **仅 clone provider**：参考录音的转写。qwen 不用，留空。|
 | `store` | `auto`(默认) / `oss` / `sandbox`，语义权威见 [store-mode-table.md](store-mode-table.md)。|
 
-**成功返回** `{"artifact": {artifact_id, store("oss" 或 "sandbox"), audio_url, storage_key(iff oss)|sandbox_path(iff sandbox), mime_type, byte_size, duration_ms}}`；`audio_url` 永远是 `/v1/.../content` 代理 URL（durable，见 store-mode-table.md），直接填进 `audio` 卡片块的 `read_url`。
+**成功返回** `{"artifact": {artifact_id, resource_ref, store("oss" 或 "sandbox"), audio_url, storage_key(iff oss)|sandbox_path(iff sandbox), mime_type, byte_size, duration_ms}}`；`audio_url` 永远是 `/v1/.../content` 代理 URL（durable，见 store-mode-table.md），直接填进 `audio` 卡片块的 `read_url`。业务记录同时保存 `resource_ref`，零引用时通过 `ctx.delete_resource(...)` 回收；详见 [asset-lifecycle.md](asset-lifecycle.md)。
 **失败返回** `{"error": ..., "hint": ...}`——**不要重试同一文本**（provider 已决定，重试白费时间；失败会回滚配额，不占 per-turn 上限），照常出卡、`audio_url=""`（`audio` 块自动隐藏）。
 
 ## 配置（env vars）

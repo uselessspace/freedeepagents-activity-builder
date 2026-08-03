@@ -65,6 +65,11 @@ def test_tool_writes_validate():
 always `None` offline; assign a duck-typed fake to test
 LLM-dependent paths, see [references/ctx-llm.md](../references/ctx-llm.md)).
 
+It also provides the unified file-resource helpers used by new activities:
+`save_resource`, `get_turn_resource`, `read_resource`, and `delete_resource`.
+Saved bytes live in memory; deletion records `deleted_resource_requests` and
+rejects a `resource_ref` owned by another activity instance.
+
 The navigation fake records the activity payload before the production runtime
 adds `event_id` / `turn_id`. It also JSON-round-trips the payload so non-JSON
 values fail during an offline test.

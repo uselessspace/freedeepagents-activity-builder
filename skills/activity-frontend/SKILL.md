@@ -40,9 +40,17 @@ Choose one primary UI type:
   works.
 - The frontend reads private activity DSL from `/api/dsl.json` and can subscribe
   to `/api/dsl/stream` for refreshes.
-- Agent-driven focus/navigation arrives as a named `preview_navigate` event on
-  that same stream; it is transient and activity-private. See
-  `../../references/preview-navigation.md`.
+- Agent-driven semantic navigation arrives as a named `preview_navigate` event
+  on that same stream; it may select an activity-private route, view, or
+  business object, but must not encode clicks, focus, scrolling, or DOM
+  targets. See `../../references/preview-navigation.md`.
+- SPA actions that need the normal Agent runtime use structured Preview Agent
+  turns plus an activity-root `preview_actions.json`; see
+  `../../references/preview-agent-turns.md`. Direct handlers remain appropriate
+  for deterministic data writes that do not need the Agent.
+- Agent business actions call activity-owned tools, handlers, or backend APIs;
+  `preview_navigate` never substitutes for the business operation. Persist
+  state first, then let DSL fetch/SSE refresh the SPA.
 - `dsl_builder.py` owns the DSL shape by reading typed-KV data declared in
   `data.schema.json`.
 - `tools.py` owns user-semantic writes when the preview needs interaction.
@@ -61,7 +69,7 @@ Before coding, write:
 - data_sources: data.schema.json keys and artifacts used
 - interaction_tools: tools.py functions, or none
 - refresh_model: initial fetch only / SSE / manual reload
-- agent_navigation: none / event fields and resulting select-scroll-focus behavior
+- agent_navigation: none / semantic route-view-object fields and resulting selection behavior
 - build_checks: npm run lint, npm run build, screenshots
 ```
 

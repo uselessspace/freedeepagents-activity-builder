@@ -30,6 +30,9 @@ Use the package assets relative to this skill:
 - `../../references/preview-navigation.md` when `navigation_axis` is
   `agent-to-preview`; it defines the ctx helper, SSE, isolation, and transient
   delivery contract.
+- `../../references/handler-context-lifecycle.md` before implementing retries,
+  pending jobs, threads, tasks, executors, or any callback that might outlive
+  an Activity tool/handler call.
 - `../../workflows/06-verify-and-ship.md` for verification expectations.
 - `../../workflows/07-migrate-existing.md` when the user wants to fork an
   existing activity.
@@ -97,9 +100,20 @@ When a third-party API, index, model, or private operation is needed, expose an
 activity-owned tool whose name matches the user intent. Keep generic runtime
 code activity-neutral.
 
+Treat `ctx` as call-scoped. Finish every `ctx`-dependent operation before the
+tool/handler returns. Persist only plain job data for later work; a resume
+handler must use the fresh `ctx` passed to its own `make_handlers(ctx)` call.
+Never retain `ctx`, `ctx.llm`, or bound `ctx.*` methods in globals, background
+threads/tasks, queues, timers, or callbacks.
+
+Agent-driven business interaction must call activity-owned `@tool` functions,
+handlers, or backend APIs. After a successful operation,
+`ctx.emit_preview_navigation(...)` may select an activity-private route, view,
+or business object, but it must not encode browser clicks, focus, scrolling, or
+DOM targets. Persist the result first and let the SPA render it from DSL/data.
+
 ## Done Criteria
 
-Do not claim done from this skill. Route to `../activity-packager/SKILL.md` for
-`.fda.tgz` packaging, install validation, and smoke evidence.
-
+Do not claim done from this skill. Route to `../activity-packager/SKILL.md` for `.fda.tgz` packaging, install validation, and smoke evidence.
 - **可选自审**：agent 定义写完/改完后，可先跑 `../activity-review/SKILL.md` 做语义体检（找指令自相矛盾、卡片编排不成立、承诺与能力错配等逻辑冲突）；有 CONFLICT 再回来改。不是完工硬门禁，打包流程不依赖它。
+- **可选共享环境预检**：若已安装并登录 `fda-dev`，可转 `../activity-dev-cli/SKILL.md` 先跑只读 `doctor`、`status` 和 `sync --dry-run`。不要在实现阶段把实际同步当成静态校验或完工证据。

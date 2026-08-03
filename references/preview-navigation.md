@@ -1,8 +1,14 @@
-# Agent-driven Static Preview navigation
+# Agent-driven semantic Static Preview navigation
 
-Static Preview activities can let an Agent focus or navigate the already-open
-SPA after a successful read or action. This is a transient UX signal, not
-durable business state and not a manifest capability.
+Static Preview activities can let an Agent select an activity-private route, view, or business object
+in the already-open SPA after a successful read or action. This is a transient
+semantic navigation signal, not browser automation, durable business state, or
+a manifest capability.
+
+`preview_navigate` is intentionally narrower than a UI-action system. Its
+payload must not encode browser clicks, coordinates, selectors, DOM targets,
+focus commands, or scrolling instructions. Business reads and writes must
+already have completed through an Activity `@tool`, Handler, or backend API.
 
 ## Runtime contract
 
@@ -11,10 +17,9 @@ Activity-owned tools or handlers receive this helper on their runtime context:
 ```python
 ctx.emit_preview_navigation(
     {
-        "surface": "document",
-        "target_id": record_id,
-        "focus_id": section_id,
-        "stage": "reading",
+        "view": "document",
+        "object_id": record_id,
+        "section_id": section_id,
     }
 )
 ```
@@ -35,6 +40,13 @@ Do not emit for every search candidate, retry, token, or intermediate step.
 Navigation is observational UX: failure to deliver it must never make the
 business tool fail. Do not call `notify_dsl_update()` solely for navigation.
 
+Allowed payload semantics include stable Activity concepts such as `route`,
+`view`, `object_id`, `section_id`, or `tab_id`. Forbidden payload semantics
+include `selector`, `coordinates`, `click`, `focus`, `scroll`, element handles,
+or instructions to execute JavaScript. The SPA may update its own React/router
+state from a valid semantic selection; it must not replay low-level browser
+operations on the Agent's behalf.
+
 ## SPA contract
 
 Use the same EventSource as DSL refresh. Do not open a second stream:
@@ -42,7 +54,7 @@ Use the same EventSource as DSL refresh. Do not open a second stream:
 ```ts
 source.addEventListener('preview_navigate', (event) => {
   const navigation = JSON.parse(event.data) as PreviewNavigationEvent;
-  // Validate activity-private fields, then select/scroll/focus.
+  // Validate activity-private fields, then select a route/view/business object.
 });
 ```
 
@@ -52,9 +64,9 @@ The packaged `frontend-base` already wires this event into `useDsl()`:
 const { data, navigation } = useDsl();
 
 useEffect(() => {
-  if (!navigation || navigation.surface !== 'document') return;
-  selectRecord(String(navigation.target_id));
-  scrollToSection(String(navigation.focus_id));
+  if (!navigation || navigation.view !== 'document') return;
+  setActiveView('document');
+  setSelectedObjectId(String(navigation.object_id));
 }, [navigation]);
 ```
 
@@ -74,6 +86,9 @@ through the installed preview URL.
   `navigation_axis: agent-to-preview`.
 - [ ] Payload contains only JSON-safe activity identifiers and display state;
   no secret, raw file bytes, or user-routing fields.
+- [ ] Payload names only semantic routes, views, or business objects and does
+  not contain browser clicks, focus, scrolling, selectors, coordinates, DOM
+  targets, or JavaScript instructions.
 - [ ] Backend emits after a successful operation and catches/logs any optional
   navigation failure without failing the operation.
 - [ ] SPA consumes `preview_navigate` on the existing DSL stream and validates
@@ -82,5 +97,5 @@ through the installed preview URL.
   typed-KV.
 - [ ] Two-user test confirms the other user on the same instance receives
   nothing.
-- [ ] Installed-runtime test confirms focus/scroll works and ordinary DSL SSE
-  updates still render.
+- [ ] Installed-runtime test confirms route/view/object selection works and
+  ordinary DSL SSE updates still render.

@@ -43,7 +43,7 @@ bash <package>/tools/derive-frontend.sh <activity-id> --name "<English Name>" --
 | `src/components/...` | 你的业务 UI |
 | `src/hooks/...` | 你的业务 hooks |
 
-若活动启用 Agent → SPA 导航，使用 `useDsl()` 返回的 `navigation`，在活动代码里校验私有字段后执行选中 / 滚动 / 聚焦。它复用 DSL EventSource，不要再开第二条 SSE；完整契约见 [`references/preview-navigation.md`](../references/preview-navigation.md)。
+若活动启用 Agent → SPA 导航，使用 `useDsl()` 返回的 `navigation`，在活动代码里校验私有字段后切换 Activity 私有路由、视图或业务对象。不要把 payload 翻译成浏览器点击、聚焦、滚动或 DOM target。它复用 DSL EventSource，不要再开第二条 SSE；完整契约见 [`references/preview-navigation.md`](../references/preview-navigation.md)。
 
 ## 与现有前端活动的关系
 

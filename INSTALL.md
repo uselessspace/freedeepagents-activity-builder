@@ -67,10 +67,22 @@ plugin.json 的 `skills` 数组只是显式声明 + 排序，不是白名单。�
 /activity-review        语义自审（找逻辑冲突/承诺错配，调在场 LLM，非阻塞）
 /activity-smoke         端到端冒烟（核 trace.jsonl 的 card_item / turn_completed / done）
 /activity-diagnostician 失败排查（turn_id / 错误日志 / 症状 → 根因 + 修复）
+/activity-dev-cli       共享 dev runtime（连通、状态、同步、拉取、真 turn、日志）
 ```
 
 （`/activity-orchestrator` 是 Codex 侧 router 入口；Claude 用户用根 router
 `/freedeepagents-activity-builder` 即可。）
+
+如果已安装 FDA Dev Client，可直接让 Coding Agent 调用：
+
+```text
+/activity-dev-cli 检查当前活动能否连上开发服务器，先不要修改任何内容
+/activity-dev-cli 预演同步，然后跑一个新的 smoke turn，失败时拉取日志
+/activity-dev-cli 比较服务器源码和本地源码，但不要覆盖本地文件
+```
+
+该 skill 默认从 `doctor` / `status` / `--dry-run` 开始。实际同步会写开发
+服务器；`pull --force` 和 `login --replace-session` 需要用户明确授权。
 
 Restart Claude Code if your version scans plugins only at startup.
 

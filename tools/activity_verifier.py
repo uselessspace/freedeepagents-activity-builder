@@ -46,7 +46,7 @@ ALLOWED_MANIFEST_FIELDS = {
     # ActivityManifest.sandbox_env + validate_sandbox_env.
     "sandbox_env",
 }
-ALLOWED_CAPABILITIES = {"image_generate", "image_edit", "tts_generate", "read_document"}
+ALLOWED_CAPABILITIES = {"image_generate", "image_edit", "tts_generate", "read_document", "asr"}
 ALLOWED_RUNTIME_FIELDS = {
     "llm_timeout_seconds",
     "llm_max_output_tokens",
@@ -139,6 +139,7 @@ BUILTIN_TOOL_NAMES = frozenset(
         "image_generate",
         "image_edit",
         "tts_generate",
+        "transcribe_audio",
         # state markdown
         "state_read",
         # DeepAgents framework builtins
@@ -151,9 +152,6 @@ BUILTIN_TOOL_NAMES = frozenset(
         "edit_file",
         "task",
         "write_todos",
-        # reserved for future framework tools
-        "manage_memory",
-        "search_memory",
     }
 )
 NON_NATIVE_SKILL_PROMPT_HELPER = "_skill" + "_instruction" + "_text"
@@ -196,6 +194,9 @@ def verify_project(root: Path | str) -> list[VerificationIssue]:
     _verify_generic_runtime_references(project_root, activity_ids, issues)
     _verify_frontend_private_state_reads(project_root, issues)
     _verify_no_credential_access(project_root, issues)
+    _verify_no_detached_activity_work(project_root, issues)
+    _verify_no_legacy_resource_helpers(project_root, issues)
+    _verify_no_legacy_preview_command_protocol(project_root, issues)
     _verify_deepagents_skill_progressive_disclosure(project_root, issues)
     _verify_activity_instruction_shape(project_root, issues)
     _verify_skill_layering(project_root, issues)
@@ -538,6 +539,185 @@ def _verify_no_credential_access(root: Path, issues: list[VerificationIssue]) ->
                         "image_generate / tts_generate tools for media.",
                     )
                 )
+
+
+def _dotted_expr_name(node: ast.AST) -> str:
+    """Best-effort dotted name for a call target."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        prefix = _dotted_expr_name(node.value)
+        return f"{prefix}.{node.attr}" if prefix else node.attr
+    return ""
+
+
+def _detached_work_finding(tree: ast.AST) -> tuple[int, str] | None:
+    """Return the first obvious fire-and-forget scheduler carrying ``ctx``."""
+    parents: dict[ast.AST, ast.AST] = {}
+    thread_vars: dict[str, tuple[int, bool]] = {}
+    started_thread_vars: dict[str, int] = {}
+    joined_thread_vars: set[str] = set()
+    ctx_functions: set[str] = set()
+
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parents[child] = parent
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)) and any(
+            isinstance(inner, ast.Name) and inner.id == "ctx" for inner in ast.walk(node)
+        ):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                ctx_functions.add(node.name)
+
+    def uses_ctx(node: ast.AST) -> bool:
+        for inner in ast.walk(node):
+            if isinstance(inner, ast.Name) and (inner.id == "ctx" or inner.id in ctx_functions):
+                return True
+            if isinstance(inner, ast.Call) and _dotted_expr_name(inner.func).split(".")[-1] in ctx_functions:
+                return True
+        return False
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            value = node.value
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            if isinstance(value, ast.Call):
+                constructor = _dotted_expr_name(value.func).split(".")[-1]
+                if constructor in {"Thread", "Timer"}:
+                    for target in targets:
+                        if isinstance(target, ast.Name):
+                            thread_vars[target.id] = (getattr(node, "lineno", 0), uses_ctx(value))
+
+        if not isinstance(node, ast.Call):
+            continue
+        call_name = _dotted_expr_name(node.func)
+        tail = call_name.split(".")[-1]
+
+        if tail in {"create_task", "ensure_future", "add_task"} and uses_ctx(node):
+            return getattr(node, "lineno", 0), f"fire-and-forget scheduler `{call_name}`"
+
+        if tail in {"run_in_executor", "to_thread"} and uses_ctx(node) and not isinstance(parents.get(node), ast.Await):
+            return getattr(node, "lineno", 0), f"unawaited background call `{call_name}`"
+
+        if tail == "submit" and uses_ctx(node) and isinstance(parents.get(node), ast.Expr):
+            return getattr(node, "lineno", 0), f"discarded executor future from `{call_name}`"
+
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "start":
+            receiver = node.func.value
+            if isinstance(receiver, ast.Call):
+                constructor = _dotted_expr_name(receiver.func).split(".")[-1]
+                if constructor in {"Thread", "Timer"} and uses_ctx(receiver):
+                    return getattr(node, "lineno", 0), f"detached `{constructor}(...).start()`"
+            if isinstance(receiver, ast.Name) and receiver.id in thread_vars and thread_vars[receiver.id][1]:
+                started_thread_vars[receiver.id] = getattr(node, "lineno", 0)
+
+        if isinstance(node.func, ast.Attribute) and node.func.attr == "join" and isinstance(node.func.value, ast.Name):
+            joined_thread_vars.add(node.func.value.id)
+
+    for name, line_no in started_thread_vars.items():
+        if name not in joined_thread_vars:
+            return line_no, f"thread `{name}` is started but never joined"
+    return None
+
+
+def _verify_no_detached_activity_work(root: Path, issues: list[VerificationIssue]) -> None:
+    """Reject obvious background work that carries a tool/handler ctx."""
+    activities_dir = root / "activities"
+    if not activities_dir.exists():
+        return
+    for activity_dir in sorted(path for path in activities_dir.iterdir() if path.is_dir()):
+        for path in _activity_python_files(activity_dir):
+            text = _read(path)
+            if text is None:
+                continue
+            try:
+                tree = ast.parse(text)
+            except SyntaxError:
+                continue
+            finding = _detached_work_finding(tree)
+            if finding is None:
+                continue
+            line_no, detail = finding
+            issues.append(
+                _issue(
+                    "error",
+                    root,
+                    path,
+                    f"line {line_no}: activity code starts detached ctx work ({detail}). "
+                    "Activity ctx capabilities are call-scoped and are revoked when the "
+                    "current tool/handler returns. Finish ctx-dependent work before "
+                    "returning, or persist plain job data and let a later handler resume "
+                    "it with that handler's fresh ctx. See "
+                    "references/handler-context-lifecycle.md.",
+                )
+            )
+
+
+def _verify_no_legacy_resource_helpers(root: Path, issues: list[VerificationIssue]) -> None:
+    """New activities must use the ResourceRef-based lifecycle exclusively."""
+    activities_dir = root / "activities"
+    if not activities_dir.exists():
+        return
+    for activity_dir in sorted(path for path in activities_dir.iterdir() if path.is_dir()):
+        for path in _activity_python_files(activity_dir):
+            text = _read(path)
+            if text is None:
+                continue
+            try:
+                tree = ast.parse(text)
+            except SyntaxError:
+                continue
+            if any(isinstance(node, ast.Attribute) and node.attr == "delete_asset" for node in ast.walk(tree)):
+                issues.append(
+                    _issue(
+                        "error",
+                        root,
+                        path,
+                        "legacy upload-name deletion is not supported; keep the complete resource_ref and call "
+                        "ctx.delete_resource(resource_ref=...) after the activity confirms zero references",
+                    )
+                )
+
+
+def _verify_no_legacy_preview_command_protocol(
+    root: Path,
+    issues: list[VerificationIssue],
+) -> None:
+    """Reject the removed Agent→SPA preview-command compatibility protocol.
+
+    Activity Python must emit the activity-owned semantic payload through
+    ``ctx.emit_preview_navigation(...)``. Activity frontends receive that same
+    payload from the ``preview_navigate`` SSE event; the runtime adds
+    ``event_id`` and ``turn_id``.
+    """
+    activities_dir = root / "activities"
+    if not activities_dir.exists():
+        return
+    source_extensions = {".py", ".js", ".jsx", ".ts", ".tsx"}
+    excluded_parts = {"dist", "node_modules", ".venv", "__pycache__"}
+    legacy_pattern = re.compile(r"\b(?:emit_preview_command|preview_command)\b")
+    for activity_dir in sorted(path for path in activities_dir.iterdir() if path.is_dir()):
+        for path in sorted(activity_dir.rglob("*")):
+            if (
+                not path.is_file()
+                or path.suffix not in source_extensions
+                or excluded_parts.intersection(path.relative_to(activity_dir).parts)
+            ):
+                continue
+            text = _read(path)
+            if text is None or not legacy_pattern.search(text):
+                continue
+            issues.append(
+                _issue(
+                    "error",
+                    root,
+                    path,
+                    "removed Agent→SPA protocol 'preview_command' is not supported; "
+                    "emit semantic fields with ctx.emit_preview_navigation(...) and "
+                    "listen for the 'preview_navigate' SSE event",
+                )
+            )
 
 
 def _verify_deepagents_skill_progressive_disclosure(root: Path, issues: list[VerificationIssue]) -> None:
@@ -1276,6 +1456,58 @@ def _verify_static_preview_contracts(root: Path, issues: list[VerificationIssue]
         data_schema_path = activity_dir / "data.schema.json"
         if data_schema_path.exists():
             _verify_data_schema_top_level_default(root, data_schema_path, issues)
+
+        preview_actions_path = activity_dir / "preview_actions.json"
+        if preview_actions_path.exists():
+            _verify_preview_actions(root, preview_actions_path, issues)
+
+
+def _verify_preview_actions(root: Path, path: Path, issues: list[VerificationIssue]) -> None:
+    """Validate the activity-owned allowlist for SPA-originated Agent turns."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        issues.append(_issue("error", root, path, f"preview_actions.json is unreadable: {exc}"))
+        return
+    if not isinstance(payload, dict) or set(payload) != {"actions"}:
+        issues.append(_issue("error", root, path, "preview_actions.json must contain only an `actions` array"))
+        return
+    actions = payload.get("actions")
+    if not isinstance(actions, list) or not actions:
+        issues.append(_issue("error", root, path, "preview_actions.json actions must be a non-empty array"))
+        return
+    seen: set[str] = set()
+    allowed_fields = {"id", "versions", "payload_schema", "exclusive"}
+    for index, action in enumerate(actions):
+        label = f"actions[{index}]"
+        if not isinstance(action, dict):
+            issues.append(_issue("error", root, path, f"{label} must be an object"))
+            continue
+        extra = sorted(set(action) - allowed_fields)
+        if extra:
+            issues.append(_issue("error", root, path, f"{label} has unsupported fields: {extra}"))
+        action_id = action.get("id")
+        if not isinstance(action_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,159}", action_id):
+            issues.append(_issue("error", root, path, f"{label}.id must be a lowercase stable action identifier"))
+        elif action_id in seen:
+            issues.append(_issue("error", root, path, f"duplicate Preview Action id: {action_id}"))
+        else:
+            seen.add(action_id)
+        versions = action.get("versions")
+        if (
+            not isinstance(versions, list)
+            or not versions
+            or any(not isinstance(version, str) or not version or len(version) > 32 for version in versions)
+            or len(set(versions)) != len(versions)
+        ):
+            issues.append(_issue("error", root, path, f"{label}.versions must be unique non-empty strings"))
+        schema = action.get("payload_schema", {"type": "object"})
+        if not isinstance(schema, (dict, bool)):
+            issues.append(
+                _issue("error", root, path, f"{label}.payload_schema must be a JSON Schema object or boolean")
+            )
+        if "exclusive" in action and not isinstance(action["exclusive"], bool):
+            issues.append(_issue("error", root, path, f"{label}.exclusive must be boolean"))
 
 
 def _verify_frontend_file_dependencies(root: Path, issues: list[VerificationIssue]) -> None:

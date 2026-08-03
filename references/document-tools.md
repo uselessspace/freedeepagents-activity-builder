@@ -20,8 +20,10 @@ Converts an uploaded document to Markdown the agent can read. Supply **exactly o
 { "markdown": "...", "char_count": 12345, "truncated": false, "source_kind": "file", "title": "..." }
 ```
 When `truncated` is `true`, the full Markdown is persisted as a `text/markdown`
-artifact and the result includes a `sandbox_path` (e.g.
-`/instance/artifacts/<turn_id>/<artifact_id>.md`). The agent recovers the rest by
+artifact and the result includes its `resource_ref`, authenticated `read_url`,
+and a `sandbox_path` (e.g. `/instance/artifacts/<turn_id>/<artifact_id>.md`). It
+therefore participates in the same read/delete/GC lifecycle as image and TTS
+artifacts. The agent recovers the rest by
 reading that path with `read_file` (paginating via `offset`/`limit` as needed) —
 NOT by calling `read_document` again on the `.md` (that would just re-truncate).
 

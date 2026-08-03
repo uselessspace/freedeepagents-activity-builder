@@ -39,8 +39,9 @@ Read the `Activity Brief` and produce a fixed classification before build work.
 `navigation_axis`:
 
 - `none` when the Agent never needs to move the user's open preview.
-- `agent-to-preview` when a successful Agent read/action should select, scroll,
-  focus, or switch the current Static Preview.
+- `agent-to-preview` when a successful Agent read/action should select an
+  activity-private route, view, or business object in the current Static
+  Preview. It must not encode browser clicks, focus, scrolling, or DOM targets.
 
 `delivery_target` defaults to `.fda.tgz`.
 

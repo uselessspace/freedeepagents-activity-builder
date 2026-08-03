@@ -303,9 +303,12 @@ class FakeCtx:
     def __init__(self, activity_dir: Path, instance_dir: Path) -> None:
         self.activity_dir = Path(activity_dir)
         self.instance_dir = Path(instance_dir)
+        self.activity_type_id = self.activity_dir.name
+        self.activity_id = self.instance_dir.name
         self.turn_files: list = []
-        self.promoted_turn_file_ids: list[str] = []
-        self.deleted_asset_requests: list[dict[str, Any]] = []
+        self.requested_turn_resource_ids: list[str] = []
+        self.deleted_resource_requests: list[dict[str, Any]] = []
+        self._resource_bytes: dict[str, bytes] = {}
         self.dsl_updates = 0
         # Records the activity-authored payload before production adds its
         # event_id / turn_id envelope and publishes it on preview_navigate.
@@ -326,48 +329,99 @@ class FakeCtx:
         # Prove offline that the payload can cross the runtime JSON boundary.
         self.preview_navigation_events.append(json.loads(json.dumps(payload)))
 
-    def promote_turn_file(self, file_id: str) -> dict[str, Any]:
-        """Return a JSON-safe instance asset handle and record the promotion.
-
-        Offline tests do not persist media bytes. The deterministic handle is
-        sufficient for exercising activity reference migration and cleanup
-        policy without a platform storage backend.
-        """
+    def get_turn_resource(self, file_id: str) -> dict[str, Any]:
+        """Return a JSON-safe turn-file reference without copying bytes."""
         if not isinstance(file_id, str) or not file_id:
             raise AppError("file_id must be a non-empty string", status_code=400)
-        digest = hashlib.sha256(file_id.encode("utf-8")).hexdigest()
-        upload_name = f"{digest}.png"
-        self.promoted_turn_file_ids.append(file_id)
-        activity_type_id = self.activity_dir.name
-        activity_id = self.instance_dir.name
+        self.requested_turn_resource_ids.append(file_id)
+        resource_ref = {
+            "kind": "turn_file",
+            "activity_type_id": self.activity_type_id,
+            "activity_id": self.activity_id,
+            "turn_id": "offline-turn",
+            "file_id": file_id,
+        }
         return {
-            "asset_id": upload_name,
-            "upload_name": upload_name,
-            "url": f"/preview/{activity_type_id}/{activity_id}/uploads/{upload_name}",
-            "content_type": "image/png",
+            "file_id": file_id,
+            "url": (
+                f"/v1/activity-types/{self.activity_type_id}/activities/{self.activity_id}"
+                f"/turns/offline-turn/files/{file_id}/content"
+            ),
             "byte_size": 0,
-            "sha256": digest,
-            "resource_ref": {
-                "kind": "upload",
-                "activity_type_id": activity_type_id,
-                "activity_id": activity_id,
-                "upload_name": upload_name,
-            },
+            "resource_ref": resource_ref,
         }
 
-    def delete_asset(self, *, upload_name: str, purge_origin: bool = False) -> dict[str, Any]:
-        """Record an instance-scoped cleanup request for offline assertions."""
-        if not isinstance(upload_name, str) or re.fullmatch(r"[0-9a-f]{64}\.[a-z0-9]+", upload_name) is None:
-            raise AppError("upload_name must be a content-addressed asset name", status_code=400)
-        request = {"upload_name": upload_name, "purge_origin": bool(purge_origin)}
-        self.deleted_asset_requests.append(request)
+    def save_resource(self, *, content: bytes, content_type: str) -> dict[str, Any]:
+        """Persist bytes in an in-memory upload resource for offline tests."""
+        extensions = {
+            "image/png": ".png",
+            "image/jpeg": ".jpg",
+            "image/webp": ".webp",
+            "image/gif": ".gif",
+            "audio/wav": ".wav",
+            "audio/x-wav": ".wav",
+            "audio/wave": ".wav",
+            "audio/webm": ".weba",
+            "audio/mp4": ".m4a",
+            "audio/mpeg": ".mp3",
+            "audio/ogg": ".oga",
+            "application/pdf": ".pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+            "application/msword": ".doc",
+            "application/vnd.ms-excel": ".xls",
+            "application/vnd.ms-powerpoint": ".ppt",
+            "text/plain": ".txt",
+            "text/markdown": ".md",
+        }
+        if not isinstance(content, bytes) or not content:
+            raise AppError("save_resource requires non-empty bytes", status_code=400)
+        if content_type not in extensions:
+            raise AppError(f"unsupported resource MIME: {content_type}", status_code=415)
+        digest = hashlib.sha256(content).hexdigest()
+        upload_name = f"{digest}{extensions[content_type]}"
+        resource_ref = {
+            "kind": "upload",
+            "activity_type_id": self.activity_type_id,
+            "activity_id": self.activity_id,
+            "upload_name": upload_name,
+        }
+        self._resource_bytes[json.dumps(resource_ref, sort_keys=True)] = content
+        return {
+            "url": f"/preview/{self.activity_type_id}/{self.activity_id}/uploads/{upload_name}",
+            "upload_name": upload_name,
+            "resource_ref": resource_ref,
+            "content_type": content_type,
+            "byte_size": len(content),
+            "sha256": digest,
+        }
+
+    def read_resource(self, resource_ref: dict[str, Any]) -> bytes | None:
+        return self._resource_bytes.get(json.dumps(resource_ref, sort_keys=True))
+
+    def delete_resource(self, *, resource_ref: dict[str, Any], purge_origins: bool = False) -> dict[str, Any]:
+        """Record and enforce an instance-scoped resource cleanup request."""
+        if not isinstance(resource_ref, dict):
+            raise AppError("resource_ref must be an object", status_code=400)
+        if (
+            resource_ref.get("activity_type_id") != self.activity_type_id
+            or resource_ref.get("activity_id") != self.activity_id
+        ):
+            raise AppError("resource_ref must belong to the current instance", status_code=403)
+        kind = resource_ref.get("kind")
+        required = {"upload": "upload_name", "turn_file": "file_id", "artifact": "artifact_id"}.get(kind)
+        if required is None or not resource_ref.get(required):
+            raise AppError("resource_ref is not a deletable file resource", status_code=400)
+        request = {"resource_ref": dict(resource_ref), "purge_origins": bool(purge_origins)}
+        self.deleted_resource_requests.append(request)
+        content = self._resource_bytes.pop(json.dumps(resource_ref, sort_keys=True), None)
         return {
             "ok": True,
             "deleted": True,
             "pending": False,
-            "upload_name": upload_name,
-            "reclaimed_bytes": 0,
-            "origins_deleted": 1 if purge_origin else 0,
+            "resource_ref": dict(resource_ref),
+            "reclaimed_bytes": len(content or b""),
         }
 
 

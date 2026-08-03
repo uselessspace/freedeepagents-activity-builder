@@ -50,6 +50,10 @@ assets when needed, and leave the activity runnable.
   `/preview/<activity_type_id>/<activity_id>/api/dsl.json`.
 - For image activities, verify `manifest.capabilities`, persistent image URLs,
   and card image blocks.
+- When an authenticated shared dev runtime and `fda-dev` are available, use
+  `/activity-dev-cli` to run `doctor`, then capture a real
+  `message --sync-first --new --smoke --pull-logs-on-error` result. This is the
+  runtime E2E evidence; it does not replace the verifier or offline testkit.
 - Acknowledge any warnings with a decision.
 
 ## Ship Verification

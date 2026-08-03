@@ -12,6 +12,7 @@ activities/project-map/
 |-- manifest.json          # includes dsl_builder_module, optional tools_module
 |-- runtime.json           # data_schema_enabled: true (card-system mode is implicit)
 |-- data.schema.json       # typed-KV business data
+|-- preview_actions.json   # optional SPA -> standard Agent turn allowlist
 |-- AGENTS.md              # thin entrypoint
 |-- dsl_builder.py         # build(instance_dir) -> SPA DSL dict
 |-- tools.py               # optional make_tools(ctx)
@@ -50,8 +51,9 @@ activities/project-map/
    the dashboard, graph, canvas, timeline, or form workflow.
 5. Optionally, after a successful activity operation, the backend calls
    `ctx.emit_preview_navigation({...})`; the SPA receives `preview_navigate` on
-   the same DSL stream and focuses the relevant item. This event is transient,
-   user-scoped UX—not durable state or a manifest capability.
+   the same DSL stream and selects the relevant activity view or business
+   object. This event is transient, user-scoped UX—not browser automation,
+   durable state, or a manifest capability.
 6. Packaging produces `.fda.tgz`; `bash <package>/tools/install-activity.sh <pkg>` rebuilds
    `site/dist/` when needed.
 

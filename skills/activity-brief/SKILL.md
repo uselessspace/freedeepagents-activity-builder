@@ -29,8 +29,9 @@ Capture the smallest useful brief:
   or a combination.
 - `frontend_need`: no dedicated frontend, static preview, visual canvas,
   dashboard, game-like interaction, timeline, graph, or other.
-- `agent_navigation`: whether a successful Agent read/action should select,
-  scroll, focus, or switch the user's open Static Preview; otherwise `none`.
+- `agent_navigation`: whether a successful Agent read/action should switch the
+  user's open Static Preview to an activity-private route, view, or business
+  object; otherwise `none`. This is not browser click/scroll automation.
 - `image_need`: none, generate fresh images, or edit user/reference images.
 - `external_capabilities`: APIs, databases, browser/search, files, payments,
   models, or other services.

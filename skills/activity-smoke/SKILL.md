@@ -57,15 +57,22 @@ pre-configured `fda-dev` CLI), drive steps 1-3 in ONE command instead of
 manually starting uvicorn + clicking the client:
 
 ```bash
-fda-dev --folder activities/<id> message --sync-first --new --smoke "<a representative user message>"
+fda-dev --folder activities/<id> doctor
+fda-dev --folder activities/<id> message \
+  --sync-first --new --smoke --pull-logs-on-error \
+  "<a representative user message>"
 # stderr → SMOKE: PASS (card_item=1 turn_completed=1 done=1)  [exit 0]  /  SMOKE: FAIL ... [exit 1]
 ```
 
 `--smoke` runs the turn and asserts **this skill's evidence standard** (real
 `card_item` + `turn_completed` + `done`, fallback rule applied) — verdict to
-stderr, exit non-zero on FAIL, no parser needed. All flags, the
-`--pull-logs-on-error` → `/activity-diagnostician` path, and the server rate
-limit are documented in
+stderr, exit non-zero on FAIL, no parser needed. `doctor` must pass server,
+auth, and local-folder checks before any write. If it reports
+`activityHasPriorSync=false`, stop and ask the user to perform the first upload
+in FDA Dev Client; an agent must not use `--sync-first` yet. On FAIL,
+`--pull-logs-on-error` writes the diagnostic snapshot under `fda-logs/`; pass
+the returned `turn_id` and snapshot to `/activity-diagnostician`. Full
+side-effect rules and output contracts are owned by `/activity-dev-cli` and
 [../../references/dev-agent-cli.md](../../references/dev-agent-cli.md).
 
 ## Parser

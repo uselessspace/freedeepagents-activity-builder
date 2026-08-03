@@ -39,7 +39,8 @@ Required backend/frontend alignment:
   `/api/dsl/stream` when `refresh_model` needs live updates.
 - When `navigation_axis` is `agent-to-preview`, `useDsl()` also exposes the
   latest named `preview_navigate` event as `navigation`; validate its private
-  fields before selecting, scrolling, focusing, or switching views.
+  fields before selecting an activity-private route, view, or business object.
+  Do not encode browser clicks, focus, scrolling, or DOM targets.
 
 Do not make the SPA read activity-private state from `frontend-src/` or generic
 runtime APIs.
@@ -55,7 +56,7 @@ In `activities/<id>/site/`, edit activity-owned files. The final app should:
 - reuse that same EventSource for `preview_navigate`; never open a navigation-only stream
 - avoid dev-server-only `/api/*` plugin routes in production code
 - let end-users upload their own images / voice recordings (and persist them) via `POST api/upload` — see [user-upload.md](../references/user-upload.md)
-- keep `asset_id` / `resource_ref` with business records and reclaim only zero-reference assets after discard/replace/delete — see [asset-lifecycle.md](../references/asset-lifecycle.md)
+- keep the complete `resource_ref` with business records and reclaim only zero-reference resources after discard/replace/delete — see [asset-lifecycle.md](../references/asset-lifecycle.md)
 
 Typical files:
 
@@ -73,8 +74,9 @@ The runtime serves `site/dist/`. Local `npm run dev` uses `src/lib/mock-dsl.ts`
 as a fallback only; production data must come from `dsl_builder.py`.
 
 Agent navigation is also runtime-only in local Vite dev. Unit-test how a sample
-payload changes selection/focus, then verify real delivery through an installed
-preview. Full contract: [preview-navigation.md](../references/preview-navigation.md).
+payload changes semantic route/view/object selection, then verify real delivery
+through an installed preview. Full contract:
+[preview-navigation.md](../references/preview-navigation.md).
 
 ## Step 5: smoke build (local host loop — fast)
 

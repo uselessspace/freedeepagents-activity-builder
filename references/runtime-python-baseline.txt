@@ -10,16 +10,11 @@
 # GENERATED — do not edit by hand. Regenerate after the root
 # requirements.txt changes:
 #   .venv/bin/python .claude/skills/freedeepagents-activity-builder/tools/gen-python-baseline.py
-# python: 3.12.13   distributions in closure: 123   import names: 124
-aiohappyeyeballs
-aiohttp
-aiosignal
+# python: 3.12.13   distributions in closure: 96   import names: 97
 annotated_doc
 annotated_types
 anthropic
 anyio
-attr
-attrs
 boto3
 botocore
 bracex
@@ -30,26 +25,21 @@ charset_normalizer
 click
 cobble
 cryptography
-dashscope
-dataclasses_json
 dateutil
 deepagents
 defusedxml
 distro
 docstring_parser
 dotenv
-dydantic
 et_xmlfile
 fastapi
 filetype
 flatbuffers
-frozenlist
 google
 h11
 httpcore
 httptools
 httpx
-httpx_sse
 idna
 jiter
 jmespath
@@ -57,26 +47,19 @@ jsonpatch
 jsonpointer
 langchain
 langchain_anthropic
-langchain_classic
-langchain_community
 langchain_core
 langchain_google_genai
 langchain_openai
 langchain_protocol
-langchain_text_splitters
 langgraph
 langgraph_sdk
-langmem
 langsmith
 lxml
 magika
 mammoth
 markdownify
 markitdown
-marshmallow
-multidict
 multipart
-mypy_extensions
 numpy
 onnxruntime
 openai
@@ -90,16 +73,11 @@ pdfplumber
 PIL
 pptx
 prometheus_client
-propcache
-psycopg
-psycopg_binary
-psycopg_pool
 pyasn1
 pyasn1_modules
 pycparser
 pydantic
 pydantic_core
-pydantic_settings
 pypdfium2
 pypdfium2_cfg
 pypdfium2_cli
@@ -112,15 +90,12 @@ s3transfer
 six
 sniffio
 soupsieve
-sqlalchemy
 starlette
 tenacity
 tiktoken
 tiktoken_ext
 tqdm
-trustcall
 typing_extensions
-typing_inspect
 typing_inspection
 urllib3
 uuid_utils
@@ -128,10 +103,8 @@ uvicorn
 uvloop
 watchfiles
 wcmatch
-websocket
 websockets
 xlsxwriter
 xxhash
 yaml
-yarl
 zstandard

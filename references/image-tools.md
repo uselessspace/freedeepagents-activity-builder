@@ -6,7 +6,7 @@
 
 - `image_generate`（签名 / 返回 / store）
 - 产物如何展示给用户
-- `ctx.image_generate` / `ctx.image_edit`（handler/SPA 直调 · `source_upload` 改上传图 · 落 uploads 两条路：A `save_upload` 即时 / B 返回字节延迟提交 · `read_upload`）
+- `ctx.image_generate` / `ctx.image_edit`（handler/SPA 直调 · `source_upload` 改上传图 · artifact `resource_ref` 生命周期）
 - `image_edit`（签名 / 返回 / 约束 / source 引用与安全）
 - 实测工时 · Runtime 配置（env vars + 活动级覆盖）
 - Skill 范式 · 计费 `image_bill` · 诊断与修法
@@ -185,54 +185,46 @@ def make_handlers(ctx):
     return {"restore_photo": restore_photo}
 ```
 
-### 把 handler 产出的图落进 uploads —— 两条路，按交互模型选
+### handler 产出的图已经是受管资源
 
-`image_generate` / `image_edit` 的产物是 **artifact**（`file_url` 指向 `/v1/.../artifacts/...`）。要让它成为活动自己的"一张照片"（喂进加照片数据流、和用户上传同命名空间、复用上传生命周期），有两条路，**区别只在字节什么时候落盘**——按交互模型选，平台两条都支持：
-
-| | **A · 即时落盘**（`ctx.save_upload`）| **B · 延迟提交**（返回字节 → 前端确认时 `api/upload`）|
-|---|---|---|
-| 落盘时机 | handler 内、生成即落 | 用户在前端**确认**时才落 |
-| handler 返回给前端 | 一个 uploads URL（可直接拿去 add_memory）| 图片**字节**（如 base64 data URL），**不**落盘 |
-| 预览来源 | 返回的 URL（经服务端取图）| 本地字节（object-URL / data URL），不依赖服务端取图 |
-| 丢弃 / 反复重生成的图 | 也会落盘（孤儿清理归活动）| **永不落盘**（不产孤儿）|
-| 典型场景 | 生成即定稿；agent / 非交互流程；想一步到位 | 交互式编辑器：用户可能反复改或丢弃，确认前都算草稿 |
-
-> 两条路终点相同：同一个 uploads 命名空间、同形 `{url, resource_ref}`（A 经 `ctx.save_upload`，B 经 [user-upload.md](user-upload.md) 的 `api/upload`）；之后都当普通上传引用，显示走 `resolveAssetUrl()`（要同源拉字节加 `?proxy=true`）。
-
-**A — `ctx.save_upload`（即时落盘）**
+`image_generate` / `image_edit` 的产物是 **artifact**。返回值同时包含 `file_url` 和
+`resource_ref(kind="artifact")`，已经进入统一读取、删除、GC 和实例硬删除范围。活动把它纳入照片、草稿
+或页面时，直接保存这个引用，不要为了“可管理”再复制一份 upload：
 
 ```python
-# store="sandbox" 让产物落到本地，便于读回字节
-res = ctx.image_edit(source_upload=name, prompt="…", store="sandbox")
+res = ctx.image_edit(source_upload=name, prompt="…", store="auto")
 art = (res.get("artifacts") or [None])[0]
-from pathlib import Path
-data = (Path(ctx.instance_dir) / art["sandbox_path"].removeprefix("/instance/")).read_bytes()
-saved = ctx.save_upload(content=data, content_type=art["mime_type"])
-# saved["url"] 形如 <preview-root>/uploads/<name>，与 api/upload 返回同形 —— 之后当普通上传引用
+photo = {
+    "image_url": art["file_url"],
+    "resource_ref": art["resource_ref"],
+}
 ```
 
 | helper | 签名 | 返回 |
 |---|---|---|
-| `ctx.save_upload` | `(*, content: bytes, content_type: str)` | `{url, upload_name, resource_ref, content_type, byte_size, sha256}`（进入同一个实例 assets/uploads 生命周期）|
-| `ctx.read_upload` | `(upload_name: str) -> bytes \| None` | 读回一个已登记上传的字节；未登记 / 不可读 → `None` |
-| `ctx.promote_turn_file` | `(file_id: str) -> dict` | 把当前 Agent turn 附件提升成 `{asset_id, upload_name, url, resource_ref, ...}` |
-| `ctx.delete_asset` | `(*, upload_name: str, purge_origin: bool = False) -> dict` | 删除当前实例的零引用资产；失败可返回 `pending: true` 进入 GC |
+| `ctx.save_resource` | `(*, content: bytes, content_type: str)` | 活动/系统新产生字节的 `{url, resource_ref, content_type, byte_size, sha256, ...}` |
+| `ctx.read_resource` | `(resource_ref: dict) -> bytes \| None` | 读当前实例的 upload / turn_file / artifact 字节 |
+| `ctx.get_turn_resource` | `(file_id: str) -> dict` | 直接取得当前 Agent turn 附件引用，不复制字节 |
+| `ctx.delete_resource` | `(*, resource_ref: dict, purge_origins: bool = False) -> dict` | 删除当前实例的零引用资源；失败可返回 `pending: true` 进入 GC |
 
-> 这些 helper 在平台 `storage` 就绪时即可用（不需要额外 capability）；允许的 `content_type` 与 `api/upload` 一致（图像 + wav）。删除前的全实例引用扫描属于活动业务，详见 [asset-lifecycle.md](asset-lifecycle.md)。
+> 这些 helper 在平台 `storage` 就绪时即可用（不需要额外 capability）。`save_resource` / `api/upload`
+> 共享图像、音频、PDF、Office、纯文本与 Markdown MIME 策略。删除前的全实例引用扫描属于活动业务，详见
+> [asset-lifecycle.md](asset-lifecycle.md)。
 
-**B — 返回字节，前端确认时才落盘**
+如果前端需要本地 data URL 预览，可以读 artifact 字节再编码；这不会改变资源身份。用户丢弃预览时，
+活动仍应在确认零引用后删除原 artifact：
 
 ```python
-# handler：生成到 sandbox、读回字节，作为 data URL 返回（不写 uploads）
 import base64
-from pathlib import Path
 res = ctx.image_generate(prompt="…", store="sandbox")
 art = (res.get("artifacts") or [None])[0]
-data = (Path(ctx.instance_dir) / art["sandbox_path"].removeprefix("/instance/")).read_bytes()
-return {"ok": True, "data_url": f"data:{art['mime_type']};base64," + base64.b64encode(data).decode("ascii")}
+data = ctx.read_resource(art["resource_ref"])
+return {
+    "ok": True,
+    "data_url": f"data:{art['mime_type']};base64," + base64.b64encode(data).decode("ascii"),
+    "resource_ref": art["resource_ref"],
+}
 ```
-
-前端拿 `data_url` 本地预览；用户**确认**时把这坨字节（或用户自己选的 `File`）`POST api/upload`（`apiUrl('upload')`）拿到 uploads URL，再写业务数据。纯"用户选图"场景同理——`File` 一直留在页面，确认才上传，handler 都不用碰图字节。
 
 > 落盘只发生在确认那一下，所以编辑期是纯页面草稿：换图 / 重生成 / 放弃都不触碰存储；预览用本地字节，也不经服务端取图。上传命名空间的语义见 [user-upload.md](user-upload.md)。
 
@@ -465,7 +457,7 @@ result = image_generate(prompt="<≤500 chars>", size="1920x1920", store="<auto|
 
 无 image 调用的 turn 完全不出现 `image_bill` 键。
 
-**持久化**:平台把每轮账单写入成本台账(`activity_cost_ledger`):扁平列 `image_count`(张数)用于聚合;完整明细(含 `by_size`)存 `bill_detail`(jsonb)列,不丢尺寸信息。
+**计量归属**：FDA 仅把本轮汇总写入 SSE/trace 并更新 Prometheus 聚合指标；持久化计费与额度控制由 Go 网关负责。
 
 ---
 

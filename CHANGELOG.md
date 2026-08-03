@@ -1,5 +1,96 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.27 (2026-08-03)
+
+修复 Builder 发布前的 manifest 与 Skill 行数门禁：Codex 默认提示收敛为 3 条，
+`activity-builder` 保持薄入口（不超过 120 行）。
+
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.27**。
+
+## 0.4.26 (2026-08-03)
+
+补齐可计费 ASR Gateway 的活动作者契约。
+
+- `asr` capability 通过 `transcribe_audio(source_file_id, context="")` 只读取本轮私有音频附件；支持 WAV、WebM、MP4/M4A、MP3 与 Ogg，禁止 URL 与 sandbox 路径输入。
+- 明确 Go Gateway 固定使用 `fun-asr-flash-2026-06-15`，负责百炼凭据、按真实时长向上取整到秒的计费、余额截断与上游调用；活动与 FDA 均不得配置 Key、费率或余额策略。
+- 记录 Gateway V1 的嵌套 `usage` wire 形状与 FDA 面向 Agent 的归一化返回，避免活动逻辑依赖传输层字段位置。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.26**。
+
+## 0.4.25 (2026-07-30)
+
+把新版 `fda-dev` CLI 正式纳入 Activity Builder 的开发与诊断流程。
+
+- 新增薄入口 `/activity-dev-cli`：覆盖服务器预检、状态比较、同步预演/执行、
+  服务器源码拉取、真实 turn、smoke 判定和日志下载；详细命令集中在
+  `references/dev-agent-cli.md`，避免阶段技能复制并漂移。
+- Builder、Verify、Smoke、Diagnostician、Packager 与最终交付 workflow
+  均补齐 CLI 路由：静态校验后可连接共享 dev runtime，失败日志自动进入诊断，
+  live smoke 可直接成为 Ship Verification 的 E2E 证据。
+- CLI 指南同步 v0.4.5 的 JSON-first 输出、GUI/CLI 共享原生会话、自动 token
+  refresh、`doctor` / `capabilities`、`sync|pull --dry-run`、smoke gate 和
+  失败日志回收。
+- 明确 Coding Agent 安全边界：只读检查优先；不得自主执行
+  `login --replace-session`、`pull --force` 或跨活动目录附件上传；所有写操作
+  先确认目标活动与副作用。
+- CLI 本体新增跨进程双窗口限流（每服务器 12 次/分钟、120 次/小时），并在活动
+  没有历史同步证据时硬拒绝 `sync` / `message`，要求用户先通过 FDA Dev Client
+  完成首次上传。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.25**。
+
+## 0.4.24 (2026-07-28)
+
+明确 Activity Python Runner 的调用期 `ctx` 契约，阻止后台任务持有失效能力。
+
+- 新增 `references/handler-context-lifecycle.md`：区分 Agent tool lease、SPA
+  handler 与 DSL builder 的上下文生命周期；禁止把 `ctx`、`ctx.llm`、bound method
+  或闭包带入返回后仍执行的线程、任务、队列和回调。
+- 给出同步完成和“持久化普通 job 数据、由后续 handler 使用 fresh ctx 恢复”的标准写法；
+  明确 HTTP 200 只表示 handler 正常返回，不代表延迟工作成功。
+- verifier 新增硬门禁，拦截把 `ctx` 带入 `asyncio.create_task`、未 await
+  executor、framework background task、直接 `Thread(...).start()` 和未
+  `join()` 线程的明显写法；不误伤完全不持有 `ctx` 的 Activity 自有后台工作。
+- activity-builder/backend workflow 增加实现前阅读与交付自检；diagnostician 新增
+  `E13 — Activity capability token is invalid or expired`。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.24**。
+
+## 0.4.21 (2026-07-24)
+
+撤回 Agent→浏览器操作通道，保留活动私有的 `preview_navigate` 语义导航信号。
+
+- 移除 `preview_ui_actions.json`、Preview UI Session、语义上下文注册、
+  `ui_get_context` / `ui_list_actions` / `ui_invoke_action` 与对应前端 SDK。
+- 保留 `ctx.emit_preview_navigation(...)` / `preview_navigate`，但只用于切换
+  Activity 私有视图、路由或业务对象；不得编码 DOM target、点击、聚焦、滚动等
+  浏览器操作，也不得承担业务写入。
+- 保留 `preview_actions.json`（SPA→Agent Turn）、Activity `@tool`、Handler、
+  typed-KV 与 DSL SSE；Agent 的业务交互必须调用活动接口，SPA 只投影已提交状态。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.21**。
+
+## 0.4.20 (2026-07-24, withdrawn)
+
+该版本短暂引入的 Preview UI Action、语义页面上下文和浏览器 Session/Turn
+绑定已撤回；不要基于这一版本构建新活动，请直接使用 0.4.21。
+
+## 0.4.19 (2026-07-20)
+
+补齐统一资源在 Static Preview 自定义字段和开发态读取平面的闭环。
+
+- Preview `api/dsl.json`、DSL SSE full-mode 与 handler JSON 统一使用同一个字段级 enrichment；任意直属字段中的精确 FDA canonical URL 都可派生 `resource_refs[field]`，不再维护 `src` / `image` / `photo` 等媒体字段白名单。
+- 新活动的自定义 DSL 明确使用字段级 `resource_refs`；目标字段必须已存在，协议字段受保护。外部 URL、普通文本和不完整路径不推导，历史裸 canonical URL 无需迁移即可动态补 ref。
+- 开发态 `turn_file` / `turn_trace` 通过 namespace-scoped FDA 内部端点读取，Go 继续负责浏览器鉴权、ACL 与当前平面的 public URL 投影。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.19**。
+
+## 0.4.18 (2026-07-20)
+
+把实例文件从“上传资产”扩展为统一资源生命周期。
+
+- `resource_ref` 统一覆盖 SPA/handler 上传、Agent 会话附件、图像生成/编辑、TTS、文档转换和普通文件产物。
+- 新活动使用 `ctx.save_resource` / `ctx.get_turn_resource` / `ctx.read_resource` / `ctx.delete_resource`；会话附件直接保留 `turn_file` 引用，不再为持久化复制第二份 upload。
+- 删除只接受当前实例的完整 `resource_ref`；artifact 与 turn_file 同样采用逻辑墓碑、物理删除、失败 GC 重试和 410 内容语义。
+- SPA 与 handler 保存共享图像、音频、PDF、Office、纯文本和 Markdown MIME 策略；HTML / SVG / JS 仍拒绝。
+- 重写资源生命周期和图像/上传参考；FakeCtx、strict-tool fake 与回归测试同步统一 helper，不保留旧删除入口。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.18**。
+
 ## 0.4.17 (2026-07-19)
 
 补齐实例级媒体资产的完整生命周期契约，与平台新增的统一删除能力同步。
@@ -7,12 +98,12 @@
 - 新增 `references/asset-lifecycle.md`：把 SPA `api/upload`、Agent 会话附件
   `ctx.promote_turn_file(file_id)`、handler `ctx.save_upload` 归一为同一个实例资产模型；规定
   活动先提交业务删除、再扫描完整实例引用、只对零引用资产调用
-  `ctx.delete_asset(upload_name=..., purge_origin=True)`，并说明实例隔离、内容寻址共享引用、
+  当时新增的实例内删除入口，并说明实例隔离、内容寻址共享引用、
   GC pending、来源附件墓碑和用户无感的交互口径。
 - `references/user-upload.md` 同步 `api/upload` 新增的 `asset_id` / `upload_name` 响应字段和
   删除责任；`references/image-tools.md` 补齐 promote/delete helper 签名；Builder 与前端工作流
   在存在上传、替换、丢弃或 Agent 附件入库时路由到新参考。
-- 离线 testkit `FakeCtx` 与 strict-tool fake 新增 `promote_turn_file` / `delete_asset`，活动作者
+- 离线 testkit `FakeCtx` 与 strict-tool fake 新增附件结构化句柄和实例内删除模拟，活动作者
   可在无平台存储后端时测试引用迁移和清理请求；新增对应回归测试。
 - 同步 0.4.16 发布后平台已提交的 `skill_egress_similarity_threshold` runtime schema、verifier
   白名单与参考文档，保证 0.4.17 bundle 和当前 runtime 模型继续逐字段一致。

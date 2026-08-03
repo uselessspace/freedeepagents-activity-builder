@@ -63,9 +63,9 @@
       "type": "array",
       "uniqueItems": true,
       "items": {
-        "enum": ["image_generate", "image_edit", "tts_generate", "read_document"]
+        "enum": ["image_generate", "image_edit", "tts_generate", "read_document", "asr"]
       },
-      "description": "Optional capability gates. Recognized: image_generate / image_edit / tts_generate / read_document; anything else fails the verifier."
+      "description": "Optional capability gates. Recognized: image_generate / image_edit / tts_generate / read_document / asr; anything else fails the verifier."
     },
     "tools_module": {
       "type": "string",
@@ -90,7 +90,7 @@
     "sandbox_env": {
       "type": "array",
       "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
-      "description": "Environment variable NAMES this activity's sandbox needs (e.g. [\"TMDB_API_KEY\"]). The runtime injects only these names into this activity's sandbox, resolving VALUES server-side from secrets/<activity_id>.env or secrets/_shared.env — never from the activity source (secrets must not be synced) and never from arbitrary host env. Declare the need here; the admin sets the value out-of-band."
+      "description": "Activity-scoped secret NAMES (e.g. [\"TMDB_API_KEY\"]). The runtime exposes only these names through ctx.get_secret and this activity's Docker sandbox, resolving VALUES from administrator-managed secrets/<activity_id>.env or secrets/_shared.env, never from arbitrary host env. FDA_ADMIN_* names are reserved platform policy and cannot be declared."
     },
     "enabled": {
       "type": "boolean",

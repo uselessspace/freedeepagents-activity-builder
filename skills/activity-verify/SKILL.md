@@ -114,5 +114,8 @@ activities/<id>`, no platform repo needed) — see
 ## Hand-off
 
 - `ship-ready: yes` → route to `activity-packager`.
+- 如果共享 dev runtime 可用，可在静态检查通过后转
+  `activity-dev-cli` → `activity-smoke`；CLI 真 turn 是动态证据，不属于本
+  skill 的静态门禁。
 - `ship-ready: no` → for each pending fix, route to `activity-diagnostician`
   to map the error to a class, then `activity-builder` to apply the fix.

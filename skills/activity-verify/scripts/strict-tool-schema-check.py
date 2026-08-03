@@ -56,11 +56,32 @@ class _FakeCtx:
     def emit_preview_navigation(self, payload: dict) -> None:
         pass
 
-    def promote_turn_file(self, file_id: str) -> dict:
-        return {"asset_id": "0" * 64 + ".png", "upload_name": "0" * 64 + ".png"}
+    def get_turn_resource(self, file_id: str) -> dict:
+        return {
+            "resource_ref": {
+                "kind": "turn_file",
+                "activity_type_id": self.activity_dir.name,
+                "activity_id": self.instance_dir.name,
+                "turn_id": "offline-turn",
+                "file_id": file_id,
+            }
+        }
 
-    def delete_asset(self, *, upload_name: str, purge_origin: bool = False) -> dict:
-        return {"ok": True, "deleted": True, "pending": False, "upload_name": upload_name}
+    def save_resource(self, *, content: bytes, content_type: str) -> dict:
+        return {
+            "resource_ref": {
+                "kind": "upload",
+                "activity_type_id": self.activity_dir.name,
+                "activity_id": self.instance_dir.name,
+                "upload_name": "0" * 64 + ".bin",
+            }
+        }
+
+    def read_resource(self, resource_ref: dict) -> bytes | None:
+        return None
+
+    def delete_resource(self, *, resource_ref: dict, purge_origins: bool = False) -> dict:
+        return {"ok": True, "deleted": True, "pending": False, "resource_ref": resource_ref}
 
 
 def _find_repo_root(explicit: str | None) -> pathlib.Path:

@@ -2,8 +2,10 @@
 name: freedeepagents-activity-builder
 description: >-
   Use when the user asks to create, scaffold, build, design, or package a new
-  FDA / FreeDeepAgents / DeepAgents intelligent activity, or asks how to add a
-  new activity to the repo. Router entry for the plugin workflow skills.
+  FDA / FreeDeepAgents / DeepAgents intelligent activity; asks how to add one
+  to the repo; or wants to use fda-dev CLI to connect, inspect, sync, pull,
+  smoke-test, or diagnose an activity. Router entry for the plugin workflow
+  skills.
 license: MIT
 ---
 
@@ -21,8 +23,9 @@ license: MIT
 | 记住跨轮的业务数据 | + typed-KV | [examples/card-typed-kv.md](examples/card-typed-kv.md) |
 | 生成 / 编辑图片 | + image 能力 | [examples/card-image.md](examples/card-image.md) |
 | 一块持久、可检视的可视化界面 | → static-preview | [examples/static-preview.md](examples/static-preview.md) |
-| Agent 完成读取/操作后让 SPA 自动定位 | static-preview + navigation | [references/preview-navigation.md](references/preview-navigation.md) |
-| 上传媒体、从会话附件入库，并在零引用时回收 | + asset lifecycle | [references/asset-lifecycle.md](references/asset-lifecycle.md) |
+| Agent 完成读取/操作后让 SPA 切换到语义视图或业务对象 | static-preview + navigation | [references/preview-navigation.md](references/preview-navigation.md) |
+| 上传、会话附件、模型/系统生成文件，并在零引用时回收 | + resource lifecycle | [references/asset-lifecycle.md](references/asset-lifecycle.md) |
+| 重试、待处理任务或可能跨请求执行的工作 | call-scoped ctx + durable job data | [references/handler-context-lifecycle.md](references/handler-context-lifecycle.md) |
 
 > **名词速查**：**card-system** = 用工具发卡片的输出模式（新活动默认）· **typed-KV** = 活动的结构化业务存储（`data.schema.json` + `data_*` 工具）· **static-preview** = 活动自带的一块 React 前端页面（`site/` + `dsl_builder.py`）。
 
@@ -36,9 +39,9 @@ license: MIT
 4. [`/activity-frontend`](skills/activity-frontend/SKILL.md) — **仅** static-preview 或更丰富前端时。
 5. [`/activity-packager`](skills/activity-packager/SKILL.md) — 打包 `.fda.tgz` + 安装 + 冒烟取证。
 
-**按需工具**（独立于上面链路，随时单独调）：[`/activity-verify`](skills/activity-verify/SKILL.md) 静态校验（<5s 不调 LLM）· [`/activity-review`](skills/activity-review/SKILL.md) 语义自审（找逻辑冲突，调在场 LLM）· [`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查。
+**按需工具**（独立于上面链路，随时单独调）：[`/activity-verify`](skills/activity-verify/SKILL.md) 静态校验（<5s 不调 LLM）· [`/activity-review`](skills/activity-review/SKILL.md) 语义自审（找逻辑冲突，调在场 LLM）· [`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查 · [`/activity-dev-cli`](skills/activity-dev-cli/SKILL.md) 共享 dev runtime 的检查、同步、真 turn 与日志。
 
-> **改完想立刻在线上 dev runtime 测一轮?** `fda-dev` CLI 一条命令完成 同步→跑 turn→读事件流→拉日志（`message --sync-first --new --events`）。用法：[`references/dev-agent-cli.md`](references/dev-agent-cli.md)。
+> **改完想立刻在共享 dev runtime 测一轮？** 先用 `/activity-dev-cli` 做 `doctor` / `status`，再用 `message --sync-first --new --smoke --pull-logs-on-error` 完成同步、真 turn、证据判定和失败日志回收。统一规范见 [`references/dev-agent-cli.md`](references/dev-agent-cli.md)。
 
 ## 两条铁律（动手前必读）
 

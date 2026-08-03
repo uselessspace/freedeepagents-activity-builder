@@ -85,10 +85,15 @@ Prerequisites:
 
 > **Working against a SHARED dev runtime instead of a local uvicorn?** If you
 > have a baked `fda-dev` CLI (it ships with the dev-client bundle), skip the
-> uvicorn + curl below and drive the smoke in one command:
-> `fda-dev --folder activities/<id> message --sync-first --new --events "<typical input>"`
-> — it syncs your edit, runs the turn, and streams the same `card_item` /
-> `turn_completed` / `done` events. See [`../references/dev-agent-cli.md`](../references/dev-agent-cli.md).
+> uvicorn + curl below. First run the read-only preflight
+> `fda-dev --folder activities/<id> doctor`, then drive the smoke with
+> `fda-dev --folder activities/<id> message --sync-first --new --smoke --pull-logs-on-error "<typical input>"`.
+> The command syncs the edit, runs a fresh turn, asserts the same non-fallback
+> `card_item` / `turn_completed` / `done` evidence, and downloads diagnostics
+> on failure. If `doctor` reports `activityHasPriorSync=false`, stop and ask the
+> user to complete the first upload in FDA Dev Client; the Coding Agent must not
+> create that first server sync. Use `--events` only when raw NDJSON is needed. See
+> [`../references/dev-agent-cli.md`](../references/dev-agent-cli.md).
 
 ```bash
 # Instances are created implicitly on first turn — pick any kebab-case id.
@@ -140,7 +145,7 @@ Before the Ship Verification block: every "ready" / "完成" claim must sit imme
 Activity <id> is ready to ship.
 ```
 
-No Ship Verification block = no completion claim. The **verifier + testkit smoke lines are always required** (both run with no platform repo); the runtime E2E line is required when you have the runtime, otherwise it's deferred to a maintainer and noted as such — never silently dropped. maintainer 的 runtime smoke / fda-logs 回传可按需重复——交接不是一次性的；若开发者已拿到 `fda-dev` token，用共享 dev runtime 自己复跑即是等价替代（见 [../references/dev-agent-cli.md](../references/dev-agent-cli.md)）。
+No Ship Verification block = no completion claim. The **verifier + testkit smoke lines are always required** (both run with no platform repo); the runtime E2E line is required when you have the runtime, otherwise it's deferred to a maintainer and noted as such — never silently dropped. maintainer 的 runtime smoke / fda-logs 回传可按需重复——交接不是一次性的；若开发者已经通过 FDA Dev Client 登录，`fda-dev` 会复用同一原生会话，可在共享 dev runtime 自助复跑（见 [../references/dev-agent-cli.md](../references/dev-agent-cli.md)）。
 
 ## Done
 

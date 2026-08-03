@@ -1,49 +1,69 @@
-# Reference — 实例资产生命周期（上传、引用与删除）
+# Reference — 实例资源生命周期（创建、引用、读取与删除）
 
-> 平台级能力，不绑定活动。适用于 Static Preview 上传、Agent 会话附件，以及 handler 生成后写入 uploads 的图像/音频。
+> 平台级能力，不绑定活动。这里的“资源”是实例内所有持久化文件，不只图片和上传文件。
 
-## 一个模型，两条入口
+## 一个身份模型，多种来源
 
-终端用户可能从两个入口提供媒体，但活动最终都应把它们归一化为当前实例的上传资产：
+所有来源都返回并持久化 `resource_ref`；来源不同只会得到不同 `kind`，读取和删除使用同一组 helper。
 
-| 来源 | 归一化方式 | 结果 |
+| 来源 | 创建/取得方式 | `resource_ref.kind` |
 |---|---|---|
-| SPA / 草稿箱上传 | `POST api/upload` | `{asset_id, upload_name, url, resource_ref, ...}` |
-| Agent 会话附件 | `ctx.promote_turn_file(file_id)` | 同形的结构化资产句柄 |
-| handler 生成或编辑后的字节 | `ctx.save_upload(content=..., content_type=...)` | uploads 资产句柄 |
+| Static Preview 用户上传 | `POST api/upload` | `upload` |
+| handler / 系统生成的原始字节 | `ctx.save_resource(content=..., content_type=...)` | `upload` |
+| Agent 会话附件 | `ctx.get_turn_resource(file_id)` | `turn_file` |
+| 模型生成图、图片编辑、TTS | 工具返回的 `artifact.resource_ref` | `artifact` |
+| 文档转换、截断 Markdown、普通文件产物 | artifact 返回值或历史记录里的 `resource_ref` | `artifact` |
 
-`asset_id` 当前等于内容寻址的 `upload_name`（`<sha256>.<ext>`），但业务代码应把它当 opaque ID，
-不要自己拼 OSS key、本地路径或跨实例 URL。新活动优先保存 `resource_ref` + `asset_id`；`url` 只作
-显示/旧客户端兜底。
+新活动的业务数据只保存完整 `resource_ref`。URL 是展示兜底，不是资源身份；不要拼 OSS key、磁盘路径，
+也不要只保存 `upload_name` / `artifact_id`。
 
 ```python
-# Agent turn 的 files[] 里拿 file_id；不要只保存会话临时 URL。
-asset = ctx.promote_turn_file(file_id)
+# 对话附件直接复用原文件，不复制第二份 upload。
+resource = ctx.get_turn_resource(file_id)
 record = {
-    "asset_id": asset["asset_id"],
-    "resource_ref": asset["resource_ref"],
-    "image_url": asset["url"],
+    "resource_ref": resource["resource_ref"],
+    "file_url": resource["url"],
+    "content_type": resource["content_type"],
+}
+
+# 活动或系统自己产生的字节。
+saved = ctx.save_resource(content=document_bytes, content_type="application/pdf")
+record = {"resource_ref": saved["resource_ref"], "file_url": saved["url"]}
+```
+
+图像生成、编辑、TTS 和文档转换已经注册为 artifact，不需要再复制到 uploads 才能管理。直接保存工具返回的
+`resource_ref`；只有业务确实产生了一组新字节时才调用 `save_resource`。
+
+## Preview 字段投影
+
+新活动把资源身份保存在业务数据里，并在 DSL 或 handler 响应中用字段级 `resource_refs` 指明 URL 要写回哪里：
+
+```python
+photo = {
+    "src": record.get("url", ""),
+    "alt": record.get("title", ""),
+    "resource_refs": {"src": record["resource_ref"]},
 }
 ```
 
-旧的 `ctx.publish_uploaded_file(file_id)` 仍返回 URL，但没有结构化资产句柄；需要完整生命周期的新活动
-应使用 `ctx.promote_turn_file(file_id)`。
+字段名开放：`src`、`photo`、`cover_url` 等活动私有直属字段都可以；key 不是 JSONPath，目标字段必须已存在，且不能是协议字段 `resource_ref` / `resource_refs`。Go 只在当前访问平面鉴权后把这些字段投影成 public URL，SPA 不区分资源来自 upload、turn_file 还是 artifact。
 
-## 删除能力
+为了兼容历史数据，FDA 的 Preview 出站 walker 也会扫描任意直属字符串字段：值完整匹配 `/v1/...` 或 `/preview/.../uploads/...` canonical 资源 URL 时，自动补出对应 `resource_refs[field]`。这个规则同时覆盖 bootstrap DSL、full-mode DSL SSE 和 handler JSON；不匹配的外部 URL、普通文本保持原样。若数据只存了 ref 而没有 canonical URL，必须像上例一样显式写字段映射。
 
-handler / activity tool 可调用：
+## 统一读取与删除
 
 ```python
-result = ctx.delete_asset(
-    upload_name=asset_id,
-    purge_origin=True,
-)
+content = ctx.read_resource(resource_ref)
+result = ctx.delete_resource(resource_ref=resource_ref, purge_origins=True)
 ```
+
+`read_resource(ref)` 对当前实例的 `upload`、`turn_file`、`artifact` 返回字节；不可读时返回 `None`。
+`delete_resource` 只接受完整引用，并由 ctx 强制绑定当前 `activity_type_id + activity_id`：
 
 | 参数 | 含义 |
 |---|---|
-| `upload_name` | 当前实例的内容寻址资产名；不要传 URL、OSS key 或路径 |
-| `purge_origin` | 若资产由 Agent 会话附件提升而来，同时清除来源附件字节；历史仍保留文件名和“内容已删除”墓碑 |
+| `resource_ref` | 当前实例的完整资源引用 |
+| `purge_origins` | 仅对曾从 turn 文件复制出的 upload 有意义；同时回收其冗余来源。直接使用 `turn_file` 的新活动通常不需要它 |
 
 典型返回：
 
@@ -52,57 +72,48 @@ result = ctx.delete_asset(
   "ok": true,
   "deleted": true,
   "pending": false,
-  "upload_name": "<sha256>.png",
-  "reclaimed_bytes": 12345,
-  "origins_deleted": 1
+  "resource_ref": {"kind": "artifact", "activity_type_id": "…", "activity_id": "…", "artifact_id": "…"},
+  "reclaimed_bytes": 12345
 }
 ```
 
-对象存储暂时失败时通常返回 `pending: true`，平台保留 GC 墓碑并在后续删除/重试时继续处理。活动可把
-它显示为“业务记录已删除，文件清理中”，不要因此恢复已经删除的草稿或业务对象。
+逻辑墓碑先于物理回收提交。对象存储暂时失败时返回 `pending: true`，平台保留删除坐标并由统一 GC 重试；
+历史元数据仍可展示，但内容读取返回 410。活动可显示“业务记录已删除，文件清理中”，不能因此恢复业务对象。
 
-## 活动必须负责引用判断
+## 活动负责零引用判断
 
-平台只保证“调用者只能删除当前 `activity_type_id + activity_id` 实例登记的资产”，不理解活动私有
-数据，也不会替活动判断一张图是否仍被草稿、记忆、页面或展览引用。**零引用判断属于活动业务。**
+平台不解释活动私有数据，也不知道一个资源是否仍被草稿、记忆、页面或展览引用。零引用判断必须在活动层完成：
 
-正确顺序：
-
-1. 在业务变更前收集可能失去引用的 `asset_id`。
-2. 原子提交业务数据变更（删除草稿、替换图片、删除记录等）。
-3. 扫描该实例所有仍存活的业务对象，汇总当前引用集合。
-4. 仅对候选集合中不再出现的资产调用 `ctx.delete_asset(...)`。
-5. 删除异常或 `pending: true` 只记为清理待办，不能回滚第 2 步。
+1. 业务变更前收集可能失去引用的完整 `resource_ref`。
+2. 原子提交删除、替换或移动引用。
+3. 扫描该实例所有仍存活的业务对象，建立当前引用集合。
+4. 只对已不在集合中的候选调用 `ctx.delete_resource(...)`。
+5. 删除异常或 `pending: true` 只记清理待办，不回滚业务提交。
 
 ```python
-before_candidates = upload_names(removed_or_replaced_object)
-ctx.set_data(new_data)  # 先完成业务提交
+def identity(ref: dict) -> str:
+    return json.dumps(ref, ensure_ascii=False, sort_keys=True)
 
-live_refs = upload_names(ctx.get_data() or {})
+before = {identity(ref): ref for ref in resource_refs(removed_or_replaced)}
+ctx.set_data(new_data)
+live = {identity(ref) for ref in resource_refs(ctx.get_data() or {})}
+
 cleanup = []
-for name in sorted(before_candidates - live_refs):
+for key in sorted(before.keys() - live):
     try:
-        cleanup.append(ctx.delete_asset(upload_name=name, purge_origin=True))
+        cleanup.append(ctx.delete_resource(resource_ref=before[key]))
     except Exception as exc:
-        cleanup.append({"upload_name": name, "deleted": False, "pending": True, "error": str(exc)})
+        cleanup.append({"resource_ref": before[key], "deleted": False, "pending": True, "error": str(exc)})
 ```
 
-内容寻址会让相同字节复用同一个 `asset_id`，所以不能按“删除了一条记录”直接删文件；必须扫描完整
-实例引用。把草稿整理成正式记录只是**引用迁移**，不是零引用，也不应删除资产。
+同一引用可能出现在多个业务对象中，所以不能因为删除一条记录就立即删文件。草稿转正式记录通常只是引用迁移。
 
-## 安全边界
+## 安全与管理边界
 
-- `ctx.delete_asset` 已绑定当前活动类型和实例；活动不能指定别的实例。
-- 平台从当前实例注册表解析真实对象存储 key，并校验 canonical key；不接受任意 OSS key/path。
-- 重复删除是幂等的；已删除或不存在的当前实例资产不会越界影响其他实例。
-- 实例硬删除仍会清除活跃资产和 GC 墓碑中的待删对象。
-- `delete_asset` 不是用户授权模型。若活动有多人协作，handler 仍须用 `ctx.user_id` 执行业务权限校验。
+- ctx 已绑定当前实例；跨实例的 `resource_ref` 返回 403。
+- 平台从登记记录解析并校验真实 OSS key / 本地路径，不接受调用方提供物理位置。
+- `upload`、`turn_file`、`artifact` 都保留可枚举元数据和删除墓碑；实例硬删除会覆盖活跃资源与待重试资源。
+- 重复删除幂等；`turn_trace` 不是活动可删除的文件资源。
+- 删除能力不代替业务授权。多人活动仍须先用 `ctx.user_id` 校验谁有权删除业务对象。
 
-## 交互建议
-
-对终端用户保持一个“图片/录音”概念即可，不要暴露 SPA 上传和 Agent 会话提升这两条内部通道。
-删除草稿时可以返回并展示：
-
-- `assets_reclaimed`：本次确认回收的资产数；
-- `reclaimed_bytes`：确认回收的字节数；
-- `cleanup_pending`：仍在 GC 重试的资产数。
+对终端用户只展示“文件/图片/录音”等业务概念，不需要暴露 SPA、Agent 或 artifact 的内部来源差异。

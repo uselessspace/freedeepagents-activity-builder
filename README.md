@@ -25,8 +25,9 @@ FreeDeepAgents repo with `bash <package>/tools/install-activity.sh`.
   activity-owned tools.
 - Builds Static Preview activities with `site/`, `dsl_builder.py`, optional
   `tools.py`, and `site/dist/`.
-- Wires optional Agent-driven SPA selection, scroll, focus, or view switching
-  through the user-scoped `preview_navigate` event on the existing DSL stream.
+- Wires optional Agent-driven semantic route, view, or business-object
+  selection through the user-scoped `preview_navigate` event on the existing
+  DSL stream, without browser click/scroll automation.
 - Packages the final activity as `.fda.tgz`.
 - Verifies install and runtime smoke behavior before calling the activity ready.
 
@@ -47,7 +48,8 @@ packages/freedeepagents-activity-builder/
 |   |-- activity-verify/SKILL.md     # static verify (verifier + strict-tool-schema)
 |   |-- activity-review/SKILL.md     # semantic self-audit (logic conflicts; in-session LLM)
 |   |-- activity-smoke/SKILL.md      # runtime SSE smoke test
-|   `-- activity-diagnostician/SKILL.md  # error-class triage
+|   |-- activity-diagnostician/SKILL.md  # error-class triage
+|   `-- activity-dev-cli/SKILL.md    # safe shared-runtime CLI workflow
 |-- workflows/                       # deeper build procedures
 |-- policies/                        # runtime and output guardrails
 |-- references/                      # lookup tables and examples
@@ -76,9 +78,11 @@ the same stages:
 5. `activity-packager` creates `.fda.tgz`, runs `bash <package>/tools/install-activity.sh`,
    and captures smoke-test evidence.
 
-Three standalone utility skills support any stage: `activity-verify` (static
+Four standalone utility skills support any stage: `activity-verify` (static
 verifier + strict-tool-schema check), `activity-smoke` (runtime SSE smoke
-test), and `activity-diagnostician` (maps errors to fix classes). The
+test), `activity-diagnostician` (maps errors to fix classes), and
+`activity-dev-cli` (safe `doctor` / `status` / sync / pull / real-turn / logs
+workflows against a shared dev runtime). The
 `testkit/` directory ships the offline harness behind the always-required
 testkit smoke line (see `testkit/README.md`).
 

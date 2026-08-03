@@ -436,6 +436,49 @@ succeeds.
 
 ---
 
+## E13 — Activity capability token is invalid or expired
+
+**Signature:**
+
+```text
+Activity capability token is invalid or expired
+```
+
+The SPA's retry, resume, and `dsl.json` requests may all return HTTP 200 while
+the DSL still renders this failure.
+
+**Root cause:** an Activity tool/handler returned after starting detached work,
+and that later thread/task/callback retained the old `ctx`, `ctx.llm`, or a
+bound `ctx.*` method. FDA revokes the call-scoped capability token when the
+tool lease or handler call ends. HTTP 200 means the handler returned normally;
+it does not prove that fire-and-forget work completed.
+
+**User-visible symptom:** a task first enters pending/loading, then shows a
+retry card containing the raw token error. Refreshing or calling a
+`resume_pending_jobs` endpoint may keep returning 200 while the stored failure
+state remains.
+
+**Fix location:**
+
+- Activity `tools.py`, `handlers.py`, or helper modules that create pending
+  work.
+- Remove retained `ctx` objects and detached capability calls.
+- Persist plain job inputs/checkpoints only. Make the later resume handler use
+  the fresh `ctx` passed to that invocation and complete its `ctx`-dependent
+  unit before returning.
+- Authoritative reference:
+  `references/handler-context-lifecycle.md`.
+
+Do not fix this by making capability tokens permanent or by extending their
+lifetime beyond the call; that weakens the Activity isolation boundary.
+
+**Validation:** run `activity-verify`; it must report no detached-work error.
+Then retry the real flow and confirm the task reaches its completed state
+instead of persisting the token string. Treat HTTP 200 as transport evidence
+only; validate the returned body and final DSL state.
+
+---
+
 ## How to add a new class
 
 1. Reproduce the failure once and copy the trace signature (the most stable

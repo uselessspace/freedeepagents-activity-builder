@@ -92,9 +92,10 @@ Subset of `{"text", "file", "image"}`. The runtime uses this to size the upload 
 "capabilities": ["image_generate"]                     // generate-only
 "capabilities": ["image_generate", "image_edit"]       // generate + edit
 "capabilities": ["image_generate", "tts_generate"]     // images + clone-voice narration
+"capabilities": ["asr"]                                  // transcribe this-turn audio uploads
 ```
 
-Recognized values: `image_generate` / `image_edit` / `tts_generate` / `read_document` — the whitelist authority is [../policies/capabilities.md](../policies/capabilities.md) (any other value → verifier ERROR). Per-capability docs: [image-tools.md](image-tools.md) / [tts-tools.md](tts-tools.md) / [document-tools.md](document-tools.md).
+Recognized values: `image_generate` / `image_edit` / `tts_generate` / `read_document` / `asr` — the whitelist authority is [../policies/capabilities.md](../policies/capabilities.md) (any other value → verifier ERROR). Per-capability docs: [image-tools.md](image-tools.md) / [tts-tools.md](tts-tools.md) / [document-tools.md](document-tools.md) / [asr-tools.md](asr-tools.md).
 
 ## tools_module (optional)
 
@@ -134,14 +135,15 @@ Optional second `<provider>:<model_id>` override used by activities that run a h
 "sandbox_env": ["TMDB_API_KEY"]
 ```
 
-Declares the environment variable **NAMES** this activity's sandbox needs — e.g. an external API key a Skill's `curl` reads (`curl "...?api_key=$TMDB_API_KEY"`). The runtime injects **only these names** into **this activity's** sandbox.
+Declares activity-scoped secret **NAMES**. The runtime exposes **only these names** through `ctx.get_secret(name)` for in-process tools/handlers and injects them into **this activity's** Docker sandbox.
 
-- **Names only — never values.** The activity folder is synced via `/dev/sync`, git-tracked, and shared; a real key here would leak (and `/dev/sync` atomically replaces the activity dir, so a secret file inside it gets wiped anyway). Put the **value** server-side in `secrets/<activity_type_id>.env` (gitignored, never packed). See the repo's `secrets/README.md`.
+- **Names only — never values.** Put values in administrator-managed `secrets/<activity_type_id>.env`; `/dev/sync` never packages that directory. The current private-repository deployment may Git/CI-sync those files, while `.dockerignore` keeps them out of image build contexts. See `secrets/README.md`.
 - **Least privilege.** Each name resolves *only* from this activity's own `secrets/<activity_type_id>.env` (and `secrets/_shared.env`), **never from arbitrary host env** — so declaring `DEEPSEEK_API_KEY` (or any platform secret) gets you nothing unless an admin explicitly placed that value in your activity's secret file.
 - Names must match `^[A-Z][A-Z0-9_]*$`.
+- Names beginning with `FDA_ADMIN_` are platform policy and cannot be declared or injected.
 - This is the per-activity successor to the global `ACTIVITY_SANDBOX_ENV_ALLOWLIST` (which still works but is shared by every activity). Prefer declaring per activity so the requirement travels with the activity and hot-syncs.
 
-Setup is two steps: (1) declare the name here; (2) on the server, drop the value into `secrets/<activity_type_id>.env`. A name with no value on the server is simply not injected.
+Setup is two steps: (1) declare the name here; (2) let an administrator set the value in `secrets/<activity_type_id>.env`. A missing value is simply unavailable.
 
 ## catalog fields (optional): enabled / sort_order
 

@@ -35,6 +35,13 @@ Three accepted; pick the one with the most signal:
    each class lists a "user-visible symptom" hint. Match symptom → class →
    request a `turn_id` to confirm.
 
+When the turn ran on a reachable shared dev runtime but no local trace is
+available, route through `/activity-dev-cli`: run `doctor`, then
+`fda-dev --folder <activity-folder> logs`, and inspect the downloaded
+`fda-logs/` snapshot. `logs` is read-only on the server but writes a local
+diagnostic snapshot. Do not guess a trace from the visible UI alone; see
+[../../references/dev-agent-cli.md](../../references/dev-agent-cli.md).
+
 ## Output
 
 A short diagnosis with three sections:
@@ -78,6 +85,9 @@ A "no class matched" outcome is a real outcome — better than guessing.
 
 - After proposing a fix, route the user to `activity-verify` (static check) and
   then `activity-smoke` (real turn) before declaring the bug fixed.
+- When using a shared dev runtime, `/activity-dev-cli` supplies the
+  `doctor` / `logs` / `message --smoke` execution path; this skill still owns
+  diagnosis from the resulting trace evidence.
 - For repeated failures on the same turn, the fix often belongs in
   [`policies/llm-output-discipline.md`](../../policies/llm-output-discipline.md);
   cite it directly in the diagnosis.

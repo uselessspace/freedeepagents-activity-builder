@@ -54,12 +54,21 @@ Then create:
 - `activities/<id>/dsl_builder.py` exporting `build(instance_dir) -> dict` — pure function reading `data.json` and returning the DSL shape your SPA consumes.
 - `activities/<id>/site/` in [04-derive-frontend.md](04-derive-frontend.md).
 
+Before adding retries, queues, timers, threads, tasks, or executor jobs, read
+[../references/handler-context-lifecycle.md](../references/handler-context-lifecycle.md).
+`ctx` is valid only for the current tool lease or handler call. Finish every
+`ctx`-dependent operation before returning. Deferred jobs may persist plain
+job data, but a later `resume_pending_jobs` handler must use its fresh `ctx`;
+never retain an old `ctx`, `ctx.llm`, bound method, or closure.
+
 If `navigation_axis` is `agent-to-preview`, a successful tool or handler may
 call `ctx.emit_preview_navigation({...})` after it has finished the read/write
-that justifies the UI movement. The payload is activity-private and JSON-safe;
-the runtime adds `event_id` / `turn_id` and sends `preview_navigate` on the
-existing DSL stream. It is best-effort UX, so do not fail the business action or
-call `notify_dsl_update()` merely because navigation was emitted. Read
+that justifies the semantic route/view/object selection. The payload is
+activity-private and JSON-safe; it must not encode browser clicks, focus,
+scrolling, selectors, or DOM targets. The runtime adds `event_id` / `turn_id`
+and sends `preview_navigate` on the existing DSL stream. It is best-effort UX,
+so do not fail the business action or call `notify_dsl_update()` merely because
+navigation was emitted. Read
 [../references/preview-navigation.md](../references/preview-navigation.md)
 before implementing it.
 
@@ -86,10 +95,12 @@ or a runtime capability before adding a dependency. Full rules:
 - [ ] Every activity @tool in `tools.py` passes the DeepSeek strict-mode schema self-check (no bare `list`/`dict` params; parameterized containers like `list[str]` / `list[dict]` are legal, JSON-encoded `str` remains the most cross-model-compatible fallback for complex/optional-field payloads — see [../policies/llm-output-discipline.md](../policies/llm-output-discipline.md) §8d; run `skills/activity-verify/scripts/strict-tool-schema-check.py` to confirm)
 - [ ] data.schema.json exists with `type: object`, a top-level `default` block, `properties` covering every business field, and `x-auto-inject` set per key (true for fields the LLM should see in the prompt; false for secrets / large sets)
 - [ ] Every third-party Python package imported by `tools.py` / `dsl_builder.py` / `handlers.py` (or their helpers) is declared, pinned with `==`, in `activities/<id>/requirements.txt`; stdlib / platform-baseline / `app.*` are NOT declared ([reference](../references/python-dependencies.md))
+- [ ] No tool/handler starts detached work that can outlive the call; every thread/task/future is joined or awaited, pending jobs persist plain data only, and every resume call uses its fresh `ctx` ([reference](../references/handler-context-lifecycle.md))
 - [ ] If Static Preview: manifest has `dsl_builder_module` + `tools_module`; both `tools.py` (exports `make_tools(ctx)`) and `dsl_builder.py` (exports `build(instance_dir)`) exist; `site/` exists
 - [ ] If `navigation_axis: agent-to-preview`: backend emits only after success;
-      payload is JSON-safe and contains no user-routing field; SPA handles the
-      event on the existing DSL stream; missing/duplicate delivery is harmless
+      payload is JSON-safe, contains no user-routing field or low-level browser
+      operation; SPA handles the event on the existing DSL stream;
+      missing/duplicate delivery is harmless
 - [ ] Activity @tools (in `tools.py`) wrap typed-KV writes with user-semantic names; tool names do not collide with built-ins
 - [ ] AGENTS.md ≤80 lines; routes to `skills/<id>-host/SKILL.md`
 - [ ] host SKILL.md ≤120 lines; supporting files under `workflows/`/`policies/`/`references/`
