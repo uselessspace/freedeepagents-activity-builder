@@ -18,7 +18,7 @@
 
 `image_generate` / `image_edit` 共享 wanxiang provider 实例与同一 `IMAGE_GEN_MAX_PER_TURN` per-turn 计数器（详见 [`references/image-tools.md`](../references/image-tools.md)）。`tts_generate` 把文本合成语音、结果上传 object storage、返回播放 URL（配 `audio` 卡片块）；后端是可插拔 provider（`TTS_PROVIDER`：`qwen` 预置音色，默认 / `cosyvoice` 录音克隆），详见 [`references/tts-tools.md`](../references/tts-tools.md)。`read_document` 把上传的 PDF / Word / PowerPoint / Excel / HTML / CSV / JSON 转成 Markdown 供 agent 阅读（与图片源一致的 SSRF / 路径穿越 / 字节上限防护），详见 [`references/document-tools.md`](../references/document-tools.md)。
 
-`asr` 把本轮私有音频附件转成文本；FDA 只把受限字节发给 Go gateway，由 gateway 调固定的 Fun-ASR-Flash 模型、实施秒级计费和余额校验。详见 [`references/asr-tools.md`](../references/asr-tools.md)。
+`asr` 把本轮私有音频附件转成文本；活动只需声明 capability 并调用 `transcribe_audio`。详见 [`references/asr-tools.md`](../references/asr-tools.md)。
 
 > **不是 capability 的能力**：活动代码在工具 / handler 内部做 side-channel LLM 调用（一次性文本生成、JSON 结构化、`vision` 看图）走 `ctx.llm`——它由 runtime 无条件注入、无需 manifest 声明，详见 [`references/ctx-llm.md`](../references/ctx-llm.md)。"看图分析"不要找 capability，也绝不要直连 provider（verifier 硬检查会拦）。
 
@@ -72,7 +72,7 @@ manifest.json：
 | `image_generate` / `image_edit` | [`references/image-tools.md`](../references/image-tools.md) — `IMAGE_GEN_*` + `IMAGE_EDIT_*` env vars |
 | `tts_generate` | [`references/tts-tools.md`](../references/tts-tools.md) — `TTS_PROVIDER` / `QWEN_TTS_MODEL` / `QWEN_TTS_VOICE` / `TTS_ENDPOINT` / `TTS_TIMEOUT` / `TTS_MAX_PER_TURN` / `TTS_DEFAULT_STORE` / `TTS_MAX_TEXT_CHARS` / `TTS_ENABLED` |
 | `read_document` | [`references/document-tools.md`](../references/document-tools.md) — `DOC_INGEST_MAX_SOURCE_BYTES` / `DOC_INGEST_MAX_OUTPUT_CHARS` / `DOC_INGEST_MAX_PER_TURN` / `DOC_INGEST_URL_ALLOWLIST` env vars |
-| `asr` | [`references/asr-tools.md`](../references/asr-tools.md) — `ASR_ENABLED` / `ASR_TIMEOUT` / `ASR_MAX_PER_TURN` / `ASR_MAX_SOURCE_BYTES` / `ASR_MAX_CONTEXT_CHARS` |
+| `asr` | [`references/asr-tools.md`](../references/asr-tools.md) |
 
 ---
 

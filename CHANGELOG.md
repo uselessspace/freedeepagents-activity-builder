@@ -1,5 +1,14 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.28 (2026-08-03)
+
+精简 ASR 活动作者文档为纯使用说明：声明 `asr` capability，调用
+`transcribe_audio`，并仅处理转写文本和普通错误。
+
+- 删除 provider、传输层与计费实现细节，活动作者无需配置 ASR 参数。
+- 校验器安全跳过残留的 Python 字节码缓存，避免合法活动同步时出现 UTF-8 解码错误。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.28**。
+
 ## 0.4.27 (2026-08-03)
 
 修复 Builder 发布前的 manifest 与 Skill 行数门禁：Codex 默认提示收敛为 3 条，
@@ -9,11 +18,10 @@
 
 ## 0.4.26 (2026-08-03)
 
-补齐可计费 ASR Gateway 的活动作者契约。
+补齐 ASR 的活动作者使用契约。
 
 - `asr` capability 通过 `transcribe_audio(source_file_id, context="")` 只读取本轮私有音频附件；支持 WAV、WebM、MP4/M4A、MP3 与 Ogg，禁止 URL 与 sandbox 路径输入。
-- 明确 Go Gateway 固定使用 `fun-asr-flash-2026-06-15`，负责百炼凭据、按真实时长向上取整到秒的计费、余额截断与上游调用；活动与 FDA 均不得配置 Key、费率或余额策略。
-- 记录 Gateway V1 的嵌套 `usage` wire 形状与 FDA 面向 Agent 的归一化返回，避免活动逻辑依赖传输层字段位置。
+- 说明活动只声明 capability、调用工具并处理规范化结果；不依赖传输层实现。
 - Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.26**。
 
 ## 0.4.25 (2026-07-30)

@@ -838,7 +838,10 @@ def _contains_activity_reference(text: str, activity_id: str) -> bool:
 def _read(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8")
-    except OSError:
+    except (OSError, UnicodeDecodeError):
+        # Sync directories can retain Python bytecode from an earlier local
+        # run. Static source checks must ignore those binary cache files rather
+        # than turning an otherwise valid activity upload into a server error.
         return None
 
 
