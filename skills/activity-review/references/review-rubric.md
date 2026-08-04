@@ -13,6 +13,7 @@
 - 「每轮必发 X 卡」 vs 某分支「某情况下不发 X 卡」。
 - 「保持简短」 vs 「逐条详尽展开」。
 - 同一工具被要求以矛盾方式调用。
+- AGENTS、host skill 与 runtime/SPA 三处同时拥有同一种意图的 fast path，且触发条件或副作用不同。
 **锚**：纯逻辑矛盾，无 policy；这是 review 的主战场。
 
 ## 2. 卡片编排逻辑
@@ -24,7 +25,7 @@
 **锚**：`policies/llm-output-discipline.md`（§1 assignment_id）+ `policies/output-protocol.md`。
 
 ## 3. 工具叙事一致
-**查什么**：prose 对某工具「何时调 / 怎么调」的描述，与它在 `tools.py` 的真实签名/docstring 是否矛盾；有无工具存在却没有任何指令给 agent 调它的理由。
+**查什么**：prose 对某工具「何时调 / 怎么调」的描述，与它在 `tools.py` 的真实签名/docstring 是否矛盾；有无工具存在却没有任何指令给 agent 调它的理由；handler 与 Agent tool 共用业务操作时是否共用同一实现和校验。
 **注意**：**不复判** verify 已确定性查过的「引用了不存在的工具」（doc↔tools.py 名字漂移）——那是 `/activity-verify` 的活。本维度只看"存在但叙事自相矛盾/无理由"。
 **锚**：`policies/multi-store-tool-design.md`、`policies/tool-error-protocol.md`。
 
@@ -32,11 +33,17 @@
 **查什么**：活动**显式声明要做的事**，跟它实际拥有的工具/卡片/输入模式是否对得上。**只按显式承诺判，不按口吻/题材判。**
 **典型冲突**：
 - `manifest.description` 声明"读上传 PDF"，但 `manifest.input_modes` 无 `file`、`manifest.capabilities` 无 `read_document` → 兑现不了（CONFLICT）。
+- SPA 承诺录后直接转写，却未声明 `asr`，或把 `api/upload` 返回 URL 当作 `source_file_id`。
+- Agent 承诺处理 SPA 录音，却没有 `api/upload` → 同实例 `attachment_refs` → 本轮 `file_0` 的链路。
+- Prompt 要求 handler 调 `read_document` / `transcribe_audio`，但这两项没有 ctx helper；或把 `ctx.llm`、Preview Agent Turn、upload、navigation 写进 `manifest.capabilities`。
+- Prompt 假设声明 capability 就保证 provider 可用，没有 unavailable 降级路径。
 **不报**：活动没声明读文件，缺文档能力不算问题；自称"严谨"而提示词口语化属设计自由。
+**锚**：`policies/capabilities.md` + 对应 capability reference + `references/preview-agent-turns.md`。
 
 ## 5. 输出纪律落位
 **查什么**：host SKILL.md 是否把 `policies/llm-output-discipline.md` 要求的护栏写进去——字面 `assignment_id`（非拼接）、不让 LLM 直接拼最终 JSON 输出、artifact 的 `url`/`path` 规则、图片 artifact 由 runtime 自动 surface（不手动 artifact_emit）。
 **缺护栏**（该写的护栏没写）= 易跑偏 → SMELL。**注意边界**：若 host skill **主动指示**了某个破坏契约的反模式（如主动让 assignment_id 递增），那是维度 2 的 CONFLICT，不在这里降级成 SMELL；本维度只管"该写的护栏没写"。
+同时检查代码示例是否把 Markdown code fence 误称为 JSON 免转义通道，或要求持久化 `sandbox_path` / `storage_key` 等部署位置而不是 `resource_ref` / `artifact_id`。
 **锚**：`policies/llm-output-discipline.md` + `policies/agents-md-thin.md` + `policies/output-protocol.md`。
 
 ## 6. 意图达成

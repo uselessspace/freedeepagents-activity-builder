@@ -80,9 +80,7 @@ What it does:
 
 Exit code 0 = all tools clean.
 
-The script is pure stdlib + langchain (already a runtime dep); no extra
-install. It mirrors the manual check used to catch an early activity's
-`set_last_brief` `str | list` regression.
+The script uses stdlib + the runtime's existing langchain dependency; no extra install.
 
 ## Combined output contract
 
@@ -113,7 +111,7 @@ activities/<id>`, no platform repo needed) — see
 
 ## Hand-off
 
-- `ship-ready: yes` → route to `activity-packager`.
+- `ship-ready: yes` → ensure the current `activity-review` has `CONFLICT: 0`, then route to `activity-packager`.
 - 如果共享 dev runtime 可用，可在静态检查通过后转
   `activity-dev-cli` → `activity-smoke`；CLI 真 turn 是动态证据，不属于本
   skill 的静态门禁。

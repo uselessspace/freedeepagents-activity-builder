@@ -15,7 +15,6 @@ Severity = Literal["error", "warning"]
 
 ALLOWED_MANIFEST_FIELDS = {
     "activity_type_id",
-    "activity_id",
     "name",
     "description",
     "model",
@@ -72,7 +71,7 @@ ALLOWED_RUNTIME_FIELDS = {
     # app/auto_memory.py.
     "auto_memory_enabled",
 }
-GENERIC_ROOTS = ("app", "frontend-src", "schemas")
+GENERIC_ROOTS = ("app", "schemas")
 
 # Python dependency check. An activity's Python (tools.py / dsl_builder.py /
 # handlers.py + any helper modules they ship) runs inside the host's single
@@ -156,11 +155,6 @@ BUILTIN_TOOL_NAMES = frozenset(
 )
 NON_NATIVE_SKILL_PROMPT_HELPER = "_skill" + "_instruction" + "_text"
 SKILL_MARKDOWN_PATTERN = "SKILL" + r"\.md"
-FRONTEND_PRIVATE_STATE_PATTERNS = (
-    re.compile(r"\binstance\s*\.\s*data\b"),
-    re.compile(r"\bdata\s*\.\s*(phase|trip_brief|selected_attractions|memory_index)\b"),
-)
-
 # Doc→code tool-reference drift check. We treat a backtick-wrapped call,
 # `name(`, as the unambiguous "the LLM should call this tool" signal and
 # verify the name exists in tools.py. Bare backtick mentions (`name` in a
@@ -192,7 +186,6 @@ def verify_project(root: Path | str) -> list[VerificationIssue]:
     _verify_card_template_schema_conformance(project_root, issues)
     _verify_capabilities(project_root, issues)
     _verify_generic_runtime_references(project_root, activity_ids, issues)
-    _verify_frontend_private_state_reads(project_root, issues)
     _verify_no_credential_access(project_root, issues)
     _verify_no_detached_activity_work(project_root, issues)
     _verify_no_legacy_resource_helpers(project_root, issues)
@@ -220,7 +213,7 @@ def verify_activity_dir(activity_dir: Path | str, *, runtime_root: Path | str | 
     manifest_path = src / "manifest.json"
     try:
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        candidate = payload.get("activity_type_id") or payload.get("activity_id")
+        candidate = payload.get("activity_type_id")
         if isinstance(candidate, str) and candidate:
             activity_id = candidate
     except (OSError, json.JSONDecodeError):
@@ -245,32 +238,8 @@ def _activity_ids(root: Path, issues: list[VerificationIssue]) -> set[str]:
         for field in sorted(set(payload) - ALLOWED_MANIFEST_FIELDS):
             issues.append(_issue("error", root, manifest_path, f"manifest.json has disallowed field: {field}"))
         activity_type_id = payload.get("activity_type_id")
-        legacy_activity_id = payload.get("activity_id")
-        if (
-            isinstance(activity_type_id, str)
-            and isinstance(legacy_activity_id, str)
-            and activity_type_id != legacy_activity_id
-        ):
-            issues.append(
-                _issue(
-                    "error",
-                    root,
-                    manifest_path,
-                    "manifest.json activity_type_id and legacy activity_id must match when both are present",
-                )
-            )
-        if activity_type_id is None and isinstance(legacy_activity_id, str) and legacy_activity_id:
-            issues.append(
-                _issue(
-                    "warning",
-                    root,
-                    manifest_path,
-                    "manifest.json uses deprecated activity_id; new activities should use activity_type_id",
-                )
-            )
-        resolved_id = activity_type_id if isinstance(activity_type_id, str) and activity_type_id else legacy_activity_id
-        if isinstance(resolved_id, str) and resolved_id:
-            ids.add(resolved_id)
+        if isinstance(activity_type_id, str) and activity_type_id:
+            ids.add(activity_type_id)
     return ids
 
 
@@ -371,7 +340,7 @@ def _verify_activity_contract_files(root: Path, issues: list[VerificationIssue])
         activity_type_id: str | None = None
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            candidate = manifest.get("activity_type_id") or manifest.get("activity_id")
+            candidate = manifest.get("activity_type_id")
             if isinstance(candidate, str) and candidate:
                 activity_type_id = candidate
         except (OSError, json.JSONDecodeError, AttributeError):
@@ -465,18 +434,6 @@ def _verify_generic_runtime_references(root: Path, activity_ids: set[str], issue
                     issues.append(
                         _issue("error", root, path, f"generic runtime references activity id '{activity_id}'")
                     )
-
-
-def _verify_frontend_private_state_reads(root: Path, issues: list[VerificationIssue]) -> None:
-    frontend_root = root / "frontend-src"
-    if not frontend_root.exists():
-        return
-    for path in _source_files(frontend_root):
-        text = _read(path)
-        if text is None:
-            continue
-        if any(pattern.search(text) for pattern in FRONTEND_PRIVATE_STATE_PATTERNS):
-            issues.append(_issue("error", root, path, "frontend reads activity-private state"))
 
 
 # Activity Python must reach LLMs ONLY via ctx.llm (LiteLLM gateway, metered)

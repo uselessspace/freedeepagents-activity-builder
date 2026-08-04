@@ -130,7 +130,7 @@ read -r ACTIVITY_ID HAS_FRONTEND <<EOF
 $(.venv/bin/python -c "
 import json
 m = json.load(open('$META'))
-print(m.get('activity_type_id') or m['activity_id'], 'yes' if m.get('has_frontend') else 'no')
+print(m['activity_type_id'], 'yes' if m.get('has_frontend') else 'no')
 ")
 EOF
 

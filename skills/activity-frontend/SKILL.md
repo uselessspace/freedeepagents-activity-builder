@@ -36,7 +36,7 @@ Choose one primary UI type:
 
 - Source lives under `activities/<activity_type_id>/site/`.
 - Build output is `activities/<activity_type_id>/site/dist/`.
-- `vite.config.ts` must set `base: './'` so `/preview/<activity_type_id>/<activity_id>/`
+- `vite.config.ts` must set `base: './'` so `/preview/<activity_type_id>/<instance_id>/`
   works.
 - The frontend reads private activity DSL from `/api/dsl.json` and can subscribe
   to `/api/dsl/stream` for refreshes.
@@ -48,14 +48,20 @@ Choose one primary UI type:
   turns plus an activity-root `preview_actions.json`; see
   `../../references/preview-agent-turns.md`. Direct handlers remain appropriate
   for deterministic data writes that do not need the Agent.
+- A recording UI that declares `asr` chooses one public ASR path: direct
+  multipart `POST api/asr` for an immediate transcript, or `api/upload` plus
+  the Agent turn's `attachment_refs` when the Agent must receive current-turn
+  `file_0`. See `../../references/preview-asr.md`.
 - Agent business actions call activity-owned tools, handlers, or backend APIs;
   `preview_navigate` never substitutes for the business operation. Persist
   state first, then let DSL fetch/SSE refresh the SPA.
 - `dsl_builder.py` owns the DSL shape by reading typed-KV data declared in
   `data.schema.json`.
-- `tools.py` owns user-semantic writes when the preview needs interaction.
+- `handlers.py` exposes deterministic SPA reads/writes; `tools.py` exposes only
+  the business operations the Agent must call. Shared operations use one plain
+  implementation with thin adapters.
 - Activity data semantics stay in `dsl_builder.py`, `tools.py`, and activity
-  skills. Do not add frontend branches to `frontend-src/`.
+  skills. Do not add activity-specific frontend branches to `app/`; keep them in the activity's `site/`.
 
 ## Frontend Decision
 
@@ -68,6 +74,7 @@ Before coding, write:
 - dsl_shape:
 - data_sources: data.schema.json keys and artifacts used
 - interaction_tools: tools.py functions, or none
+- recording_asr: none / direct transcript / Agent owns uploaded recording
 - refresh_model: initial fetch only / SSE / manual reload
 - agent_navigation: none / semantic route-view-object fields and resulting selection behavior
 - build_checks: npm run lint, npm run build, screenshots
@@ -100,5 +107,5 @@ motion example, and mobile/desktop screenshot check live in
 Optional shadcn MCP examples or local UI skills may inspire patterns — they are
 not hard dependencies and their source must not be copied into this package.
 
-Route back to `../activity-builder/SKILL.md` for file integration, then to
-`../activity-packager/SKILL.md`.
+Route back to `../activity-builder/SKILL.md` for file integration, then run
+`../activity-review/SKILL.md`; only a CONFLICT-free result enters packager.

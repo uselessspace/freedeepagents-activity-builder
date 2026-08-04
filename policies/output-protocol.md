@@ -43,7 +43,7 @@
 
 Chat SSE 上的 event 类型来自 `RuntimeEventType`（`app/models.py`）。活动需要知道的几个：`run_started` / `turn_started` / `agent_started` / `agent_progress` / `card_item` / `artifact_item` / `state_committed` / `turn_completed` / `done`。两条新加事件：
 
-- `dsl_updated`：payload 只带 `{"revision": "<8-char hash>"}`，告诉 chat 端"活动 DSL 变了"。完整 DSL 由 Static Preview SPA 通过 `/preview/<activity_type_id>/<activity_id>/api/dsl/stream` 单独订阅。
+- `dsl_updated`：payload 只带 `{"revision": "<8-char hash>"}`，告诉 chat 端"活动 DSL 变了"。完整 DSL 由 Static Preview SPA 通过 `/preview/<activity_type_id>/<instance_id>/api/dsl/stream` 单独订阅。
 - `tool_invoked` / `tool_completed` / `llm_invoked` / `llm_completed`：受 `runtime.json.sse_debug_view.enabled` gate。带 `x-auto-inject: false` 字段的活动必须显式声明这个 config（见 [references/data-store-tools.md](../references/data-store-tools.md) §x-auto-inject）。
 
 ---

@@ -24,7 +24,7 @@ confirms the fix.
 Three accepted; pick the one with the most signal:
 
 1. **`turn_id`** (preferred) — e.g. `4daad15531a247c9938b355f2eb1d25e`. Locate
-   `runtime/instances/<activity_type_id>/<activity_id>/turns/<turn_id>/`; the
+   `runtime/instances/<activity_type_id>/<instance_id>/turns/<turn_id>/`; the
    `input.json` shows what the user sent and `trace.jsonl` shows what the
    runtime / LLM / tools did. Walk to [workflows/from-turn-id.md](workflows/from-turn-id.md).
 2. **Error log / stack trace pasted by user** — the user copied a message like
@@ -69,7 +69,7 @@ If `error-classes.md` has no row matching the symptom + trace, say so
 explicitly and capture:
 
 1. The exact error string from `trace.jsonl`'s first `*_error` event.
-2. Activity id + a 10-line `input.json` excerpt.
+2. Activity instance ID + a 10-line `input.json` excerpt.
 3. Which existing policy / reference doc closest to the issue (so a follow-up
    PR can add a new error class row).
 

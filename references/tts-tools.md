@@ -36,7 +36,7 @@
 | `prompt_text` | **仅 clone provider**：参考录音的转写。qwen 不用，留空。|
 | `store` | `auto`(默认) / `oss` / `sandbox`，语义权威见 [store-mode-table.md](store-mode-table.md)。|
 
-**成功返回** `{"artifact": {artifact_id, resource_ref, store("oss" 或 "sandbox"), audio_url, storage_key(iff oss)|sandbox_path(iff sandbox), mime_type, byte_size, duration_ms}}`；`audio_url` 永远是 `/v1/.../content` 代理 URL（durable，见 store-mode-table.md），直接填进 `audio` 卡片块的 `read_url`。业务记录同时保存 `resource_ref`，零引用时通过 `ctx.delete_resource(...)` 回收；详见 [asset-lifecycle.md](asset-lifecycle.md)。
+**成功返回** `{"artifact": {artifact_id, resource_ref, store("oss" 或 "sandbox"), audio_url, asset_id?(managed), sandbox_path?(local), mime_type, byte_size, duration_ms}}`；`audio_url` 是稳定的 FDA 内容代理 URL，直接填进 `audio` 卡片块的 `read_url`。业务记录保存 `resource_ref` / `artifact_id`，不要保存 `asset_id`、`sandbox_path`、bucket key 或签名 URL；零引用时通过 `ctx.delete_resource(...)` 回收。详见 [store-mode-table.md](store-mode-table.md) 与 [asset-lifecycle.md](asset-lifecycle.md)。
 **失败返回** `{"error": ..., "hint": ...}`——**不要重试同一文本**（provider 已决定，重试白费时间；失败会回滚配额，不占 per-turn 上限），照常出卡、`audio_url=""`（`audio` 块自动隐藏）。
 
 ## 配置（env vars）
@@ -98,7 +98,7 @@ def make_handlers(ctx):
     return {"tts": tts}
 ```
 
-3. 前端 POST 当前 preview 根路径下的 `api/tts`，例如用 `frontend-base/src/lib/api-base.ts` 的 `apiUrl('tts')`。不要硬编码 `/v1/...`，也不要用 `./api/tts` 依赖当前 SPA 子路由。
+3. 因为上面的活动 handler 显式命名为 `tts`，前端才可 POST 当前 preview 根路径下的 `api/tts`，例如用 `frontend-base/src/lib/api-base.ts` 的 `apiUrl('tts')`。这不是平台预留的 direct-TTS endpoint；换了 handler 名就跟着换路由。不要硬编码 `/v1/...`，也不要用 `./api/tts` 依赖当前 SPA 子路由。
 
 **直接使用返回的 `audio_url`**（`new Audio(url)` 或 `<audio src={url}>`）——不要硬编码 `/v1/...`、也不要自己拼 URL，平台会让它在当前预览环境下可访问。
 

@@ -1,5 +1,43 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.31 (2026-08-04)
+
+全面校准 Builder 提示词与当前 FDA 能力面，并把语义审查纳入发布主链路。
+
+- 分类轴拆开 runtime capabilities 与 SPA interaction，完整覆盖五项 capability、
+  deterministic handlers、Preview Agent Turns、直接 ASR 与混合交互。
+- 修正 Static Preview、上传/实例生命周期、TTS/图像资源身份、JSON 转义、
+  multi-store 降级和 fix loop 等历史提示冲突；模板只保留 host 作为意图路由权威。
+- `activity-review` 现在扫描 handlers、preview actions、DSL 与 SPA client，并新增
+  历史反向样例目录；CONFLICT 清零成为 packager 的必需证据。
+- 根设计原则同步 `attachment_refs` → `file_0` 与 `POST api/asr` 的可信身份/计费边界，
+  插件测试新增能力表面、反例目录、单一路由权威和所有 Skill ≤120 行守卫。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.31**。
+
+## 0.4.30 (2026-08-04)
+
+Builder 的活动创作契约现在只接受 manifest `activity_type_id`。
+
+- 移除 authoring schema、plugin verifier、安装脚本与活跃参考中的 manifest
+  `activity_id` 兼容入口；新包会在创作/打包期拒绝该字段。
+- 平台 runtime 暂时仍可读取历史 manifest，迁移窗口及最终删除由 runtime 版本管理；
+  Builder 不再把它作为可用配置宣传。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.30**。
+
+## 0.4.29 (2026-08-04)
+
+补齐 Static Preview 的两条 ASR 接入契约，消除“前端录音如何成为可转写输入”的空白。
+
+- **Agent 路径**：SPA 先 `POST api/upload`，再把同实例返回的
+  `resource_ref` 放进 Preview Agent Turn 的 `attachment_refs`；运行时复制为
+  本轮私有 `file_0`，声明 `asr` 的 Agent 可调用
+  `transcribe_audio(source_file_id="file_0")`。
+- **直接路径**：SPA 可 `POST api/asr` 并以 multipart `audio` Blob 取得文字和
+  用量；请求要求 `Idempotency-Key`，不创建 Agent Turn。平台通过可信 preview
+  身份归属用户、活动与计费，前端不得传用户 ID 或 provider 凭证。
+- README、Static Preview 示例、前端 workflow 和 ASR 参考新增选择指南；Codex /
+  Claude plugin manifest 与 schema bundle 版本升级到 **0.4.29**。
+
 ## 0.4.28 (2026-08-03)
 
 精简 ASR 活动作者文档为纯使用说明：声明 `asr` capability，调用

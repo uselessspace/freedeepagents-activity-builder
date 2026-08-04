@@ -20,9 +20,9 @@ The script:
 
 ## Step 2: pick a reference archetype
 
-The `frontend-base/` ships a Vite scaffold. For the current runtime model, the frontend must be a static SPA that reads runtime APIs under `/preview/<activity_type_id>/<activity_id>/api/...`.
+The `frontend-base/` ships a Vite scaffold. For the current runtime model, the frontend is a static SPA served under `/preview/<activity_type_id>/<instance_id>/` and calls only the current preview root's `api/...` endpoints.
 
-UI 形态不限——dashboard、graph、canvas、game、timeline、scenes 都是被验证可行的方向。SPA 的唯一硬约束是**契约**：只消费 `/preview/<activity_type_id>/<activity_id>/api/dsl.json` 返回的 DSL（你自己在 `dsl_builder.py` 里定义的形状），不直连 runtime 内部状态。DSL 形状随 UI 设计走，先画 UI 再定 DSL。
+UI 形态不限——dashboard、graph、canvas、game、timeline、scenes 都是被验证可行的方向。SPA 的硬约束是**契约**：消费当前 preview root 的 `api/dsl.json`（形状由自己的 `dsl_builder.py` 定义），不直连 runtime 内部状态。DSL 形状随 UI 设计走，先画 UI 再定 DSL。
 
 ## Step 3: define the DSL boundary
 
@@ -42,20 +42,21 @@ Required backend/frontend alignment:
   fields before selecting an activity-private route, view, or business object.
   Do not encode browser clicks, focus, scrolling, or DOM targets.
 
-Do not make the SPA read activity-private state from `frontend-src/` or generic
-runtime APIs.
+Do not make the SPA read activity-private state from generic runtime APIs.
 
 ## Step 4: implement domain code
 
 In `activities/<id>/site/`, edit activity-owned files. The final app should:
 
 - set Vite `base: './'`
-- parse `activity_type_id` / `activity_id` from `window.location.pathname`
-- fetch `dsl.json` from `/preview/<activity_type_id>/<activity_id>/api/dsl.json` when using `dsl_builder_module`
-- subscribe to `/preview/<activity_type_id>/<activity_id>/api/dsl/stream` when live updates are needed
+- use the frontend base `apiUrl()` / preview-mount helpers instead of manually parsing or hardcoding user/dev preview paths
+- fetch `dsl.json` from `apiUrl('/dsl.json')` when using `dsl_builder_module`
+- subscribe to `apiUrl('/dsl/stream')` when live updates are needed
 - reuse that same EventSource for `preview_navigate`; never open a navigation-only stream
 - avoid dev-server-only `/api/*` plugin routes in production code
 - let end-users upload their own images / voice recordings (and persist them) via `POST api/upload` — see [user-upload.md](../references/user-upload.md)
+- for a recording that the Agent must process, pass that same-instance upload's `resource_ref` in the Preview Agent Turn `attachment_refs`; it becomes the current-turn `file_0` — see [preview-agent-turns.md](../references/preview-agent-turns.md)
+- for an immediate editable transcript without an Agent turn, declare `asr` and send multipart `audio` with `Idempotency-Key` to `POST api/asr` — see [preview-asr.md](../references/preview-asr.md)
 - keep the complete `resource_ref` with business records and reclaim only zero-reference resources after discard/replace/delete — see [asset-lifecycle.md](../references/asset-lifecycle.md)
 
 Typical files:

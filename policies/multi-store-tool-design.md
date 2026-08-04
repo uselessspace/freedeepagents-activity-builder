@@ -74,14 +74,22 @@ def add_note(
     """
     note = {...}
     typed_kv.append("notes", note)               # main store
-    try:
-        gbrain.mirror_note(note)                 # side-effect 1
-        gbrain.auto_stub_wikilinks(note.content) # side-effect 2
-        gbrain.apply_updates(entity_updates)     # side-effect 3
-    except Exception:
-        log.exception("gbrain side-effects failed for %s", note["id"])
+    warnings = []
+    for label, operation in (
+        ("mirror", lambda: gbrain.mirror_note(note)),
+        ("wikilinks", lambda: gbrain.auto_stub_wikilinks(note.content)),
+        ("entities", lambda: gbrain.apply_updates(entity_updates)),
+    ):
+        try:
+            operation()
+        except Exception:
+            log.exception("%s side-effect failed for %s", label, note["id"])
+            warnings.append(label)
     notify_dsl_update()                          # side-effect 4
-    return {"ok": True, "id": note["id"], ...}
+    result = {"ok": True, "id": note["id"], ...}
+    if warnings:
+        result.update(degraded=True, warning=f"secondary stores failed: {warnings}")
+    return result
 ```
 
 ```markdown
@@ -115,10 +123,11 @@ These are exits to the low-level interface, not the default path.
 
 ## Side-effects must be best-effort
 
-If the secondary store fails, the **main store write must still
-succeed** and the user must still see their action took effect.
-Wrap each side-effect in `try / except / log`, never let a search
-index hiccup throw away the user's note.
+If a secondary store fails, the **main store write must still succeed**.
+Isolate each side-effect so one failure does not skip the rest, and return
+`degraded: true` + a user-readable `warning` as defined by
+[tool-error-protocol.md](tool-error-protocol.md). Never report an incomplete
+fan-out as a clean success.
 
 ## Verifier signal (future)
 

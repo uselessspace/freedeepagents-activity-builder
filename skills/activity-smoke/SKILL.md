@@ -43,7 +43,7 @@ For a real end-to-end smoke:
 1. Start the FDA service (`uvicorn app.main:app ...`).
 2. Open the activity in the client and send a single user message.
 3. The runtime writes the trace at
-   `runtime/instances/<activity_type_id>/<activity_id>/turns/<turn_id>/trace.jsonl`.
+   `runtime/instances/<activity_type_id>/<instance_id>/turns/<turn_id>/trace.jsonl`.
 4. Run the parser below against that file.
 
 This skill deliberately stops short of automating step 1-2 *by itself*.
@@ -77,34 +77,15 @@ side-effect rules and output contracts are owned by `/activity-dev-cli` and
 
 ## Parser
 
-Pure stdlib — runs under any Python 3.10+, including a plain `python3`
-on PATH.
+Pure stdlib; any Python 3.10+ works.
 
 ```bash
 python3 <package>/skills/activity-smoke/scripts/parse-trace.py \
-    <path>/runtime/instances/<activity_type_id>/<activity_id>/turns/<turn_id>/trace.jsonl
+    <path>/runtime/instances/<activity_type_id>/<instance_id>/turns/<turn_id>/trace.jsonl
 ```
 
-Output:
-
-```
-==> trace.jsonl summary
-  card_item: 1
-  turn_completed: 1
-  done: 1
-  llm_error: 0
-  ...
-==> Smoke: PASS  (card_item ≥ 1, turn_completed ≥ 1, done ≥ 1)
-```
-
-Or:
-
-```
-==> Smoke: FAIL
-  missing: turn_completed
-  first error: llm_error - BadRequestError ...
-==> Route to activity-diagnostician with this turn_id.
-```
+It prints event counts and PASS, or the missing event plus first error and the
+route to `activity-diagnostician`.
 
 ## Combined output contract
 

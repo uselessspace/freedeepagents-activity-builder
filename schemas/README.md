@@ -2,7 +2,7 @@
 
 Canonical schemas for FreeDeepAgents activity files. Use them in your editor (VS Code: add `"json.schemas"` mapping in settings) or in CI to validate authored files.
 
-**Bundle version: 0.4.28** — this schema bundle ships inside the plugin and tracks `.claude-plugin/plugin.json`. `tools/check_schema_sync.py` (run in the platform repo / CI) proves `card-template.schema.json` matches the runtime's `app.models` field-for-field, so an authored file that passes these schemas also passes the runtime's `OutputCard` validation at emit time.
+**Bundle version: 0.4.31** — this schema bundle ships inside the plugin and tracks `.claude-plugin/plugin.json`. `tools/check_schema_sync.py` (run in the platform repo / CI) proves `card-template.schema.json` matches the runtime's `app.models` field-for-field, so an authored file that passes these schemas also passes the runtime's `OutputCard` validation at emit time.
 
 | File | Validates |
 |---|---|
@@ -53,13 +53,13 @@ jsonschema.validate(manifest, schema)
 
 ## Authority chain
 
-The **`tools/activity_verifier.py`** in this package is the source of truth — it implements the same rules these schemas describe, plus cross-file checks (e.g. each card template has a sibling `.vars.json`). If a schema and the verifier disagree, the verifier wins; please file a bug.
+For local authoring, **`tools/activity_verifier.py`** is the executable gate: it applies these schemas plus cross-file checks (for example, every card template needs a sibling `.vars.json`). The target runtime's `app.models` remains canonical. `check_schema_sync.py` should keep the bundled schema/verifier aligned with it; if they diverge, treat that as a plugin bug and validate against the target runtime rather than guessing.
 
 ## Bundle 与 runtime 版本窗口
 
 两套 schema 各管一段：
 
-- **创作期**（你本地）：`<package>/schemas/*` + `activity_verifier.py` 校验你写的文件，随插件版本走（当前 `Bundle version: 0.4.28`，见顶部）。
+- **创作期**（你本地）：`<package>/schemas/*` + `activity_verifier.py` 校验你写的文件，随插件版本走（当前 `Bundle version: 0.4.31`，见顶部）。
 - **加载 / emit 期**（部署后）：平台 runtime 的 `app.models`（pydantic）才是最终权威——bundled schema 与 verifier 只是它的离线镜像，`check_schema_sync.py`（在平台仓库 / CI 跑）逐字段证明两者一致。**两者分歧时以 runtime 为准。**
 
 当 bundle 与 runtime 版本不一致：

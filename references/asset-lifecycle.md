@@ -91,12 +91,21 @@ result = ctx.delete_resource(resource_ref=resource_ref, purge_origins=True)
 5. 删除异常或 `pending: true` 只记清理待办，不回滚业务提交。
 
 ```python
+import json
+from app.card_system import data_store
+
 def identity(ref: dict) -> str:
     return json.dumps(ref, ensure_ascii=False, sort_keys=True)
 
 before = {identity(ref): ref for ref in resource_refs(removed_or_replaced)}
-ctx.set_data(new_data)
-live = {identity(ref) for ref in resource_refs(ctx.get_data() or {})}
+schema = data_store.load_data_schema(ctx.activity_dir)
+
+def commit(current: dict) -> tuple[dict, set[str]]:
+    updated = apply_business_change(current)
+    live = {identity(ref) for ref in resource_refs(updated)}
+    return updated, live
+
+live = data_store.update_data(ctx.instance_dir, schema, commit)
 
 cleanup = []
 for key in sorted(before.keys() - live):

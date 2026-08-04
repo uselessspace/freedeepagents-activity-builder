@@ -34,17 +34,18 @@ Keep provider calls and state mutation in the active handler:
 
 ```python
 def make_handlers(ctx):
-    def recognize(image_ref: dict) -> dict:
-        result = ctx.llm.invoke_json(
-            system="Recognize the object.",
-            user="Return the object name and confidence.",
-            images=[image_ref],
+    def classify(text: str) -> dict:
+        if ctx.llm is None:
+            return {"ok": False, "error": "llm unavailable"}
+        result = ctx.llm.chat_json(
+            system='Return JSON: {"category": "...", "confidence": 0.0}.',
+            user=text,
         )
         save_result(result)
         ctx.notify_dsl_update()
         return {"ok": True, "result": result}
 
-    return {"recognize": recognize}
+    return {"classify": classify}
 ```
 
 Return only after every `ctx`-dependent operation has completed.
@@ -66,13 +67,14 @@ When work must be split across requests:
 ```python
 def make_handlers(ctx):
     def resume_pending_jobs(limit: int = 1) -> dict:
+        if ctx.llm is None:
+            return {"ok": False, "error": "llm unavailable"}
         jobs = load_pending_jobs(limit=limit)
         completed = []
         for job in jobs:
-            result = ctx.llm.invoke_json(
-                system="Process one queued item.",
+            result = ctx.llm.chat_json(
+                system='Process one queued item and return JSON: {"result": "..."}.',
                 user=job["prompt"],
-                images=[job["resource_ref"]],
             )
             mark_completed(job["job_id"], result)
             completed.append(job["job_id"])

@@ -1,7 +1,7 @@
 ---
 name: activity-packager
 description: >-
-  活动构建第 5 步·打包交付。把实现好的活动打成 .fda.tgz、装进真 repo、收集 verifier +
+  活动构建第 6 步·打包交付。把实现好的活动打成 .fda.tgz、装进真 repo、收集 verifier +
   smoke 证据。实现（和前端，如有）完成后用，是工作流的最后一步。
   Use after FDA activity implementation to create the .fda.tgz package, install
   it in a real repo, and collect verifier plus smoke-test evidence.
@@ -37,6 +37,8 @@ assets when needed, and leave the activity runnable.
 
 ## Required Checks
 
+- Confirm the latest `activity-review` report has `CONFLICT: 0`; accepted
+  SMELL/NOTE items may be recorded as review decisions.
 - Run the activity verifier and fix every ERROR.
 - Run the offline testkit smoke:
   `python <package>/testkit/fda_testkit.py activities/<activity_type_id>`
@@ -46,8 +48,8 @@ assets when needed, and leave the activity runnable.
 - For Card-only activities, smoke test a turn and capture `card_item`,
   `turn_completed`, and `done`.
 - For Static Preview activities, also verify
-  `/preview/<activity_type_id>/<activity_id>/` and
-  `/preview/<activity_type_id>/<activity_id>/api/dsl.json`.
+  `/preview/<activity_type_id>/<instance_id>/` and
+  `/preview/<activity_type_id>/<instance_id>/api/dsl.json`.
 - For image activities, verify `manifest.capabilities`, persistent image URLs,
   and card image blocks.
 - When an authenticated shared dev runtime and `fda-dev` are available, use
@@ -60,8 +62,9 @@ assets when needed, and leave the activity runnable.
 
 End with a `## Ship Verification` block. Its **exact format is owned by**
 [workflows/06-verify-and-ship.md](../../workflows/06-verify-and-ship.md) Step 6 —
-use that block verbatim (Verifier / Testkit smoke / Runtime setup-build / E2E
-smoke / Warnings acknowledged / Files changed). Don't invent a second format.
+use that block verbatim (Semantic review / Verifier / Testkit smoke / Runtime
+setup-build / E2E smoke / Warnings acknowledged / Files changed). Don't invent
+a second format.
 
 Completion rule (also from workflow 06):
 

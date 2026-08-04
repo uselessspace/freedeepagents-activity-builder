@@ -47,9 +47,10 @@ result = image_generate(
     {
       "artifact_id": "img-a1b2c3d4e5",
       "store": "oss",                   // or "sandbox"
-      "file_url": "/v1/activity-types/<activity_type_id>/activities/<activity_id>/artifacts/img-xxx/content",  // 永远是 /v1 代理（durable）— 见 store-mode-table.md
+      "file_url": "/v1/activity-types/<activity_type_id>/activities/<instance_id>/artifacts/img-xxx/content",  // 永远是 /v1 代理（durable）— 见 store-mode-table.md
+      "resource_ref": {"kind": "artifact", "activity_type_id": "...", "activity_id": "...", "artifact_id": "img-a1b2c3d4e5"},
       "sandbox_path": "/instance/artifacts/live/<turn>/img-xxx.png",  // present iff store=="sandbox"
-      "storage_key": "activities/<activity_type_id>/<activity_id>/<turn>/img-xxx.png",     // oss only
+      "asset_id": "<opaque-go-asset-id>",  // present iff managed store
       "mime_type": "image/png",
       "width": 1024,
       "height": 1024,
@@ -264,9 +265,10 @@ result = image_edit(
   "artifacts": [{
     "artifact_id": "img-...",
     "store": "oss",                    // or "sandbox"
-    "file_url": "/v1/activity-types/<activity_type_id>/activities/<activity_id>/artifacts/img-.../content",  // 永远是 /v1 代理（durable）— 见 store-mode-table.md
+    "file_url": "/v1/activity-types/<activity_type_id>/activities/<instance_id>/artifacts/img-.../content",  // 永远是 /v1 代理（durable）— 见 store-mode-table.md
+    "resource_ref": {"kind": "artifact", "activity_type_id": "...", "activity_id": "...", "artifact_id": "img-..."},
     "sandbox_path": "/instance/...png",      // when store==sandbox
-    "storage_key": "activities/.../...png",  // oss only
+    "asset_id": "<opaque-go-asset-id>",       // when managed
     "mime_type": "image/png",
     "width": 1024, "height": 1024,           // 真实尺寸（万相 edit 通常跟源图同尺寸）
     "seed": null,
@@ -466,7 +468,7 @@ result = image_generate(prompt="<≤500 chars>", size="1920x1920", store="<auto|
 | 症状 | 修法 |
 |---|---|
 | 工具返 `{"error":...}` | emit 错误卡（`card_emit_template`）并停；同 prompt 不重试 |
-| 卡片展示用哪个字段 | 统一用 `file_url`（见上方"产物如何展示"）；`sandbox_path` 仅供同 turn 内传给 `image_edit` 上游 |
+| 卡片展示用哪个字段 | 统一使用返回的 opaque `file_url`；业务持久化优先保存 `artifact_id` / `resource_ref`，不要保存 placement-specific `sandbox_path` / `asset_id` |
 | 卡片渲染丢图（oss 模式） | OutputArtifact 用 `url=` 字段填，不要用 `path=`（同时存在时 path 优先，URL 被丢） |
 | 出图质量差 | prompt 具体化：主体、风格、光线、调色，每项一句 |
 | `image_edit` 报 `exactly one of artifact_id / file_id / path / url required` | 单图路径：4 个单数 source 参数恰传 1 个（多图改用 `sources`）|

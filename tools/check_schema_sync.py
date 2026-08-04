@@ -58,8 +58,6 @@ _MODELS = [
     "AudioItem",
 ]
 
-_LEGACY_MANIFEST_FIELDS = {"activity_id"}
-
 
 def _find_repo_root(override: str | None) -> Path:
     if override:
@@ -201,8 +199,7 @@ def main() -> int:
     # contract must agree: the pydantic model (runtime truth), the authoring
     # schema (what external devs validate against), and the verifier constant
     # (the ship gate).
-    manifest_fields = set(models.ActivityManifest.model_fields)
-    manifest_contract_fields = manifest_fields | _LEGACY_MANIFEST_FIELDS
+    manifest_contract_fields = set(models.ActivityManifest.model_fields)
     runtime_fields = set(models.ActivityRuntimeConfig.model_fields)
     caps_literal = set(_capabilities_literal(models.ActivityManifest))
 

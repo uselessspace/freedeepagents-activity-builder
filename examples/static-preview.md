@@ -47,7 +47,7 @@ activities/project-map/
    `link_dependency`.
 3. `dsl_builder.py` reads `data.json` and returns the private DSL consumed by
    `site/`.
-4. The SPA fetches `/preview/project-map/<activity_id>/api/dsl.json` and renders
+4. The SPA fetches `/preview/project-map/<instance_id>/api/dsl.json` and renders
    the dashboard, graph, canvas, timeline, or form workflow.
 5. Optionally, after a successful activity operation, the backend calls
    `ctx.emit_preview_navigation({...})`; the SPA receives `preview_navigate` on
@@ -57,10 +57,29 @@ activities/project-map/
 6. Packaging produces `.fda.tgz`; `bash <package>/tools/install-activity.sh <pkg>` rebuilds
    `site/dist/` when needed.
 
+## Optional recording and ASR
+
+If this SPA records audio, add `"asr"` to `capabilities` and choose the path
+that owns the next decision:
+
+- The SPA needs an immediate editable transcript: `POST api/asr` as multipart
+  `audio` with an `Idempotency-Key`. It returns text and usage without creating
+  an Agent turn.
+- The Agent needs the recording: `POST api/upload`, then put the returned
+  same-instance `resource_ref` in the Agent turn's `attachment_refs`. The
+  runtime copies it into that turn as `file_0`; the Agent calls
+  `transcribe_audio(source_file_id="file_0")`.
+
+Use `apiUrl()` for both endpoints. The preview gateway supplies trusted
+identity and billing attribution; the SPA must not send `user_id` or ASR
+provider credentials. Detailed request examples:
+[preview-asr.md](../references/preview-asr.md) and
+[preview-agent-turns.md](../references/preview-agent-turns.md).
+
 ## Boundary
 
 - Frontend code stays inside `activities/<id>/site/`; the activity ships only static assets — no backend services of its own.
-- Activity-private state lives in `data.schema.json` and is read through the activity's `dsl_builder.py` output, not from `frontend-src/`.
+- Activity-private state lives in `data.schema.json` and is read through the activity's `dsl_builder.py` output by that activity's own `site/` SPA.
 - Activity decisions stay in the activity's host SKILL.md + tools.py; generic runtime code remains activity-neutral.
 - Agent navigation payload semantics stay in the activity; durable selection or
   workflow state still belongs in typed-KV and the DSL.

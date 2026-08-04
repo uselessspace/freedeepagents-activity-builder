@@ -3,14 +3,14 @@ name: activity-builder
 description: >-
   活动构建第 3 步·实现。在 Brief + Classification 都有之后，scaffold 并填活动文件
   （manifest / runtime.json / data.schema / AGENTS.md / host skill / card_templates，
-  含 form 表单卡）。业务逻辑只进 activities/activity-id/，绝不碰通用 runtime（app / frontend-src / schemas）。
+  含 form 表单卡）。业务逻辑只进 activities/<activity_type_id>/，绝不碰通用 runtime（app / schemas）。
   Use after Activity Brief and Activity Classification exist to scaffold and
   implement FDA activity files without putting business logic in generic runtime code.
 ---
 
 # Activity Builder
 
-> **何时用**：Brief + Classification 都齐、要真正写文件时。写完交 `/activity-frontend`（仅 static-preview）或直接 `/activity-packager`。
+> **何时用**：Brief + Classification 都齐、要真正写文件时。Static Preview 前端完成后或 Card-only 实现完成后，都先交 `/activity-review`。
 
 Own scaffold and implementation. Require both `Activity Brief` and
 `Activity Classification` before changing files.
@@ -23,25 +23,23 @@ Use the package assets relative to this skill:
 - `../../workflows/03-image-tooling.md` when `image_axis` is not `none`.
 - `../../workflows/04-derive-frontend.md` when `frontend_axis` is
   `static-preview`.
-- `../../references/user-upload.md` when the preview SPA must let end-users
-  upload + persist their own images / voice recordings (`POST api/upload`).
-- `../../references/asset-lifecycle.md` when uploaded media can be replaced,
-  discarded, or deleted, or when Agent turn files must become durable assets.
+- `../../references/user-upload.md` for end-user uploads; `../../references/preview-agent-turns.md`
+  for structured SPA actions needing model understanding, Skills, planning, or multiple tools.
+- `../../references/preview-asr.md` when the SPA needs a transcript immediately
+  without creating an Agent turn; use upload + `attachment_refs` when the
+  Agent must own the recording instead.
+- `../../policies/capabilities.md` plus the capability-specific reference for
+  every value in Classification `runtime_capabilities`.
+- `../../references/asset-lifecycle.md` for replace/delete/durability semantics.
 - `../../references/preview-navigation.md` when `navigation_axis` is
   `agent-to-preview`; it defines the ctx helper, SSE, isolation, and transient
   delivery contract.
-- `../../references/handler-context-lifecycle.md` before implementing retries,
-  pending jobs, threads, tasks, executors, or any callback that might outlive
-  an Activity tool/handler call.
+- `../../references/handler-context-lifecycle.md` before work may outlive a tool/handler call.
 - `../../workflows/06-verify-and-ship.md` for verification expectations.
 - `../../workflows/07-migrate-existing.md` when the user wants to fork an
   existing activity.
-- `../../references/card-block-types.md` — **read before writing any
-  `card_templates/*.json`**. Catalogs the 6 block types (`markdown` /
-  `info` / `form` / `action` / `image` / `audio`) with field-level schema,
-  `form_id` rules, FormField submit semantics, and the form-vs-action
-  decision tree (when to use a multi-field form vs a row of action
-  buttons).
+- `../../references/card-block-types.md` — **read before writing cards**; it owns
+  the 6 block schemas, form semantics, and form-vs-action decision.
 - `../../references/card-system-tools.md` for the canonical
   `card_emit_template` / `artifact_emit` / `memory_add` tool signatures
   and a worked example.
@@ -85,7 +83,7 @@ In addition to the Card-only files, create:
 
 Set `manifest.dsl_builder_module` and optionally `manifest.tools_module`. Build
 the frontend into `site/dist/`. The SPA consumes only its activity DSL from
-`/preview/<activity_type_id>/<activity_id>/api/dsl.json`.
+`/preview/<activity_type_id>/<instance_id>/api/dsl.json`.
 
 Route Static Preview UI decisions to `../activity-frontend/SKILL.md`.
 
@@ -114,6 +112,6 @@ DOM targets. Persist the result first and let the SPA render it from DSL/data.
 
 ## Done Criteria
 
-Do not claim done from this skill. Route to `../activity-packager/SKILL.md` for `.fda.tgz` packaging, install validation, and smoke evidence.
-- **可选自审**：agent 定义写完/改完后，可先跑 `../activity-review/SKILL.md` 做语义体检（找指令自相矛盾、卡片编排不成立、承诺与能力错配等逻辑冲突）；有 CONFLICT 再回来改。不是完工硬门禁，打包流程不依赖它。
+Do not claim done. Route to `../activity-review/SKILL.md`; any CONFLICT returns
+here for repair. Then use `../activity-packager/SKILL.md` for packaging and evidence.
 - **可选共享环境预检**：若已安装并登录 `fda-dev`，可转 `../activity-dev-cli/SKILL.md` 先跑只读 `doctor`、`status` 和 `sync --dry-run`。不要在实现阶段把实际同步当成静态校验或完工证据。

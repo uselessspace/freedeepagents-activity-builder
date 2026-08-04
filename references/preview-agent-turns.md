@@ -7,10 +7,14 @@
 | SPA 操作 | 推荐通路 |
 |---|---|
 | 收藏、改名、切换音色、保存表单、删除条目 | 活动 handler，确定性写 `data.json` |
+| 一个 handler/tool 内的窄幅文本生成、JSON 结构化或 vision 辅助步骤 | `ctx.llm`（不是完整 Agent turn） |
 | 写文章、生成故事、分析材料、生成图片、调用多个工具 | Preview Agent Turn |
 | 需要模型理解、Skills、规划或多个 tools | Preview Agent Turn |
 
-不要在 `handlers.py` 中手写旁路 LLM 调用。Preview Agent Turn 会复用标准模型、Skills、tools、Docker sandbox、trace、额度、计费和卡片/产物提交过程。
+不要用 `handlers.py` + `ctx.llm` 重造完整 Agent loop。`ctx.llm` 只适合一个
+handler/tool 内边界明确的补充调用；需要 Skills、规划、多工具、卡片/产物提交或标准
+turn 历史时用 Preview Agent Turn。后者会复用标准模型、Skills、tools、Docker
+sandbox、trace、额度和计费过程。窄幅调用见 [ctx-llm.md](ctx-llm.md)。
 
 该能力面向带 `dsl_builder_module` 和 `site/` 的 Static Preview 活动。
 
@@ -159,6 +163,13 @@ type AcceptedAgentTurn = {
   idempotent_replay: boolean
 }
 
+type ResourceRef = {
+  kind: 'upload'
+  activity_type_id: string
+  activity_id: string
+  upload_name: string
+}
+
 export async function submitAgentTurn(args: {
   clientRequestId: string
   idempotencyKey: string
@@ -166,6 +177,7 @@ export async function submitAgentTurn(args: {
   actionVersion: string
   payload: Record<string, unknown>
   displayText: string
+  attachmentRefs?: ResourceRef[]
 }): Promise<AcceptedAgentTurn> {
   const response = await fetch(apiUrl('/agent/turns'), {
     method: 'POST',
@@ -181,6 +193,7 @@ export async function submitAgentTurn(args: {
         payload: args.payload,
       },
       display_text: args.displayText,
+      attachment_refs: args.attachmentRefs ?? [],
     }),
   })
 
@@ -195,6 +208,48 @@ export async function submitAgentTurn(args: {
   return body as AcceptedAgentTurn
 }
 ```
+
+### 将已上传录音附带到 Agent Turn
+
+若 SPA 先用 [`user-upload.md`](user-upload.md) 上传了 `MediaRecorder` Blob，
+可把响应里的 `resource_ref` 加入同一个 JSON 请求的顶层
+`attachment_refs`。运行时只接受**当前活动、当前实例**且
+`kind="upload"` 的引用，并在受理时复制为本轮私有文件：第一个为
+`file_0`、第二个为 `file_1`。因此声明了 `asr` capability 的 Agent 可以
+在该 turn 内调用 `transcribe_audio(source_file_id="file_0")`。
+
+```ts
+const recording = await uploadRecording(blob) // POST api/upload
+
+await submitAgentTurn({
+  clientRequestId: requestId,
+  idempotencyKey,
+  actionId: 'speech.process',
+  actionVersion: '1',
+  payload: { request_id: requestId },
+  displayText: '处理刚录好的语音',
+  attachmentRefs: [recording.resource_ref],
+})
+```
+
+对应请求体：
+
+```json
+{
+  "client_request_id": "request-123",
+  "action": {"id": "speech.process", "version": "1", "payload": {"request_id": "request-123"}},
+  "display_text": "处理刚录好的语音",
+  "attachment_refs": [
+    {"kind": "upload", "activity_type_id": "speech", "activity_id": "act_123", "upload_name": "<opaque>"}
+  ]
+}
+```
+
+`attachment_refs` 参与幂等请求体校验；重试必须携带完全相同的引用和
+`Idempotency-Key`。每轮最多 8 个引用，顺序决定 `file_0`…`file_7`。不要传
+URL、其他实例的 ref、artifact 或旧 turn 文件。
+若只需要在 SPA 中立即得到文字、而不是启动 Agent，使用
+[`preview-asr.md`](preview-asr.md)。
 
 调用：
 
@@ -244,7 +299,8 @@ Agent 会收到：
 }
 ```
 
-顶层 `text` 是兼容字段。新活动优先使用 `input.kind` 和 `input.preview_action`。
+新活动只按 `input.kind` 和 `input.preview_action` 路由；不要把顶层 transport
+字段当作活动 authoring contract，也不要从 `display_text` 反推结构化 payload。
 
 在 host Skill 中明确路由：
 

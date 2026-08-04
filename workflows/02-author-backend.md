@@ -39,20 +39,27 @@ Optional 7th: `activities/<id>/skills/<id>-cards/` — split out only if host SK
 > transport schema) and a `<id>-cards/` skill stub. `output.schema.json` is
 > auto-generated, not verified, and not authored by you — **leave it as-is**.
 
-## Step 3 (Static Preview only): declare activity tools + DSL builder
+## Step 3 (Static Preview only): declare DSL + the interaction surfaces actually needed
 
-For a Static Preview activity, add these fields to `manifest.json`:
+Every Static Preview activity declares the DSL builder:
 
 ```jsonc
-"tools_module": "tools",
 "dsl_builder_module": "dsl_builder"
 ```
 
-Then create:
+Then add only the interaction modules the Classification requires:
 
-- `activities/<id>/tools.py` exporting `make_tools(ctx)` — wraps the typed-KV writes into user-semantic activity tools (e.g. `add_note(content, tags)` instead of forcing the LLM to compose `data_append("notes", {...})`). Multi-store fan-out (gbrain mirror, search index, etc.) goes inside these tools as best-effort side-effects — see [../policies/multi-store-tool-design.md](../policies/multi-store-tool-design.md). Need a side-channel LLM call inside a tool/handler (one-shot text, JSON, or vision/看图)? Use `ctx.llm` — never a hand-rolled HTTP client or provider key (the verifier hard-blocks that); see [../references/ctx-llm.md](../references/ctx-llm.md).
+- `tools_module: "tools"` + `tools.py::make_tools(ctx)` when the Agent needs user-semantic activity tools. Wrap typed-KV writes (for example `add_note(content, tags)`) instead of making the LLM compose low-level store calls. Multi-store fan-out follows [multi-store-tool-design.md](../policies/multi-store-tool-design.md).
+- `handlers_module: "handlers"` + `handlers.py::make_handlers(ctx)` when the SPA needs deterministic reads/writes or direct capability helpers without an Agent. If both Agent and SPA perform the same business operation, put the implementation in a shared plain function and expose thin tool/handler adapters so validation and state transitions stay identical.
+- `preview_actions.json` when `spa_interaction_axis` is `agent-turns` or `mixed`; route its structured action in the activity Skill and submit through `POST api/agent/turns`. See [preview-agent-turns.md](../references/preview-agent-turns.md).
 - `activities/<id>/dsl_builder.py` exporting `build(instance_dir) -> dict` — pure function reading `data.json` and returning the DSL shape your SPA consumes.
 - `activities/<id>/site/` in [04-derive-frontend.md](04-derive-frontend.md).
+
+Need a side-channel LLM call inside a tool/handler (one-shot text, JSON, or
+vision)? Use `ctx.llm`, never a provider key or hand-rolled model client; see
+[ctx-llm.md](../references/ctx-llm.md). Recording UI choices are explicit:
+direct [`POST api/asr`](../references/preview-asr.md) for immediate text, or
+upload + Agent Turn `attachment_refs` for current-turn `file_0`.
 
 Before adding retries, queues, timers, threads, tasks, or executor jobs, read
 [../references/handler-context-lifecycle.md](../references/handler-context-lifecycle.md).
@@ -89,14 +96,14 @@ or a runtime capability before adding a dependency. Full rules:
 
 ## Red-line self-check (before hand-off)
 
-- [ ] No activity-specific code in `app/` / `frontend-src/` / `schemas/` ([policy](../policies/runtime-boundary.md))
+- [ ] No activity-specific code in `app/` / `schemas/` ([policy](../policies/runtime-boundary.md))
 - [ ] manifest.json validates against `<package>/schemas/manifest.schema.json`
 - [ ] runtime.json validates against `<package>/schemas/runtime.schema.json` with `data_schema_enabled: true` set
 - [ ] Every activity @tool in `tools.py` passes the DeepSeek strict-mode schema self-check (no bare `list`/`dict` params; parameterized containers like `list[str]` / `list[dict]` are legal, JSON-encoded `str` remains the most cross-model-compatible fallback for complex/optional-field payloads — see [../policies/llm-output-discipline.md](../policies/llm-output-discipline.md) §8d; run `skills/activity-verify/scripts/strict-tool-schema-check.py` to confirm)
 - [ ] data.schema.json exists with `type: object`, a top-level `default` block, `properties` covering every business field, and `x-auto-inject` set per key (true for fields the LLM should see in the prompt; false for secrets / large sets)
 - [ ] Every third-party Python package imported by `tools.py` / `dsl_builder.py` / `handlers.py` (or their helpers) is declared, pinned with `==`, in `activities/<id>/requirements.txt`; stdlib / platform-baseline / `app.*` are NOT declared ([reference](../references/python-dependencies.md))
 - [ ] No tool/handler starts detached work that can outlive the call; every thread/task/future is joined or awaited, pending jobs persist plain data only, and every resume call uses its fresh `ctx` ([reference](../references/handler-context-lifecycle.md))
-- [ ] If Static Preview: manifest has `dsl_builder_module` + `tools_module`; both `tools.py` (exports `make_tools(ctx)`) and `dsl_builder.py` (exports `build(instance_dir)`) exist; `site/` exists
+- [ ] If Static Preview: manifest has `dsl_builder_module`; `dsl_builder.py` and `site/` exist. `tools_module`, `handlers_module`, and `preview_actions.json` appear only when their classified interaction path needs them
 - [ ] If `navigation_axis: agent-to-preview`: backend emits only after success;
       payload is JSON-safe, contains no user-routing field or low-level browser
       operation; SPA handles the event on the existing DSL stream;
@@ -111,6 +118,7 @@ or a runtime capability before adding a dependency. Full rules:
 ```
 Backend authored for <id>. Runtime mode <Card-only|Static Preview>.
 Image axis: <none|generate-only|generate+edit-locked>.
+Runtime capabilities: <list or none>. SPA interaction: <none|handlers|agent-turns|mixed>.
 Proceeding to <next-step>.
 ```
 

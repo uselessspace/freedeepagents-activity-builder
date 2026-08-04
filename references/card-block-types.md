@@ -201,7 +201,7 @@ artifact 是持久化的"文件"（markdown 报告、PDF、生成的图片等）
   "artifact_id": "img-de4d5f6a7b",          // image_generate 返回值的 artifact_id 直接用
   "kind": "file",                            // 图片一律用 file
   "title": "<title>",
-  "url": "/v1/activity-types/<activity_type_id>/activities/<activity_id>/artifacts/img-de4d5f6a7b/content",  // 直接用 image_generate 返回的 file_url（始终是 /v1 代理，oss 私有桶也能加载）；或用 path（sandbox）
+  "url": "/v1/activity-types/<activity_type_id>/activities/<instance_id>/artifacts/img-de4d5f6a7b/content",  // 直接用 image_generate 返回的 file_url（始终是 /v1 代理，oss 私有桶也能加载）；或用 path（sandbox）
   "path": null,                              // sandbox 路径 /instance/artifacts/live/<turn>/xxx.png
   "mime_type": "image/png"                   // 可选
 }

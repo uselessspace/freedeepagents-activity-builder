@@ -28,3 +28,12 @@ transcribe_audio(source_file_id, context="")
 `context` 最多 400 字符；录音过大、格式不支持或工具暂不可用时，直接向用户说明并请其在下一轮上传一段受支持的短录音。
 
 活动 Skill 应定义“得到文本后如何处理”的业务策略；generic runtime 不解释转写文本。
+
+Static Preview 的两种录音接入方式见
+[preview-agent-turns.md](preview-agent-turns.md#将已上传录音附带到-agent-turn)
+（由 Agent 转写）和 [preview-asr.md](preview-asr.md)（SPA 立即转写）。
+
+| 需要谁决定后续流程 | 使用方式 |
+| --- | --- |
+| Agent，需要读取音频、调用 tools 或按照活动 Skill 处理文本 | `api/upload` 后把 `resource_ref` 放进 Agent Turn 的 `attachment_refs`；Agent 调用 `transcribe_audio(file_0)` |
+| SPA，只需立即取得可编辑文本，可在之后任选是否提交 Agent Turn | multipart `POST api/asr`，提交 `audio` 和 `Idempotency-Key` |

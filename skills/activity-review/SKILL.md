@@ -4,16 +4,17 @@ description: >-
   独立工具·语义级质量自审。由当前在场的编码 agent 执行——通读活动指令/工具/卡片，
   对照活动自身声明的意图 + 插件 policies，找指令自相矛盾、卡片编排不成立、承诺与
   能力错配等"逻辑冲突"。verify 查契约、smoke 验运行，本工具看"设计自不自洽"。
-  非阻塞、不动平台、不做发布门槛。活动 agent 定义写完/改完、想自查质量时用。
+  不动平台、不调用外部服务。新建或改造活动在打包前必须执行；CONFLICT 阻止交给
+  packager，SMELL / NOTE 允许记录取舍。
   Use to self-audit an FDA activity's agent design for logic conflicts the
   deterministic verifier can't catch (contradictory instructions, broken card
   orchestration, promise-vs-capability mismatch). Run BY the in-session coding
-  agent; advisory only, no platform code, no gate.
+  agent; no platform mutation or external service.
 ---
 
 # Activity Review
 
-> **何时用**：活动 agent 定义（AGENTS.md / host SKILL.md / tools.py / 卡模板）写完或改完，想做语义自查时。站位：`/activity-verify`（契约）与 `/activity-smoke`（运行）之间的可选一环。
+> **何时用**：活动定义写完或改完、打包前。站位：补足 `/activity-verify` 的确定性契约检查与 `/activity-smoke` 的运行证据。
 
 语义级、由**你（在场编码 agent）**亲自读文件并推理——不调外部服务、不需要 API key、不碰同步链路。
 
@@ -32,12 +33,13 @@ description: >-
 - `manifest.json`（`description` 声明的意图、`input_modes`、`capabilities`）、`runtime.json`（`data_schema_enabled` / timeout / `sse_debug_view` / 模型覆盖等运行配置——**不含相位语义**）。
 - `AGENTS.md` + host `SKILL.md` + `skills/**`（指令与玩法叙事）。
 - `tools.py`（@tool 真实签名 / docstring）。
+- `preview_actions.json`、`handlers.py`、`dsl_builder.py` 与 `site/` 的 API client（SPA 交互路径与职责边界）。
 - `card_templates/*.json` + `*.vars.json`（卡片契约）。
 - `data.schema.json`（typed-KV 业务态，若有；相位看这里的业务 `phase` + 卡模板 `meta.phase` + host skill 路由，别去 runtime.json 找）。
 
 ## 六维评审
 
-逐维过 [references/review-rubric.md](references/review-rubric.md)：① 指令自洽 ② 卡片编排逻辑 ③ 工具叙事一致 ④ 承诺↔能力匹配 ⑤ 输出纪律落位 ⑥ 意图达成。
+逐维过 [references/review-rubric.md](references/review-rubric.md)：① 指令自洽 ② 卡片编排逻辑 ③ 工具叙事一致 ④ 承诺↔能力匹配 ⑤ 输出纪律落位 ⑥ 意图达成。遇到熟悉写法也要对照 [references/prompt-conflict-catalog.md](references/prompt-conflict-catalog.md) 的反向样例，不能因为历史模板曾这样写就放过。
 
 ## 判级
 
@@ -45,7 +47,7 @@ description: >-
 - **SMELL（质量异味）** — 自洽性弱、易跑偏、承诺与能力不一致但尚未到"兑现不了"。
 - **NOTE（优化建议）** — 可选打磨。
 
-全部**非阻塞**：本工具产出报告，不是门槛。
+`CONFLICT` 必须修复后再进入 packager；`SMELL` / `NOTE` 是非阻塞建议，可记录接受理由。
 
 ## 输出契约
 
@@ -73,6 +75,6 @@ description: >-
 
 ## 何时跑 / hand-off
 
-- `activity-builder` 写完或改完 agent 定义后、打包前；可选。
-- **不进 `activity-packager` 完工门禁**——保持自审、不阻塞。
-- 有 CONFLICT → `/activity-builder` 改 → `/activity-verify` 复核契约；仅 SMELL/NOTE → 自行取舍。
+- `activity-builder` 写完或改完 agent 定义后、打包前执行。
+- 有 CONFLICT → `/activity-builder` 改 → 重新 review；清零后再 `/activity-verify`。
+- 仅 SMELL/NOTE → 记录取舍并进入 `activity-packager`。

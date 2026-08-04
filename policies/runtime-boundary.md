@@ -2,18 +2,17 @@
 
 ## Hard rule
 
-Generic runtime code (`app/`, `frontend-src/`, `schemas/`) stays activity-neutral.
+Generic runtime code (`app/`, `schemas/`) stays activity-neutral.
 
 ## Verifier-enforced invariants
 
-The verifier (`tools/activity_verifier.py`) greps for these patterns in `app/` / `frontend-src/` / `schemas/` and refuses to ship if any are found:
+The verifier (`tools/activity_verifier.py`) greps for these patterns in `app/` / `schemas/` and refuses to ship if any are found:
 
 | Pattern checked | Reason |
 |---|---|
 | `if activity_id == "<id>": ...` / `case "<id>":` switch / activity-id string literals | Branch on activity capability or skill content, not on id. |
-| `frontend-src/` reading `instance.data.<activity-private-key>` | Frontend talks via `OutputArtifact` + cards only. |
 | Activity-specific fields added to `schemas/activity-output.schema.json` | That schema is the shared transport contract; private fields live in each activity's `data.schema.json`. |
-| Activity-specific UI controls in `frontend-src/` | Controls live in the activity's `site/` (Static Preview) or in card templates. |
+| Activity-specific UI behavior implemented in `app/` | Controls live in the activity's `site/` (Static Preview) or in card templates. |
 
 ## Where activity logic belongs
 

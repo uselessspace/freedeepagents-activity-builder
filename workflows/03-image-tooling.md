@@ -55,9 +55,9 @@ phase=editing    →  emit `<id>.confirmed` 卡（其 meta.phase = "editing"，r
 
 These are authority content, not repeated here:
 
-- **`store=` (auto / oss / sandbox)** + the durable `/v1` proxy + locked-reference REQUIRES `oss`: [../references/store-mode-table.md](../references/store-mode-table.md).
+- **`store=` (auto / oss / sandbox)**: keep `auto` unless remote managed placement is an explicit requirement. Cross-turn locked references use `artifact_id` / `resource_ref` and do not require a specific store: [../references/store-mode-table.md](../references/store-mode-table.md).
 - **Per-turn quota**: `IMAGE_GEN_MAX_PER_TURN` (default 4) is **shared** by generate + edit; plan ≤2/turn. Details in [../references/image-tools.md](../references/image-tools.md).
-- **Tool-return shape** (`result["artifacts"][0]` — `file_url` / `sandbox_path` / `storage_key` …): [../references/image-tools.md](../references/image-tools.md) §产物如何展示. The LLM just plugs `file_url` into card image variables; the runtime auto-registers the persisted artifact.
+- **Tool-return shape** (`result["artifacts"][0]` — `artifact_id` / `resource_ref` / `file_url` + placement-specific fields): [../references/image-tools.md](../references/image-tools.md) §产物如何展示. The LLM plugs `file_url` into card image variables; the runtime auto-registers the artifact.
 
 ## Failure handling (integration-time triage)
 

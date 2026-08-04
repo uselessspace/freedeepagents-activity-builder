@@ -23,10 +23,10 @@
 
 ## Trace 离线复验（端到端跑完后回查）
 
-每个 turn 在 `runtime/instances/<activity_type_id>/<activity_id>/turns/<tid>/` 留下完整 trace。常用入口：
+每个 turn 在 `runtime/instances/<activity_type_id>/<instance_id>/turns/<tid>/` 留下完整 trace。常用入口：
 
 ```bash
-TURN_DIR=runtime/instances/<activity_type_id>/<activity_id>/turns/<tid>
+TURN_DIR=runtime/instances/<activity_type_id>/<instance_id>/turns/<tid>
 
 # A) 看本轮 LLM 发了哪些工具调用 + 返回了什么
 jq -c 'select(.event | test("^(tool_call|tool_result)$"))' "$TURN_DIR/trace.jsonl"

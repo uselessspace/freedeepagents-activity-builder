@@ -71,7 +71,9 @@ Next steps (in order):
        activities/$ACTIVITY_ID/data.schema.json   (typed-KV business data shape — properties + default + x-auto-inject)
        activities/$ACTIVITY_ID/AGENTS.md
        activities/$ACTIVITY_ID/skills/$ACTIVITY_ID-host/SKILL.md
-  2) Static Preview only — add dsl_builder_module/tools_module fields
+  2) Static Preview only — add dsl_builder_module; add tools_module,
+     handlers_module, and preview_actions.json only for the classified
+     interaction surfaces
      (see $PACKAGE_ROOT/workflows/02-author-backend.md Step 3)
   3) If your Python code imports any third-party package, declare it (pinned,
      ==) in activities/$ACTIVITY_ID/requirements.txt — the scaffold ships an

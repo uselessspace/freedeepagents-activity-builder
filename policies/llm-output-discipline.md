@@ -98,14 +98,15 @@
 
 ## 8b. markdown content 内的字符串安全
 
-写 `card_emit` / `card_emit_template` 的 markdown content 时，确保整个字段值能作为 JSON 字符串被解析：
+写 `card_emit` / `card_emit_template` 的 markdown content 时，确保工具参数仍是合法 JSON：
 
-- **引述 / 强调 / 对话引用统一用中文引号**（`「」` / `『』`）或 markdown backtick（`` ` ``），让 content 字符串里**不出现裸 ASCII 双引号**。
+- 普通中文引述优先使用中文引号（`「」` / `『』`）或 markdown backtick，减少模型漏转义的概率。
   ```json
   {"content": "你问我「关于 XX 有没有记过什么」，我就能..."}
   {"content": "你问我 `关于 XX 有没有记过什么`，我就能..."}
   ```
-- 需要在 content 里展示包含 ASCII 双引号 / 反斜杠 / 字面换行的内容（代码示例、Windows 路径、raw regex 等），放进 markdown 代码块（三反引号）里——代码块内部不会被再尝试塞 JSON-unsafe 字符。
+- 必须展示 ASCII 双引号、反斜杠或换行时，按 JSON 规则转义。Markdown
+  代码块只影响渲染，**不会绕过工具参数的 JSON 解析**；不要把代码块当作转义手段。
 
 后果说明：content 里夹带未转义的 ASCII 双引号 / 反斜杠 / 字面换行会让 tool-call JSON 解析失败，整轮变 `invalid_tool_call`（错误信息形如 `Function card_emit arguments are not valid JSON. JSONDecodeError: Expecting ',' delimiter`）。LLM 看不到错误反馈，会反复 retry execute / read_file，最终触发 19s 后的 `zero-emit-fallback`，用户看到"AI 本轮未能给出有效回答"。
 
@@ -239,4 +240,4 @@ LLM 发完卡片后可以撤回再重发，但要警惕**反复撤回让自己�
 - [ ] 沙箱路径示例都是 `/activity/skills/...`（不是 `/activity/activities/...`）
 - [ ] 有 `## Turn boundary（HARD）` 段（如果业务是多步流水线）
 - [ ] 若有"看似闲聊实为业务信号"的输入，在 host SKILL.md 显式声明覆盖默认 smalltalk fallback
-- [ ] 「card_emit markdown content 用「」或 backtick 而非 ASCII 引号」这条规则在 host SKILL.md 引用或重述（deepseek 模型尤其需要）
+- [ ] host SKILL.md 提醒 markdown 参数必须是合法 JSON；代码块不能替代 JSON 转义

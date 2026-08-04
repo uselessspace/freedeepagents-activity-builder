@@ -19,35 +19,41 @@ license: MIT
 
 | 你的活动需要… | 加什么 | 形态长什么样 |
 |---|---|---|
-| 聊天 / 卡片 / 表单 / 文件就够了 | card-only 起步 | [examples/card-only.md](examples/card-only.md) |
-| 记住跨轮的业务数据 | + typed-KV | [examples/card-typed-kv.md](examples/card-typed-kv.md) |
+| 聊天 / 卡片 / 表单就够了 | card-only 起步（新活动已含 typed-KV） | [examples/card-only.md](examples/card-only.md) |
+| 读取文档、语音转写、生成语音 | + `read_document` / `asr` / `tts_generate` | [policies/capabilities.md](policies/capabilities.md) |
 | 生成 / 编辑图片 | + image 能力 | [examples/card-image.md](examples/card-image.md) |
 | 一块持久、可检视的可视化界面 | → static-preview | [examples/static-preview.md](examples/static-preview.md) |
+| SPA 按钮需要模型理解、Skills 或多工具规划 | static-preview + Preview Agent Turn | [references/preview-agent-turns.md](references/preview-agent-turns.md) |
+| SPA 录音后立即得到可编辑文字 | static-preview + direct ASR | [references/preview-asr.md](references/preview-asr.md) |
 | Agent 完成读取/操作后让 SPA 切换到语义视图或业务对象 | static-preview + navigation | [references/preview-navigation.md](references/preview-navigation.md) |
 | 上传、会话附件、模型/系统生成文件，并在零引用时回收 | + resource lifecycle | [references/asset-lifecycle.md](references/asset-lifecycle.md) |
 | 重试、待处理任务或可能跨请求执行的工作 | call-scoped ctx + durable job data | [references/handler-context-lifecycle.md](references/handler-context-lifecycle.md) |
 
 > **名词速查**：**card-system** = 用工具发卡片的输出模式（新活动默认）· **typed-KV** = 活动的结构化业务存储（`data.schema.json` + `data_*` 工具）· **static-preview** = 活动自带的一块 React 前端页面（`site/` + `dsl_builder.py`）。
 
-**设计完全自由。** 平台对活动只有三条硬契约：**卡片渲染得出来**（输出符合卡片 schema）、**工具调用得生效**（@tool 参数过 strict 校验）、**Web 产物接得准**（static-preview 时 DSL/接口对得上）。满足契约，玩法、相位、卡片编排、前端形态随你设计——形态只决定你要交付哪些文件，不约束你怎么设计。拿不准属于哪种？直接走流程第 1 步，`/activity-brief` 会帮你问清楚。
+**设计完全自由。** 核心交付契约是：**卡片可验证**、**工具可调用**、
+**业务数据符合 typed-KV schema**、**Static Preview 的 DSL 与交互接口对齐**。
+安全、资源归属、身份和能力声明仍按对应 policy 执行。玩法、相位、卡片编排、
+前端形态由活动自己设计。拿不准属于哪种？直接走第 1 步。
 
-## 流程（5 步主链路，每步可 `/<name>` 单独调）
+## 流程（6 步主链路，每步可 `/<name>` 单独调）
 
 1. [`/activity-brief`](skills/activity-brief/SKILL.md) — 点子还模糊？把它问成结构化 Brief。
 2. [`/activity-classifier`](skills/activity-classifier/SKILL.md) — 定形态（上表那几个轴），产出 Classification。
 3. [`/activity-builder`](skills/activity-builder/SKILL.md) — scaffold + 实现活动文件（含 card_templates / 表单卡）。
 4. [`/activity-frontend`](skills/activity-frontend/SKILL.md) — **仅** static-preview 或更丰富前端时。
-5. [`/activity-packager`](skills/activity-packager/SKILL.md) — 打包 `.fda.tgz` + 安装 + 冒烟取证。
+5. [`/activity-review`](skills/activity-review/SKILL.md) — 语义审查；CONFLICT 必须修复，SMELL/NOTE 可记录取舍。
+6. [`/activity-packager`](skills/activity-packager/SKILL.md) — 打包 `.fda.tgz` + 安装 + 冒烟取证。
 
-**按需工具**（独立于上面链路，随时单独调）：[`/activity-verify`](skills/activity-verify/SKILL.md) 静态校验（<5s 不调 LLM）· [`/activity-review`](skills/activity-review/SKILL.md) 语义自审（找逻辑冲突，调在场 LLM）· [`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查 · [`/activity-dev-cli`](skills/activity-dev-cli/SKILL.md) 共享 dev runtime 的检查、同步、真 turn 与日志。
+**按需工具**（也可单独调用）：[`/activity-verify`](skills/activity-verify/SKILL.md) 静态校验（<5s 不调 LLM）· [`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查 · [`/activity-dev-cli`](skills/activity-dev-cli/SKILL.md) 共享 dev runtime 的检查、同步、真 turn 与日志。
 
 > **改完想立刻在共享 dev runtime 测一轮？** 先用 `/activity-dev-cli` 做 `doctor` / `status`，再用 `message --sync-first --new --smoke --pull-logs-on-error` 完成同步、真 turn、证据判定和失败日志回收。统一规范见 [`references/dev-agent-cli.md`](references/dev-agent-cli.md)。
 
 ## 两条铁律（动手前必读）
 
 - **先 Brief 后 Classification 再 scaffold**，不要上来就建文件。默认交付 `.fda.tgz`。
-- **活动逻辑只进 `activities/<id>/`**，绝不碰通用 runtime（`app/` / `frontend-src/` / `schemas/`）。完整边界 + 理由见 [`policies/runtime-boundary.md`](policies/runtime-boundary.md)。
+- **活动逻辑只进 `activities/<id>/`**，绝不碰通用 runtime（`app/` / `schemas/`）。完整边界 + 理由见 [`policies/runtime-boundary.md`](policies/runtime-boundary.md)。
 
-**完工门禁**由 [`/activity-packager`](skills/activity-packager/SKILL.md) 把关：verifier 0 ERROR + 离线 testkit + 安装 + 冒烟（`card_item` / `turn_completed` / `done`）。证据不齐就说还差什么，别说"做完了"。
+**完工门禁**由 [`/activity-packager`](skills/activity-packager/SKILL.md) 把关：semantic review `CONFLICT: 0` + verifier 0 ERROR + 离线 testkit + 安装 + 冒烟（`card_item` / `turn_completed` / `done`）。证据不齐就说还差什么，别说"做完了"。
 
 （[`skills/activity-orchestrator/SKILL.md`](skills/activity-orchestrator/SKILL.md) 是 Codex 侧的 router 孪生入口；Claude 用户用本根 router 即可。每个 stage 只读当下需要的那个 subskill，深层细节在 `workflows/` `policies/` `references/`。）

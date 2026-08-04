@@ -34,7 +34,9 @@
 
 - 浏览器 `MediaRecorder` 默认产 `audio/webm;codecs=opus`（Chrome/Firefox）或 `audio/mp4`（Safari），都被接受——**录音不用前端转码**。
 - HTML / SVG / JS **一律拒**（415），避免同源 XSS；PDF 作为下载/文档资源允许。
-- 超 `upload_max_bytes` → 413；空文件 → 400；上传到不存在的实例 → 404（上传必须发生在一个已存在的实例里，即至少跑过一次 turn）。
+- 超 `upload_max_bytes` → 413；空文件 → 400。成功上传本身就是正式 Preview
+  交互：即使此前没有 turn，runtime 也会创建实例、记录可信操作者并更新
+  `updated_at`。只打开页面或读取 DSL 不会创建空实例。
 
 ## 响应
 
@@ -75,17 +77,26 @@ FDA 在三个 Preview 出站面统一 enrichment：bootstrap `api/dsl.json`、DS
 
 ```python
 # handlers.py：保存上传归属
-def save_page_recording(page_index: int, resource_ref: dict, url: str = "") -> dict:
-    data = ctx.get_data() or {}
-    recordings = data.setdefault("recordings", {})
-    recordings[str(page_index)] = {
-        "resource_ref": resource_ref,
-        "url": url,  # fallback only; do not parse
-        "author_user_id": ctx.user_id,
-    }
-    ctx.set_data(data)
-    ctx.notify_dsl_update()
-    return {"ok": True}
+from app.card_system import data_store
+
+def make_handlers(ctx):
+    schema = data_store.load_data_schema(ctx.activity_dir)
+
+    def save_page_recording(page_index: int, resource_ref: dict, url: str = "") -> dict:
+        def mutate(data: dict) -> dict:
+            recordings = data.setdefault("recordings", {})
+            recordings[str(page_index)] = {
+                "resource_ref": resource_ref,
+                "url": url,  # fallback only; do not parse
+                "author_user_id": ctx.user_id,
+            }
+            return data
+
+        data_store.update_data(ctx.instance_dir, schema, mutate)
+        ctx.notify_dsl_update()
+        return {"ok": True}
+
+    return {"save_page_recording": save_page_recording}
 ```
 
 ```python
@@ -101,7 +112,10 @@ audio = {
 
 ## 归属：平台不管业务
 
-平台只**存字节 + 发 ref**。"谁传的、传给绘本第几页、是不是当前用户的录音"全是你的活动业务——在 handler 里用 `ctx.user_id`（Go 鉴权的可信用户，见 `api/whoami`）写进你自己的 `data.json`，和评论作者身份同一套。**upload 端点本身不记用户、不做归属、不做配额。**
+平台负责**存字节 + 发 ref + 记录这次实例交互的可信操作者**，但 upload
+资源记录本身没有活动业务的 `author_user_id`、页面位置或所有权字段。"谁上传、
+属于绘本哪一页、谁能替换"仍由活动在 handler 中用 `ctx.user_id` 写进自己的
+typed-KV。不要把实例交互审计误当成资源级业务归属或配额。
 
 `ctx.user_name`（`str | None`）是调用者的**显示名**，来自 `X-FDA-User-Name` 头（percent-decoded）。仅用于界面展示 / 署名（如 "某某上传了…"）；身份校验、归属鉴权、配额管理仍须用 `ctx.user_id`。该字段 best-effort，头缺席时为 `None`——使用前必须判空。
 
@@ -111,6 +125,16 @@ audio = {
 2. SPA `POST api/<your_handler>`（带上 url + 业务位置，如 `page_index`）；
 3. handler 校验 `ctx.user_id` 后把 `resource_ref`（和可选 `url` 兜底）落进 `data.json`；
 4. `dsl_builder` 渲染时带出活动需要的直属字段（如 `src`）+ `resource_refs.src`，SPA 用 `resolveAssetUrl()` 显示。
+
+## 上传录音后交给 Agent ASR
+
+若录音要由 Agent 在**本轮**调用 `transcribe_audio`，上传完成后不要把
+`url` 当作 `source_file_id`。将响应的 `resource_ref` 放在 Preview Agent
+Turn 顶层的 `attachment_refs`；运行时会把同实例的 upload 复制成该 turn
+的私有 `file_0`。完整请求例见 [preview-agent-turns.md](preview-agent-turns.md)。
+
+若录完要立即显示可编辑文字、不启动 Agent，则直接调用平台的
+[preview-asr.md](preview-asr.md) 接口。
 
 ## 录音 → 克隆朗读
 

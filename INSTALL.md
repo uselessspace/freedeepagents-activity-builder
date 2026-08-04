@@ -166,8 +166,8 @@ Then smoke test the installed activity (needs the platform runtime):
 
 - Card-only activities must emit `card_item`, `turn_completed`, and `done`.
 - Static Preview activities must also serve
-  `/preview/<activity_type_id>/<activity_id>/` and
-  `/preview/<activity_type_id>/<activity_id>/api/dsl.json`.
+  `/preview/<activity_type_id>/<instance_id>/` and
+  `/preview/<activity_type_id>/<instance_id>/api/dsl.json`.
 - Image activities must validate manifest capabilities, persistent image URLs,
   and image card blocks.
 

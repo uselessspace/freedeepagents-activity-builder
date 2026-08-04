@@ -33,6 +33,13 @@ Capture the smallest useful brief:
   user's open Static Preview to an activity-private route, view, or business
   object; otherwise `none`. This is not browser click/scroll automation.
 - `image_need`: none, generate fresh images, or edit user/reference images.
+- `document_need`: none, accept files only, or let the Agent parse supported
+  documents with `read_document`.
+- `audio_need`: none, SPA direct ASR, Agent-turn ASR, TTS, voice clone, or a
+  combination.
+- `spa_interaction`: none, deterministic handlers, Preview Agent Turns, or
+  both. Use Agent Turns only when the action needs model understanding,
+  Skills, planning, or multiple tools.
 - `external_capabilities`: APIs, databases, browser/search, files, payments,
   models, or other services.
 - `persistence`: typed-KV fields, larger artifacts, secrets, indexes, or none.
@@ -69,6 +76,9 @@ End this stage with a block named exactly:
 - frontend_need:
 - agent_navigation: none
 - image_need:
+- document_need:
+- audio_need:
+- spa_interaction:
 - external_capabilities:
 - persistence:
 - delivery_target: .fda.tgz

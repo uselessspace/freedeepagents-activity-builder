@@ -327,7 +327,7 @@ ERROR activities/<id>: tools_module 'tools' declared but tools.py missing
 ERROR activities/<id>: dsl_builder_module 'dsl_builder' missing build() callable
 ```
 
-Or runtime: `GET /preview/<activity_type_id>/<activity_id>/` returns 404, `/api/dsl.json` returns
+Or runtime: `GET /preview/<activity_type_id>/<instance_id>/` returns 404, `/api/dsl.json` returns
 500.
 
 **Root cause:** manifest declares `tools_module: "tools"` or
@@ -346,7 +346,7 @@ blank page.
   + § dsl_builder_module; `references/verifier-checks.md` Hard checks.
 
 **Validation:** `activity-verify`; for Static Preview, also probe
-`/preview/<activity_type_id>/<activity_id>/api/dsl.json` returns a JSON object (not 404 / 500).
+`/preview/<activity_type_id>/<instance_id>/api/dsl.json` returns a JSON object (not 404 / 500).
 
 ---
 

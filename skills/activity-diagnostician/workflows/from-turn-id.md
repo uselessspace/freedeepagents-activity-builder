@@ -8,7 +8,7 @@ Use this when the user says "看下 turn `<turn_id>`" / "this turn failed:
 Trace files live at:
 
 ```
-<repo>/runtime/instances/<activity_type_id>/<activity_id>/turns/<turn_id>/
+<repo>/runtime/instances/<activity_type_id>/<instance_id>/turns/<turn_id>/
   ├── input.json       # what the user submitted
   └── trace.jsonl      # one JSON event per line
 ```
@@ -19,7 +19,7 @@ If the user gave only `turn_id`:
 find runtime/instances -maxdepth 5 -type d -name "<turn_id>" 2>/dev/null
 ```
 
-Pick the path with `runtime/instances/<activity_type_id>/<activity_id>/turns/<turn_id>`
+Pick the path with `runtime/instances/<activity_type_id>/<instance_id>/turns/<turn_id>`
 shape (the one with `input.json` next to `trace.jsonl`).
 
 ## Step 2 — Read input.json (10 lines is enough)
@@ -41,7 +41,7 @@ Common failure events (`event` field in each JSONL row):
 
 ```bash
 grep -E '"event": "(llm_error|chain_error|tool_error|turn_error|system_message_injected)"' \
-  runtime/instances/<activity_type_id>/<activity_id>/turns/<turn_id>/trace.jsonl | head -5
+  runtime/instances/<activity_type_id>/<instance_id>/turns/<turn_id>/trace.jsonl | head -5
 ```
 
 ## Step 4 — Match the error string against `references/error-classes.md`

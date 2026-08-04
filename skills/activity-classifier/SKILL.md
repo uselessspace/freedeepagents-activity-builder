@@ -24,10 +24,14 @@ Read the `Activity Brief` and produce a fixed classification before build work.
 
 `tool_axis`:
 
-- `zero-tool` for pure card/tool protocol plus typed-KV.
-- `image-only` when only runtime image tools are needed.
-- `external-api` when third-party services are required.
-- `custom-tools` when domain operations need activity-owned Python tools.
+- `runtime-only` when card-system, typed-KV, and declared runtime capabilities
+  are sufficient.
+- `activity-tools` when domain operations, third-party APIs, deterministic SPA
+  writes, indexes, or private business logic need `tools.py` / `handlers.py`.
+
+`runtime_capabilities` is an additive list drawn only from:
+`image_generate`, `image_edit`, `tts_generate`, `read_document`, `asr`.
+An empty list means no opt-in runtime tool.
 
 `image_axis`:
 
@@ -43,6 +47,15 @@ Read the `Activity Brief` and produce a fixed classification before build work.
   activity-private route, view, or business object in the current Static
   Preview. It must not encode browser clicks, focus, scrolling, or DOM targets.
 
+`spa_interaction_axis` (Static Preview only):
+
+- `none` for read-only DSL views.
+- `handlers` for deterministic reads/writes that do not need an Agent.
+- `agent-turns` for structured actions requiring model understanding, Skills,
+  planning, or multiple tools.
+- `mixed` when both classes of interaction exist. Direct `api/asr` remains a
+  platform endpoint, not an Agent turn.
+
 `delivery_target` defaults to `.fda.tgz`.
 
 `runtime_mode` is derived from `frontend_axis`, not chosen independently:
@@ -56,10 +69,13 @@ Read the `Activity Brief` and produce a fixed classification before build work.
   optional `tools.py`, then build to `site/dist/`.
 - `agent-to-preview` requires `frontend_axis: static-preview`. It uses the
   runtime context helper and existing DSL SSE; it is not a manifest capability.
+- Any non-`none` `spa_interaction_axis` requires `static-preview`.
+- `runtime_capabilities` maps directly to `manifest.capabilities`; do not list
+  `ctx.llm`, handlers, Preview Agent Turns, upload, or navigation there.
 - **No half-preview mode.** Ship either a complete Card-only activity or a
   complete Static Preview one — never a partial frontend.
 - External services and business decisions live in activity-owned tools and
-  skills. Do not move activity policy into `app/`, `frontend-src/`, or
+  skills. Do not move activity policy into `app/` or
   `schemas/`.
 - The classification fixes **which files the activity must ship** — it does not
   constrain the design. Do not pattern-match the new activity onto an existing
@@ -74,8 +90,10 @@ End this stage with a block named exactly:
 ## Activity Classification
 - frontend_axis:
 - tool_axis:
+- runtime_capabilities: []
 - image_axis:
 - navigation_axis:
+- spa_interaction_axis:
 - runtime_mode:
 - delivery_target: .fda.tgz
 - implementation_notes:

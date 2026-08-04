@@ -21,12 +21,14 @@ list, where does it belong instead?
 | Behavior flag | host SKILL.md or one of its `policies/` files |
 | Activity-specific tool implementation | `activities/<id>/tools.py` + `manifest.tools_module` |
 | Static Preview rendering contract | `activities/<id>/dsl_builder.py` + `manifest.dsl_builder_module` |
-| SPA-callable business function | `activities/<id>/handlers.py` + `manifest.handlers_module` (then wrap with an @tool in `tools.py`) |
+| SPA-callable business function | `activities/<id>/handlers.py` + `manifest.handlers_module`; add a thin @tool adapter only if the Agent needs the same operation |
 | Side-track model override (e.g. graph extraction) | `manifest.graph_model` |
 | Cross-activity shared config | `app/settings.py` (genuinely needs runtime change; design review required) |
 | Activity-private domain constant | a `references/` markdown file inside the host skill |
 
-If a manifest field still feels necessary after that, it's a runtime-protocol change — propose it to whoever owns `app/main.py` + `tools/activity_verifier.py`.
+If a manifest field still feels necessary after that, it is a runtime-protocol
+change: update `app/models.py`, the Builder schema/verifier, and
+`tools/check_schema_sync.py` together after architecture review.
 
 ## Validation
 
@@ -34,4 +36,7 @@ Use `<package>/schemas/manifest.schema.json` (`$id: https://freedeepagents.dev/s
 
 ## Authority
 
-Source of truth = `tools/activity_verifier.py`'s `ALLOWED_MANIFEST_FIELDS` set. The schema and this doc mirror it; if they disagree, the verifier wins.
+Runtime loading authority is `app.models.ActivityManifest`; Builder authoring
+authority is the closed schema + verifier. `tools/check_schema_sync.py` keeps
+their canonical fields aligned while allowing Builder to retire authoring-only
+compatibility earlier than the runtime reader.

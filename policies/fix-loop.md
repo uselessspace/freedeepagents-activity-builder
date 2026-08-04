@@ -1,8 +1,10 @@
-# Policy: one error at a time
+# Policy: one causal error class at a time
 
 ## Rule
 
-When the verifier reports multiple errors, **fix the first one only, then re-run**. Don't batch.
+When the verifier reports multiple errors, fix one **causal class** and re-run.
+It is safe to batch identical mechanical instances of the same issue; do not
+mix unrelated schema, routing, frontend, and prompt changes into one blind edit.
 
 ## Why
 
@@ -16,20 +18,18 @@ Batch fixes mean you don't know which change caused what when something breaks.
 ## Correct loop
 
 ```
-1. Run verifier
-2. Read the FIRST error line
-3. Make the smallest change that addresses it
+1. Run verifier and group messages by cause
+2. Pick the smallest causal group
+3. Fix that group (one item, or identical mechanical instances)
 4. Re-run verifier
-5. Did the first error disappear?
-   YES → next error (back to step 2 with the new "first")
-   NO  → revert step 3 and try a different fix
+5. Confirm the selected group disappeared before taking the next group
 ```
 
 ## Anti-pattern
 
 ```
 1. Verifier shows 8 errors
-2. "I see the pattern, let me fix all 8 at once"
+2. "I see several unrelated patterns, let me fix all 8 at once"
 3. Verifier shows 5 errors (3 you fixed, 2 were side-effects of the fix)
 4. Try to fix 3 more
 5. Verifier shows 4 errors (different again)

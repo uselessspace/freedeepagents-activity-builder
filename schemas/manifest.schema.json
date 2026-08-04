@@ -5,21 +5,12 @@
   "description": "Validates activities/<id>/manifest.json. Whitelist-only — any extra field will be rejected by tools/activity_verifier.py.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name", "description", "model", "skill_sources", "entrypoint", "input_modes"],
-  "anyOf": [
-    { "required": ["activity_type_id"] },
-    { "required": ["activity_id"] }
-  ],
+  "required": ["activity_type_id", "name", "description", "model", "skill_sources", "entrypoint", "input_modes"],
   "properties": {
     "activity_type_id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]{1,30}$",
       "description": "Canonical FDA activity type/package id; must match the directory name under activities/"
-    },
-    "activity_id": {
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9-]{1,30}$",
-      "description": "Deprecated legacy alias for activity_type_id. New manifests should use activity_type_id."
     },
     "name": {
       "type": "string",
@@ -75,12 +66,12 @@
     "dsl_builder_module": {
       "type": "string",
       "pattern": "^[a-z_][a-z0-9_]*$",
-      "description": "Filename (no .py) of the activity's DSL builder module under activities/<id>/. Must export `build(instance_dir)` returning the DSL dict your activity's SPA consumes (shape is private to each activity). Required to activate the /preview/<activity_type_id>/<activity_id>/api/dsl.json endpoint. activities/<id>/site/ must also exist."
+      "description": "Filename (no .py) of the activity's DSL builder module under activities/<activity_type_id>/. Must export `build(instance_dir)` returning the DSL dict your activity's SPA consumes (shape is private to each activity). Required to activate the /preview/<activity_type_id>/<instance_id>/api/dsl.json endpoint. activities/<activity_type_id>/site/ must also exist."
     },
     "handlers_module": {
       "type": "string",
       "pattern": "^[a-z_][a-z0-9_]*$",
-      "description": "Filename (no .py) of the activity's handlers module under activities/<id>/. Exposes pure business functions; activity @tools wrap them and the SPA reaches them via POST /preview/<activity_type_id>/<activity_id>/api/<handler_name>. See memory-archive for the canonical example."
+      "description": "Filename (no .py) of the activity's handlers module under activities/<activity_type_id>/. Exposes pure business functions; activity @tools may wrap them and the SPA reaches them via POST /preview/<activity_type_id>/<instance_id>/api/<handler_name>."
     },
     "graph_model": {
       "type": "string",
@@ -90,7 +81,7 @@
     "sandbox_env": {
       "type": "array",
       "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
-      "description": "Activity-scoped secret NAMES (e.g. [\"TMDB_API_KEY\"]). The runtime exposes only these names through ctx.get_secret and this activity's Docker sandbox, resolving VALUES from administrator-managed secrets/<activity_id>.env or secrets/_shared.env, never from arbitrary host env. FDA_ADMIN_* names are reserved platform policy and cannot be declared."
+      "description": "Activity-scoped secret NAMES (e.g. [\"TMDB_API_KEY\"]). The runtime exposes only these names through ctx.get_secret and this activity's Docker sandbox, resolving VALUES from administrator-managed secrets/<activity_type_id>.env or secrets/_shared.env, never from arbitrary host env. FDA_ADMIN_* names are reserved platform policy and cannot be declared."
     },
     "enabled": {
       "type": "boolean",

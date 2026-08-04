@@ -18,13 +18,13 @@ FreeDeepAgents repo with `bash <package>/tools/install-activity.sh`.
 
 - Captures an Activity Brief before scaffolding.
 - Classifies the activity into Card-only or Static Preview.
-- Separates tool needs into zero-tool, image-only, external API, or custom
-  activity tools.
+- Separates runtime-provided capabilities from activity-owned tools and
+  Static Preview interaction surfaces.
 - Keeps activity business logic inside `activities/<activity_type_id>/skills/`.
 - Builds card templates, typed-KV data schemas, host skills, and optional
   activity-owned tools.
 - Builds Static Preview activities with `site/`, `dsl_builder.py`, optional
-  `tools.py`, and `site/dist/`.
+  tools/handlers/Preview Actions, and `site/dist/`.
 - Wires optional Agent-driven semantic route, view, or business-object
   selection through the user-scoped `preview_navigate` event on the existing
   DSL stream, without browser click/scroll automation.
@@ -70,12 +70,15 @@ the same stages:
 1. `activity-brief` asks who the activity serves, what the core loop is, which
    UI and tool capabilities are needed, and what success looks like.
 2. `activity-classifier` writes the fixed Activity Classification:
-   `frontend_axis`, `tool_axis`, `image_axis`, `navigation_axis`, `runtime_mode`, and
+   `frontend_axis`, `tool_axis`, additive `runtime_capabilities`, `image_axis`,
+   `navigation_axis`, `spa_interaction_axis`, `runtime_mode`, and
    `delivery_target` (+ free-form `implementation_notes`).
 3. `activity-builder` scaffolds and implements activity-owned files.
 4. `activity-frontend` guides Static Preview UI choices without vendoring
    third-party frontend skill source.
-5. `activity-packager` creates `.fda.tgz`, runs `bash <package>/tools/install-activity.sh`,
+5. `activity-review` checks prompt/tool/card semantics and sends any CONFLICT
+   back for repair.
+6. `activity-packager` creates `.fda.tgz`, runs `bash <package>/tools/install-activity.sh`,
    and captures smoke-test evidence.
 
 Four standalone utility skills support any stage: `activity-verify` (static
@@ -101,11 +104,27 @@ See [references/preview-navigation.md](references/preview-navigation.md).
 Optional shadcn MCP examples or local UI skills may be used when available.
 They are not required by this package.
 
+## Static Preview ASR
+
+For a recording UI, declare `"asr"` in `manifest.capabilities` and choose one
+public path; do not use browser Web Speech as the platform fallback.
+
+| Need | SPA path | Result |
+|---|---|---|
+| Show/edit a transcript immediately; Agent is optional afterwards | multipart `POST api/asr` with `audio` and `Idempotency-Key` | transcript and billable usage; no Agent turn |
+| Let the Agent reason over the recording or decide what to do with its text | `POST api/upload` → Preview Agent Turn `attachment_refs` | copied current-turn `file_0`; Agent calls `transcribe_audio(file_0)` |
+
+The browser never supplies a user ID or ASR provider credential. The preview
+gateway supplies the trusted identity used for attribution and billing. See
+[references/preview-asr.md](references/preview-asr.md),
+[references/preview-agent-turns.md](references/preview-agent-turns.md), and
+[references/asr-tools.md](references/asr-tools.md).
+
 ## Runtime Boundary
 
 One hard rule: activity-specific behavior (decisions, prompts, state semantics,
 domain workflow, third-party abilities) lives in `activities/<id>/` — never in
-the generic runtime (`app/`, `frontend-src/`, `schemas/`). Full boundary table
+the generic runtime (`app/`, `schemas/`). Full boundary table
 and rationale: [policies/runtime-boundary.md](policies/runtime-boundary.md).
 
 ## Install
@@ -115,6 +134,6 @@ installation, and repo-local symlink fallback.
 
 ## Verification Authority
 
-`tools/activity_verifier.py` and the real installed activity smoke test are the
-final gates. Documentation summarizes the intended workflow; verifier results
-and runnable evidence win.
+The semantic review, `tools/activity_verifier.py`, offline testkit, and real
+installed activity smoke test form the release gate. Documentation summarizes
+the intended workflow; contract checks and runnable evidence win.
