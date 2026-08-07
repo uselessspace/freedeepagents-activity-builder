@@ -41,7 +41,7 @@
     },
     "write_todos": {
       "type": "boolean",
-      "description": "Opt-in: expose the deepagents write_todos planner tool to the main agent. Default false (the tool is hidden). Enable only for activities whose typical turn is a genuinely complex multi-step pipeline (3+ steps with external evidence or artifact work); fixed-card or single-tool turns should leave it off. Enforced per call via TodoToolPolicyMiddleware. See app/deepagents_runtime.py."
+      "description": "Opt-in: expose the DeepAgents write_todos planner tool to the main agent. Default false (the tool, Todo prompt, and todos state channel are absent). Activity code only declares this flag; on DeepAgents 0.7+ FDA automatically installs TodoListMiddleware plus its platform policy. Activity code must not register middleware itself. See app/deepagents_runtime.py."
     },
     "auto_memory_enabled": {
       "type": ["boolean", "null"],

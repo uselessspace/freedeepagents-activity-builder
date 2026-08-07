@@ -15,18 +15,30 @@ for `/activity-dev-cli`. `/activity-smoke`, `/activity-diagnostician`, and
 The FDA Dev Client release ships the CLI with the server URL baked in:
 
 - Windows ZIP: `fda-dev.exe` beside the GUI executable.
-- macOS: `fda-dev-macOS-arm64` beside the DMG; place it on `PATH` as
-  `fda-dev` or invoke its absolute path.
+- macOS: the DMG app automatically installs or updates its bundled matching
+  binary at `~/.local/bin/fda-dev` on launch and ensures new zsh login shells
+  include that fixed directory. The settings page is only a status/repair
+  surface; the standalone `fda-dev-macOS-arm64` artifact remains available for
+  headless installs.
 
-Discover it before use:
+After the FDA Dev Client has been launched once, discover it before use. A
+Coding Agent that was already running before first launch may use the fixed,
+documented per-user path until its environment is restarted; this is not an
+arbitrary binary-path fallback:
 
 ```bash
-command -v fda-dev
+FDA_DEV_CLI="$(command -v fda-dev 2>/dev/null || true)"
+if [ -z "$FDA_DEV_CLI" ] && [ -x "$HOME/.local/bin/fda-dev" ]; then
+  FDA_DEV_CLI="$HOME/.local/bin/fda-dev"
+fi
+test -n "$FDA_DEV_CLI" && "$FDA_DEV_CLI" --version
 # PowerShell: Get-Command fda-dev.exe
 ```
 
-If it is unavailable, do not invent a binary path. Continue with the bundled
-verifier and offline testkit; record the live-runtime smoke as deferred.
+Use the resolved `$FDA_DEV_CLI` for the commands below when it differs from
+`fda-dev`. If both fixed discovery routes are unavailable, do not invent
+another binary path. Continue with the bundled verifier and offline testkit;
+record the live-runtime smoke as deferred.
 
 The CLI and GUI are two interfaces to one native client session. The normal
 path is: log in once through FDA Dev Client, then let the CLI reuse the same
@@ -107,7 +119,7 @@ fda-dev --folder activities/<id> message \
 | `doctor` | Separates URL/OpenAPI, credentials, authenticated ping, manifest, and activity-state checks. |
 | `ping` | Validates the authenticated Developer API and lists visible activities. |
 | `status` | Reports states such as `clean`, `local-changes`, `not-synced`, or `no-local-folder`. |
-| `sync [--dry-run] [--build] [--version X.Y.Z]` | Packs local activity source; optionally builds Static Preview; previews it, or updates an activity that already has a GUI-created server sync. |
+| `sync [--dry-run] [--build] [--version X.Y.Z]` | Packs local activity source and updates an activity that already has a GUI-created server sync. Activities declaring `dsl_builder_module` are always rebuilt; `--build` remains an explicit opt-in for other activities. |
 | `message <text> [flags]` | Runs one real turn only after the activity has a completed server sync; returns the distilled result or raw SSE events. |
 | `logs [--instances N] [--turns N]` | Replaces the local diagnostics snapshot under `fda-logs/`. |
 | `pull --dry-run` | Compares local and server state without writing. |
@@ -135,7 +147,7 @@ from human prose. Use `--format text` only for an operator-facing view.
 
 | Flag | Effect |
 |---|---|
-| `--sync-first` | Sync local source before the turn; this is a server write. |
+| `--sync-first` | Sync local source before the turn; this is a server write. Static Preview activities are rebuilt automatically so source replacement cannot remove `site/dist/`. |
 | `--new` | Use a fresh throwaway instance instead of perturbing a stable human session. |
 | `--smoke` | Enforce real `card_item` + `turn_completed` + `done`; fail the process otherwise. |
 | `--pull-logs-on-error` | Download diagnostics when the turn or smoke assertion fails. |

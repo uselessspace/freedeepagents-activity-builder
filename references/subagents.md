@@ -45,8 +45,11 @@ the main agent.
 
 Sandbox built-ins (`ls`, `read_file`, `write_file`, `edit_file`, `glob`,
 `grep`, `execute`) and any declared `skills` are **always** available — they are
-injected by middleware, independent of the `tools` field. The `tools` field
-only controls which of the activity's **business** tools the subagent inherits:
+injected by middleware, independent of the `tools` field. DeepAgents 0.7's
+destructive recursive `delete` is intentionally not exposed by FDA. Also note
+that `write_file` replaces an existing file completely; use `read_file` plus
+`edit_file` when existing content must be preserved. The `tools` field only
+controls which of the activity's **business** tools the subagent inherits:
 
 | `tools` value | Subagent gets |
 |---|---|
@@ -77,7 +80,19 @@ Default `false`: the planner tool is hidden from the model entirely. Enable it
 only for activities whose typical turn is a complex multi-step pipeline (3+
 meaningful steps with external evidence or artifact work). When on, usage is
 still governed by a strict policy that discourages it for simple/fixed-card
-turns. Authoritative list = `grep -l write_todos activities/*/runtime.json`.
+turns. Activity authors only declare the flag: on DeepAgents 0.7+, FDA installs
+and configures `TodoListMiddleware` automatically. Do not import or register
+that middleware in activity code.
+
+To audit a workspace, test the parsed boolean rather than grepping for the key
+(which would also match `false` and miss nested dev/published roots):
+
+```bash
+find activities published -type f -name runtime.json -print0 |
+  while IFS= read -r -d '' f; do
+    jq -e '.write_todos == true' "$f" >/dev/null && printf '%s\n' "$f"
+  done
+```
 
 For subagents, `write_todos` is gated separately via the `write_todos`
 frontmatter flag in `AGENT.md` (default off, keeping the subagent context
@@ -86,6 +101,8 @@ clean).
 ## Where this is enforced
 
 - `app/activity_subagents.py` — discovers and validates `subagents/`.
-- `app/deepagents_runtime.py` — `TodoToolPolicyMiddleware` (the `write_todos`
-  gate) and the harness profile (GP subagent disabled, so `task` is opt-in).
+- `app/deepagents_runtime.py` — platform-owned `TodoListMiddleware` +
+  `TodoToolPolicyMiddleware` composition, plus the filesystem allowlist.
+- `app/runner/` — installs that composition only for an explicit main-agent
+  opt-in (GP subagent disabled, so `task` remains opt-in).
 - `app/models.py` — `ActivityRuntimeConfig.write_todos`.

@@ -111,7 +111,7 @@ artifact_emit({
 - **撤销机制**：同 turn 内可调 `card_retract(card_id)` / `artifact_retract(id)` / `memory_retract(id)` / `status_retract(id)`；跨 turn 不可撤。仅在确实察觉刚发错时调用，不要无目的反复撤回。业务数据写错了：直接用对应 @tool 提供的"修改"路径（如 `update_brief` / `delete_note`）或 `data_set(key, value)` 覆盖；typed-KV 写入幂等。
 - **沙箱路径**：容器内**扁平挂载**——SKILL 路径 `/activity/skills/<skill-name>/SKILL.md`（**不是** `/activity/activities/<activity_type_id>/skills/...`），card_templates `/activity/card_templates/<name>.json`，turn 历史 `/instance/turns/<turn_id>/...` (ro)，工作区 `/instance/workspace/...` (rw)，业务数据 `/instance/data.json`（runtime 管理，不直接 read_file）。
 - **记忆**：`memory_add(text)` 每轮 0-3 条，写短自然语言（`"用户输入 X；关键输出 Y"`），不要写 JSON / schema / 完整产物。已在 data.json / artifact 里的信息跳过。
-- **简单 turn 工具白名单**：使用 `card_emit_template` / `card_emit` / `card_retract` / `artifact_emit` / `memory_add` / `mark_status` / 活动 @tools / `data_*` 通用工具及其撤销变体即可；`write_todos` / `execute` / `task` 留给复杂多步流水线，简单 turn 不调。
+- **简单 turn 工具白名单**：使用 `card_emit_template` / `card_emit` / `card_retract` / `artifact_emit` / `memory_add` / `mark_status` / 活动 @tools / `data_*` 通用工具及其撤销变体即可；`write_todos` 仅在 `runtime.json` 显式开启后由平台提供，`execute` / `task` 也只用于确有需要的复杂工作，简单 turn 不调。沙箱不暴露递归 `delete`；`write_file` 会整体覆盖已有文件，需保留内容时用 `read_file` + `edit_file`。
 
 所有 11 个 card-system 工具的完整签名 + 错误模式：参考 activity-builder 包的 `<package>/references/card-system-tools.md`。typed-KV 工具签名 + 数据隔离合约：`<package>/references/data-store-tools.md`。（`<package>` = 你本地的 freedeepagents-activity-builder 安装目录，整包分发、外部可解析。）
 

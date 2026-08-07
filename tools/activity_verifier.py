@@ -62,8 +62,8 @@ ALLOWED_RUNTIME_FIELDS = {
     # Falls back to IMAGE_GEN_MODEL / IMAGE_EDIT_MODEL when unset.
     "image_generate_model",
     "image_edit_model",
-    # Per-activity opt-in for the deepagents write_todos planner tool.
-    # Default false; enable only for genuinely multi-step pipeline activities.
+    # Per-activity opt-in for the DeepAgents write_todos planner tool.
+    # Default false; FDA owns the TodoListMiddleware + policy composition.
     # See app/models.py ActivityRuntimeConfig and app/deepagents_runtime.py.
     "write_todos",
     # Per-activity override for the runtime auto-memory layer (None = follow the
