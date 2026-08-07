@@ -1,5 +1,19 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.32 (2026-08-07)
+
+对齐 DeepAgents 0.7 的 Todo 与文件工具契约，活动侧声明方式保持不变。
+
+- `write_todos` 继续默认关闭；活动只需在 `runtime.json` 显式设为 `true`，FDA
+  自动安装 `TodoListMiddleware` 并应用平台策略，活动代码不得自行注册中间件。
+- 修正启用盘点命令，按 JSON 布尔值扫描嵌套的 dev / published runtime，避免
+  `grep` 把 `false` 算作开启或漏掉双根目录。
+- 明确 FDA 不暴露 DeepAgents 0.7 新增的递归 `delete`；`write_file` 对已有文件
+  是整体覆盖，需要保留内容时使用 `read_file` + `edit_file`。
+- `fda-dev` 开发链路统一为 HTTPS-only；macOS FDA Dev Client 首次启动会自动安装
+  配套 CLI，Static Preview 的 `sync` / `message --sync-first` 会自动触发构建。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.32**。
+
 ## 0.4.31 (2026-08-04)
 
 全面校准 Builder 提示词与当前 FDA 能力面，并把语义审查纳入发布主链路。

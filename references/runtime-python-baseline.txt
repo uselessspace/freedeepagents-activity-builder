@@ -58,7 +58,7 @@ lxml
 magika
 mammoth
 markdownify
-markitdown
+firecrawl-anydoc
 multipart
 numpy
 onnxruntime
