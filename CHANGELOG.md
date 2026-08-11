@@ -1,5 +1,16 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.33 (2026-08-11)
+
+修复 Go developer preview 下用户上传资源被错误拼成重复 Preview 路径的问题。
+
+- `frontend-base/src/lib/asset-url.ts` 现在区分 Go developer proxy 与 FDA 直连
+  mount；代理外层的数据库活动类型 ID（`dat_...`）不再与上传 URL 中的 manifest
+  slug 做错误的等值比较。
+- 保留实例 ID 校验，并继续在 FDA 直连 mount 下同时校验活动类型，避免跨实例或
+  跨活动资源被改写到当前 Preview。
+- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.33**。
+
 ## 0.4.32 (2026-08-07)
 
 对齐 DeepAgents 0.7 的 Todo 与文件工具契约，活动侧声明方式保持不变。
