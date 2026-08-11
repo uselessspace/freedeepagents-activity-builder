@@ -83,9 +83,14 @@ function rewritePreviewPathForCurrentProxy(src: string): string | null {
   return `${mount.prefix}/${upload.rest}`;
 }
 
+function isHostAbsoluteAssetPath(src: string): boolean {
+  return src.startsWith('/v1/') || src.startsWith('/api/v1/developer/');
+}
+
 export function resolveAssetUrl(src: string): string {
   if (!src) return src;
   if (/^(https?:|data:|blob:)/i.test(src)) return src;
+  if (isHostAbsoluteAssetPath(src)) return src;
   const proxiedPreviewPath = rewritePreviewPathForCurrentProxy(src);
   if (proxiedPreviewPath) return proxiedPreviewPath;
   if (BASE_PREFIX && src.startsWith(BASE_PREFIX + '/')) return src;

@@ -2,13 +2,16 @@
 
 ## 0.4.33 (2026-08-11)
 
-修复 Go developer preview 下用户上传资源被错误拼成重复 Preview 路径的问题。
+修复 Go developer preview 下用户上传资源与 AI artifact 被错误拼成重复 Preview
+路径的问题。
 
 - `frontend-base/src/lib/asset-url.ts` 现在区分 Go developer proxy 与 FDA 直连
   mount；代理外层的数据库活动类型 ID（`dat_...`）不再与上传 URL 中的 manifest
   slug 做错误的等值比较。
 - 保留实例 ID 校验，并继续在 FDA 直连 mount 下同时校验活动类型，避免跨实例或
   跨活动资源被改写到当前 Preview。
+- 将 `/api/v1/developer/...` 与 FDA canonical `/v1/...` 识别为宿主绝对资源路径，
+  避免 artifact URL 被再次追加到当前 Preview 根目录。
 - Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.33**。
 
 ## 0.4.32 (2026-08-07)
