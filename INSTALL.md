@@ -7,7 +7,7 @@ skill symlink. All forms point at the same internal workflow skills.
 
 Use one Builder bundle per run. Read its plugin manifest version and do not mix
 scripts/templates from a repo checkout with Skills loaded from a different
-plugin cache. Builder 0.4.33 targets the current FDA contract based on Python
+plugin cache. Builder 0.4.34 targets the current FDA contract based on Python
 3.12, DeepAgents 0.7.x, and LangChain Core 1.x. For another target runtime,
 its `app/models.py` and pinned requirements are authoritative; run
 `tools/check_schema_sync.py` in that runtime or install the Builder release
@@ -16,7 +16,7 @@ paired with it. A newer Builder can author fields an older runtime rejects.
 > **Install the whole package, not individual skills.** The skills cross-link
 > each other and the shared `policies/` / `references/` / `workflows/` /
 > `schemas/` / `testkit/` dirs with package-relative paths (e.g.
-> `../../workflows/06-verify-and-ship.md`). Those resolve only when the full
+> `../../workflows/06-verify-directory.md`). Those resolve only when the full
 > package tree is intact. Extracting a single `skills/<one>/` directory into
 > `~/.claude/skills/` strands every cross-reference — symlink or copy the
 > **entire** `packages/freedeepagents-activity-builder/` directory instead.
@@ -35,13 +35,13 @@ short default prompts such as:
 
 ```text
 帮我设计并生成一个 FDA 智能活动
-Build a FreeDeepAgents activity and package it
+Build and verify a FreeDeepAgents activity directory
 Classify this activity idea into Card-only or Static Preview
 ```
 
-After installation, ask Codex to build an FDA activity. The router will first
-run `activity-brief`, then `activity-classifier`, then the builder, frontend,
-and packager skills as needed.
+After installation, ask Codex to build an FDA activity. The router runs
+`activity-brief`, `activity-classifier`, builder, optional frontend, review,
+and directory verification.
 
 ## Claude Plugin
 
@@ -67,13 +67,12 @@ plugin.json 的 `skills` 数组只是显式声明 + 排序，不是白名单。�
 /activity-classifier    分类定型（card-only / static-preview）
 /activity-builder       scaffold + 实现（含 card_templates / form 表单卡）
 /activity-frontend      Static Preview 前端（仅需要时）
-/activity-packager      打包 .fda.tgz + 安装 + 冒烟
+/activity-verify        开发目录验收（verifier + strict schema + testkit）
 ```
 
 按需独立工具（随时单独调）：
 
 ```text
-/activity-verify        静态校验（verifier + strict-tool schema，<5s）
 /activity-review        本地语义自审（CONFLICT 阻断；SMELL / NOTE 可记录取舍）
 /activity-smoke         端到端冒烟（核 trace.jsonl 的 card_item / turn_completed / done）
 /activity-diagnostician 失败排查（turn_id / 错误日志 / 症状 → 根因 + 修复）
@@ -116,7 +115,7 @@ cp -R packages/freedeepagents-activity-builder \
 
 If you copy instead of symlink, repeat the copy after updating this package.
 
-## Build And Deliver An Activity
+## Build And Deliver An Activity Directory
 
 The plugin should guide the coding agent through these stages:
 
@@ -124,31 +123,21 @@ The plugin should guide the coding agent through these stages:
 2. Write `## Activity Classification`.
 3. Generate or update `activities/<activity_type_id>/`.
 4. Build `site/dist/` for Static Preview activities.
-5. Package the activity:
+5. Verify the activity directory:
 
 ```bash
-bash <package>/tools/pack-activity.sh <activity_type_id>
+python3 <package>/tools/activity_verifier.py <project-root>
+python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
 ```
 
-The expected output is a `.fda.tgz` file under `dist/`.
+The expected output remains at `activities/<activity_type_id>/`. Point FDA Dev
+Client / `fda-dev --folder` at that directory.
 
 Static Preview frontend dependencies must be package-local. If `site/package.json`
 uses npm `file:` dependencies, the targets must live inside the activity
 directory, such as `file:vendor/<package>`. Do not point at the host Runtime
 monorepo (`file:../../../packages/...`); verifier rejects those paths because
-the `.fda.tgz` package must install on a runtime that only has the activity
-folder.
-
-## Install The Package
-
-Install the package in a real FreeDeepAgents repo:
-
-```bash
-bash <package>/tools/install-activity.sh /path/to/<activity_type_id>-*.fda.tgz
-```
-
-The install script should unpack `activities/<activity_type_id>/`, prepare runtime
-dependencies, and rebuild Static Preview assets when needed.
+the synced activity must remain self-contained.
 
 ## Verify
 
@@ -172,7 +161,7 @@ python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
 | `skills/activity-verify/scripts/strict-tool-schema-check.py` | 跟随 FDA 仓库 venv（当前 3.12） | **是**（`tools.py` 的 `app.card_system` import 需仓库在 `sys.path`） | `langchain_core` |
 | `tools/check_schema_sync.py` | 跟随 FDA 仓库 venv | **是**（比对 `app.models`，维护者侧守卫） | 平台 venv 全量 |
 
-Then smoke test the installed activity (needs the platform runtime):
+When FDA Dev Client / `fda-dev` is available, sync and smoke the directory:
 
 - Card-only activities must emit `card_item`, `turn_completed`, and `done`.
 - Static Preview activities must also serve
@@ -181,5 +170,6 @@ Then smoke test the installed activity (needs the platform runtime):
 - Image activities must validate manifest capabilities, persistent image URLs,
   and image card blocks.
 
-If any check cannot run, the activity is not ready yet. Report the blocker
-instead of claiming success.
+Verifier, strict schema/testkit, and Static Preview build failures block local
+completion. A live smoke may be explicitly deferred when the first GUI upload
+or authenticated runtime is unavailable; report the exact deferred state.

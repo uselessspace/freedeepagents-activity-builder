@@ -7,8 +7,8 @@ pull server source, and download diagnostics without exposing a generic raw API
 client.
 
 This reference owns the command, side-effect, authentication, and output rules
-for `/activity-dev-cli`. `/activity-smoke`, `/activity-diagnostician`, and
-`/activity-packager` route here when they need a shared runtime.
+for `/activity-dev-cli`. `/activity-verify`, `/activity-smoke`, and
+`/activity-diagnostician` route here when they need a shared runtime.
 
 ## Availability and identity
 
@@ -50,7 +50,7 @@ export FDA_GO_SERVER=https://Intelliland.cn:18084
 fda-dev --folder activities/<id> doctor
 ```
 
-`--folder` points to the activity being developed. Its basename is the default
+`--folder` points directly to the activity development directory. Its basename is the default
 `activity_type_id`; use `--activity <id>` only when they intentionally differ.
 
 ## Agent decision table

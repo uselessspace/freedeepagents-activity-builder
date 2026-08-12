@@ -1,8 +1,8 @@
 {
   "name": "freedeepagents-activity-builder",
   "displayName": "FreeDeepAgents Activity Builder",
-  "version": "0.4.33",
-  "description": "Codex + Claude plugin with workflow skills for designing, building, packaging, verifying, and safely live-debugging FDA activities end-to-end.",
+  "version": "0.4.34",
+  "description": "Codex + Claude plugin with workflow skills for designing, building, verifying, directory-syncing, and safely live-debugging FDA activities end-to-end.",
   "author": {
     "name": "Useless Space",
     "email": "noreply@uselessspace.dev"
@@ -37,9 +37,6 @@
     },
     {
       "path": "skills/activity-frontend"
-    },
-    {
-      "path": "skills/activity-packager"
     },
     {
       "path": "skills/activity-verify"

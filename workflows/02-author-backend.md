@@ -87,8 +87,8 @@ so prompt/logic edits hot-reload via dev_sync on the next turn.
 
 ## Step 4 (any mode): declare third-party Python deps
 
-If your `tools.py` / `dsl_builder.py` / `handlers.py` (or helper modules they
-ship) import any third-party Python package, declare it in
+If your `tools.py` / `dsl_builder.py` / `handlers.py` (or helper modules in the
+activity directory) import any third-party Python package, declare it in
 `activities/<id>/requirements.txt` (the scaffold ships an all-comment starter).
 The runtime shares one venv across all activities, so an undeclared import
 `ImportError`s on a fresh host — and the verifier blocks it. Pin with `==`;
@@ -113,7 +113,7 @@ or a runtime capability before adding a dependency. Full rules:
 - [ ] Activity @tools (in `tools.py`) wrap typed-KV writes with user-semantic names; tool names do not collide with built-ins
 - [ ] AGENTS.md ≤80 lines; routes to `skills/<id>-host/SKILL.md`
 - [ ] `skills/<id>-cards/SKILL.md` exists and is the presentation-only card catalog referenced by AGENTS/host
-- [ ] no `TODO_ACTIVITY_AUTHOR`, `<package>`, `<id>`, or `<activity_type_id>` residue remains in shipped activity instructions
+- [ ] no `TODO_ACTIVITY_AUTHOR`, `<package>`, `<id>`, or `<activity_type_id>` residue remains in completed activity instructions
 - [ ] host SKILL.md ≤120 lines; supporting files under `workflows/`/`policies/`/`references/`
 - [ ] `<id>.welcome.json` exists, contains no `{{...}}`, and `<id>.welcome.vars.json` has empty `properties` with `additionalProperties: false`
 
@@ -127,6 +127,6 @@ Proceeding to <next-step>.
 ```
 
 Where `<next-step>` is:
-- Card-only & image_axis=none → [06-verify-and-ship.md](06-verify-and-ship.md)
+- Card-only & image_axis=none → [06-verify-directory.md](06-verify-directory.md)
 - image_axis ≠ none → [03-image-tooling.md](03-image-tooling.md)
 - Static Preview → [04-derive-frontend.md](04-derive-frontend.md)

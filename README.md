@@ -2,11 +2,11 @@
 
 `freedeepagents-activity-builder` is a Codex + Claude plugin for building
 FreeDeepAgents intelligent activities. It guides a coding agent from an idea,
-through product and runtime classification, into implementation, packaging, and
-install verification.
+through product and runtime classification, into an implementation directory,
+deterministic verification, and optional live FDA Dev Client smoke testing.
 
-The default deliverable is a `.fda.tgz` package that can be installed into a
-FreeDeepAgents repo with `bash <package>/tools/install-activity.sh`.
+The deliverable is `activities/<activity_type_id>/`. FDA Dev Client and
+`fda-dev --folder` sync this development directory directly.
 
 > **Two placeholders used throughout the docs:** `<package>` = the directory
 > where this plugin is installed/unpacked (the one holding this README);
@@ -28,8 +28,8 @@ FreeDeepAgents repo with `bash <package>/tools/install-activity.sh`.
 - Wires optional Agent-driven semantic route, view, or business-object
   selection through the user-scoped `preview_navigate` event on the existing
   DSL stream, without browser click/scroll automation.
-- Packages the final activity as `.fda.tgz`.
-- Verifies install and runtime smoke behavior before calling the activity ready.
+- Verifies the activity directory with semantic review, the bundled verifier,
+  strict tool-schema checks, offline testkit, and optional live runtime smoke.
 
 ## Package Layout
 
@@ -44,7 +44,6 @@ packages/freedeepagents-activity-builder/
 |   |-- activity-classifier/SKILL.md
 |   |-- activity-builder/SKILL.md
 |   |-- activity-frontend/SKILL.md
-|   |-- activity-packager/SKILL.md
 |   |-- activity-verify/SKILL.md     # static verify (verifier + strict-tool-schema)
 |   |-- activity-review/SKILL.md     # semantic self-audit (logic conflicts; in-session LLM)
 |   |-- activity-smoke/SKILL.md      # runtime SSE smoke test
@@ -71,23 +70,21 @@ the same stages:
    UI and tool capabilities are needed, and what success looks like.
 2. `activity-classifier` writes the fixed Activity Classification:
    `frontend_axis`, `tool_axis`, additive `runtime_capabilities`, `image_axis`,
-   `navigation_axis`, `spa_interaction_axis`, `runtime_mode`, and
-   `delivery_target` (+ free-form `implementation_notes`).
+   `navigation_axis`, `spa_interaction_axis`, and `runtime_mode`
+   (+ free-form `implementation_notes`).
 3. `activity-builder` scaffolds and implements activity-owned files.
 4. `activity-frontend` guides Static Preview UI choices without vendoring
    third-party frontend skill source.
 5. `activity-review` checks prompt/tool/card semantics and sends any CONFLICT
    back for repair.
-6. `activity-packager` creates `.fda.tgz`, runs `bash <package>/tools/install-activity.sh`,
-   and captures smoke-test evidence.
+6. `activity-verify` validates the development directory and writes the
+   `Development Verification` evidence block.
 
-Four standalone utility skills support any stage: `activity-verify` (static
-verifier + strict-tool-schema check), `activity-smoke` (runtime SSE smoke
-test), `activity-diagnostician` (maps errors to fix classes), and
-`activity-dev-cli` (safe `doctor` / `status` / sync / pull / real-turn / logs
-workflows against a shared dev runtime). The
+Standalone utilities support any stage: `activity-smoke` (runtime SSE smoke),
+`activity-diagnostician` (error-class triage), and `activity-dev-cli` (safe
+directory sync / pull / real-turn / logs against a shared dev runtime). The
 `testkit/` directory ships the offline harness behind the always-required
-testkit smoke line (see `testkit/README.md`).
+testkit line.
 
 ## Frontend Capability
 
@@ -134,6 +131,7 @@ installation, and repo-local symlink fallback.
 
 ## Verification Authority
 
-The semantic review, `tools/activity_verifier.py`, offline testkit, and real
-installed activity smoke test form the release gate. Documentation summarizes
-the intended workflow; contract checks and runnable evidence win.
+The semantic review, `tools/activity_verifier.py`, strict tool-schema check,
+offline testkit, and—when available—live directory-sync smoke form the
+development gate. Documentation summarizes the workflow; contract checks and
+runnable evidence win.

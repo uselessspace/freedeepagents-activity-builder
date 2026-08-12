@@ -74,14 +74,14 @@ ALLOWED_RUNTIME_FIELDS = {
 GENERIC_ROOTS = ("app", "schemas")
 
 # Python dependency check. An activity's Python (tools.py / dsl_builder.py /
-# handlers.py + any helper modules they ship) runs inside the host's single
+# handlers.py + any helper modules included with them) runs inside the host's single
 # shared venv — there is NO per-activity isolation (app/dev_sync.py pip-installs
 # activities/<id>/requirements.txt into that same venv; the Dockerfile bakes
 # every activity's requirements at build time). So any third-party package an
 # activity imports must be declared in its own requirements.txt, or it will
 # ImportError at runtime on a fresh host. The verifier enforces completeness:
 # an import that is neither stdlib, nor in the platform baseline, nor first
-# party, nor a sibling module the activity ships, nor declared in the
+# party, nor a sibling module in the activity, nor declared in the
 # activity's requirements.txt is an undeclared dependency.
 #
 # The baseline is the transitive closure of the host's own requirements.txt,
@@ -106,10 +106,8 @@ WRONG_ARTIFACT_FIELDS = {
     "file_url": "use 'url' (pydantic OutputArtifact.url)",
     "byte_size": "OutputArtifact has no 'byte_size' field",
 }
-KNOWN_BLOCK_TYPES = {"markdown", "info", "form", "action", "image", "audio"}
-
 # Scaffold authoring markers and Builder-only addresses must never reach a
-# packaged activity. They are deliberately allowed in this Builder package's
+# completed activity. They are deliberately allowed in this Builder package's
 # templates, then rejected after those templates are copied under activities/.
 AUTHORING_RESIDUE_PATTERNS = (
     (re.compile(r"TODO_ACTIVITY_AUTHOR"), "unfinished TODO_ACTIVITY_AUTHOR marker"),
@@ -436,7 +434,7 @@ def _contains_welcome_placeholder(value: object) -> bool:
 
 
 def _verify_no_authoring_residue(root: Path, issues: list[VerificationIssue]) -> None:
-    """Reject unfinished scaffold prose and Builder-only paths in shipped files."""
+    """Reject unfinished scaffold prose and Builder-only paths in activity files."""
     activities_dir = root / "activities"
     if not activities_dir.exists():
         return
@@ -477,7 +475,7 @@ def _verify_no_authoring_residue(root: Path, issues: list[VerificationIssue]) ->
                         root,
                         path,
                         f"line {line_no}: {label}. Finish authoring the activity and replace "
-                        "the reference with an activity-local runtime path before review/package.",
+                        "the reference with an activity-local runtime path before review/verification.",
                     )
                 )
                 break
@@ -1178,7 +1176,7 @@ def _schema_check_one_of(value, options: list, *, root_schema: dict, path: str, 
 
 
 def _load_plugin_schema(name: str) -> dict | None:
-    """Load a schema shipped with this plugin (…/schemas/<name>), or None when
+    """Load a schema bundled with this plugin (…/schemas/<name>), or None when
     the file is missing/unreadable (unusual install layout)."""
     path = Path(__file__).resolve().parent.parent / "schemas" / name
     try:
@@ -1190,13 +1188,13 @@ def _load_plugin_schema(name: str) -> dict | None:
 
 def _verify_card_template_schema_conformance(root: Path, issues: list[VerificationIssue]) -> None:
     """Validate every card_templates/*.json against card-template.schema.json
-    and every *.vars.json against card-vars.schema.json (both shipped in this
+    and every *.vars.json against card-vars.schema.json (both bundled in this
     plugin's schemas/). Errors here reproduce 1:1 as runtime OutputCard
     validation failures, so severity is error."""
     template_schema = _load_plugin_schema("card-template.schema.json")
     vars_schema = _load_plugin_schema("card-vars.schema.json")
     if template_schema is None and vars_schema is None:
-        return  # schemas not shipped alongside this copy; heuristic lint above still applies
+        return  # schemas not bundled alongside this copy; heuristic lint above still applies
     for path in sorted((root / "activities").glob("*/card_templates/*.json")):
         text = _read(path)
         if text is None:
@@ -1270,12 +1268,12 @@ def _parse_requirements_dists(req_path: Path) -> set[str]:
 
 
 def _activity_local_modules(activity_dir: Path) -> set[str]:
-    """Names importable as modules shipped inside the activity, at any depth —
+    """Names importable as modules included inside the activity, at any depth —
     helper modules (``_graph.py``), sub-packages, and skill ``scripts/``
     siblings imported after a ``sys.path`` insert (e.g. bedtime-story's
-    ``from tavily_search import ...``). These are not third-party. A shipped
+    ``from tavily_search import ...``). These are not third-party. A bundled
     file shadows a same-named third-party package at runtime anyway, so folding
-    every shipped stem in is consistent with how the import resolves."""
+    every local stem in is consistent with how the import resolves."""
     names: set[str] = set()
     for path in activity_dir.rglob("*.py"):
         rel = path.relative_to(activity_dir).as_posix()
@@ -1288,7 +1286,7 @@ def _activity_local_modules(activity_dir: Path) -> set[str]:
 
 
 def _activity_python_files(activity_dir: Path) -> list[Path]:
-    """Runtime Python files shipped by the activity. Excludes the frontend
+    """Runtime Python files included by the activity. Excludes the frontend
     project (``site/``), bytecode caches, and tests (not loaded at runtime)."""
     out: list[Path] = []
     for path in sorted(activity_dir.rglob("*.py")):

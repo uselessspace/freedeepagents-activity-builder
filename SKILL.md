@@ -1,17 +1,18 @@
 ---
 name: freedeepagents-activity-builder
 description: >-
-  Use when the user asks to create, scaffold, build, design, or package a new
-  FDA / FreeDeepAgents / DeepAgents intelligent activity; asks how to add one
-  to the repo; or wants to use fda-dev CLI to connect, inspect, sync, pull,
-  smoke-test, or diagnose an activity. Router entry for the plugin workflow
-  skills.
-license: MIT
+  Use when the user asks to create, scaffold, build, design, develop, or verify
+  an FDA / FreeDeepAgents / DeepAgents intelligent activity; asks how to add
+  one to the repo; or wants to use fda-dev CLI to
+  connect, inspect, sync, pull, smoke-test, or diagnose an activity. Router
+  entry for the plugin workflow skills.
 ---
 
 # FreeDeepAgents Activity Builder
 
-把一个活动点子 → 验证过的 `.fda.tgz` 包（可装进 FreeDeepAgents repo）。本文件是 Codex + Claude 插件的总入口（router）。**先认形态，再动手。**
+把一个活动点子 → `activities/<activity_type_id>/` 下验证过的开发工程，可直接交给
+FDA Dev Client / `fda-dev` 同步。本文件是 Codex + Claude 插件的总入口（router）。
+**先认形态，再动手。**
 
 ## 我要做的活动属于哪种？（30 秒自测）
 
@@ -43,9 +44,9 @@ license: MIT
 3. [`/activity-builder`](skills/activity-builder/SKILL.md) — scaffold + 实现活动文件（含 card_templates / 表单卡）。
 4. [`/activity-frontend`](skills/activity-frontend/SKILL.md) — **仅** static-preview 或更丰富前端时。
 5. [`/activity-review`](skills/activity-review/SKILL.md) — 语义审查；CONFLICT 必须修复，SMELL/NOTE 可记录取舍。
-6. [`/activity-packager`](skills/activity-packager/SKILL.md) — 打包 `.fda.tgz` + 安装 + 冒烟取证。
+6. [`/activity-verify`](skills/activity-verify/SKILL.md) — verifier + strict schema + testkit，形成开发目录验收证据。
 
-**按需工具**（也可单独调用）：[`/activity-verify`](skills/activity-verify/SKILL.md) 静态校验（<5s 不调 LLM）· [`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查 · [`/activity-dev-cli`](skills/activity-dev-cli/SKILL.md) 共享 dev runtime 的检查、同步、真 turn 与日志。
+**按需工具**（也可单独调用）：[`/activity-smoke`](skills/activity-smoke/SKILL.md) 端到端冒烟 · [`/activity-diagnostician`](skills/activity-diagnostician/SKILL.md) 失败排查 · [`/activity-dev-cli`](skills/activity-dev-cli/SKILL.md) 共享 dev runtime 的检查、目录同步、真 turn 与日志。
 
 > **改完想立刻在共享 dev runtime 测一轮？** 先用 `/activity-dev-cli` 做 `doctor` / `status`，再用 `message --sync-first --new --smoke --pull-logs-on-error` 完成同步、真 turn、证据判定和失败日志回收。统一规范见 [`references/dev-agent-cli.md`](references/dev-agent-cli.md)。
 
@@ -55,10 +56,15 @@ license: MIT
 
 ## 两条铁律（动手前必读）
 
-- **先 Brief 后 Classification 再 scaffold**，不要上来就建文件。默认交付 `.fda.tgz`。
+- **先 Brief 后 Classification 再 scaffold**，不要上来就建文件。完成后的开发工程
+  保持在 `activities/<id>/`，由 FDA Dev Client / `fda-dev` 直接同步。
 - **活动逻辑只进 `activities/<id>/`**，绝不碰通用 runtime（`app/` / `schemas/`）。完整边界 + 理由见 [`policies/runtime-boundary.md`](policies/runtime-boundary.md)。
-- scaffold 中的 `TODO_ACTIVITY_AUTHOR` 是阻断标记，不是示例文案；全部替换后才能 review / verify / pack。
+- scaffold 中的 `TODO_ACTIVITY_AUTHOR` 是阻断标记，不是示例文案；全部替换后才能 review / verify / sync。
 
-**完工门禁**由 [`/activity-packager`](skills/activity-packager/SKILL.md) 把关：semantic review `CONFLICT: 0` + verifier 0 ERROR + 离线 testkit + 安装 + 冒烟（`card_item` / `turn_completed` / `done`）。证据不齐就说还差什么，别说"做完了"。
+**开发目录完工门禁**由 [`/activity-verify`](skills/activity-verify/SKILL.md)
+把关：semantic review `CONFLICT: 0` + verifier 0 ERROR + strict-tool schema +
+离线 testkit；共享 dev runtime 可用时再由 `/activity-dev-cli` +
+`/activity-smoke` 补真实 `card_item` / `turn_completed` / `done` 证据。证据不齐
+就说还差什么，别说“做完了”。
 
 （[`skills/activity-orchestrator/SKILL.md`](skills/activity-orchestrator/SKILL.md) 是 Codex 侧的 router 孪生入口；Claude 用户用本根 router 即可。每个 stage 只读当下需要的那个 subskill，深层细节在 `workflows/` `policies/` `references/`。）

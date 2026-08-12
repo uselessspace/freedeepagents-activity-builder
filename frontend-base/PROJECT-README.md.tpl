@@ -6,10 +6,9 @@ FreeDeepAgents activity frontend derived from the Activity Builder Static Previe
 
 Two paths — pick by where you want to run:
 
-**Runtime / packaged install**: use the Activity Builder's
-`install-activity.sh` command printed by the packager. It prewarms dependencies
-and builds `site/dist/`; do not assume the Builder is vendored at
-a fixed repo-local path in the target checkout.
+**FDA Dev Client / shared runtime**: keep this project under
+`activities/{{ACTIVITY_ID}}/` and point `fda-dev --folder` at that directory.
+Static Preview sync rebuilds the frontend server-side.
 
 **Local dev outside the runtime** (faster inner loop while authoring):
 
@@ -21,13 +20,13 @@ npm run build        # production bundle to dist/
 ```
 
 If this frontend uses npm `file:` dependencies, keep those packages inside this
-activity directory (for example `file:vendor/local-widget`). Runtime installs only
-receive the activity package, so `file:../../../packages/...` and other paths
+activity directory (for example `file:vendor/local-widget`). Directory sync only
+receives the activity project, so `file:../../../packages/...` and other paths
 outside the activity are rejected by the verifier.
 
-When `package.json` changes, rerun `setup-runtime.sh {{ACTIVITY_ID}} --force`
-from the same Builder bundle used for packaging, or reinstall the `.fda.tgz`,
-so packaged/runtime builds use the new dependencies.
+When `package.json` changes, `fda-dev sync` / `message --sync-first` rebuilds
+Static Preview remotely. When using a local FDA platform repo instead, rerun
+`setup-runtime.sh {{ACTIVITY_ID}} --force` from the active Builder bundle.
 
 ## What's where
 

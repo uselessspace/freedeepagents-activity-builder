@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 # setup-runtime.sh — one-shot "make the runtime ready" for FreeDeepAgents.
 #
-# Audience: FDA runtime operators (people running the FDA service that will
-# host activities). Plugin users who only build & pack activities for shipping
-# don't need this — they call pack-activity.sh and ship the .fda.tgz. The
-# receiver who installs the .fda.tgz into a running FDA service is the one
-# who runs this script.
+# Audience: FDA runtime operators and developers testing an activity in a
+# local FDA checkout. FDA Dev Client / fda-dev directory sync performs its own
+# server-side preparation and does not require this script.
 #
 # Prerequisites: an FDA repo checkout containing Dockerfile.sandbox at its
 # root. Run from inside that repo.
 #
 # Idempotent. Safe to re-run after any of:
 #   - cloning the repo for the first time
-#   - dropping a new activities/<id>/ in via bash <package>/tools/install-activity.sh
+#   - adding a new activities/<id>/ directory
 #   - editing activities/<id>/site/package.json
 #
 # What it does (skips work that's already done):

@@ -29,8 +29,9 @@ description: >-
   `message --sync-first --new --smoke --pull-logs-on-error`。
 - 已有失败 turn 或需要日志：用 `logs` 获取诊断快照，再转
   `/activity-diagnostician`。
-- 需要打包交付：CLI 运行证据交给 `/activity-packager` 的
-  `Ship Verification`，CLI 本身不替代静态 verifier 与离线 testkit。
+- 开发目录验收：CLI 运行证据补进 `/activity-verify` 的
+  `Development Verification`；CLI 本身不替代 verifier、strict schema 与离线 testkit。
+- FDA Dev Client 的 `sync` 直接读取 `--folder` 指向的活动开发目录。
 
 ## 安全提醒
 

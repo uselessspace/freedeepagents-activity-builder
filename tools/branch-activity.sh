@@ -92,7 +92,8 @@ cat <<EOF
   5) Verify:
        python3 $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
 
-     Treat only verifier exit 0 as ship-ready. Do not pipe through grep: a
-     filter can hide errors from this activity or from shared runtime files.
+     Do not pipe through grep: a filter can hide errors from this activity or
+     from shared runtime files. Verifier exit 0 is required, then complete
+     semantic review and the offline testkit before marking development-ready.
 
 EOF

@@ -58,11 +58,11 @@ Rules:
 - Use lucide icons for tools and status actions.
 - Use shadcn-style component structure for tabs, menus, dialogs, inputs, and
   tables, but implement only what the activity needs.
-- Check mobile and desktop screenshots before shipping.
+- Check mobile and desktop screenshots before directory verification.
 
 ## Hand-off
 
 ```text
 Frontend polish for <id> complete.
-Proceeding to 06-verify-and-ship.md.
+Proceeding to 06-verify-directory.md.
 ```

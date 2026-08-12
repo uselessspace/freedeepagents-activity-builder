@@ -226,7 +226,7 @@ unable to get local issuer certificate (_ssl.c:992)
 
 Common when a script calls `urllib.request.urlopen` over HTTPS inside the
 `freedeepagents-sandbox-node:latest` docker image — Python validates
-TLS by default but the sandbox image does not ship a populated
+TLS by default but the sandbox image does not include a populated
 `ca-certificates` store, so verification fails for every HTTPS request.
 
 **User-visible symptom:** the activity's `save_search_session` (or
@@ -276,7 +276,7 @@ ERROR activities/<id>/runtime.json: runtime.json has disallowed field: <x>
 longer exists). Common new-activity cause: trying to add `tags` / `version`
 / `default_*` to manifest.
 
-**User-visible symptom:** verifier blocks ship; the runtime refuses to load
+**User-visible symptom:** verifier blocks directory verification; the runtime refuses to load
 the activity.
 
 **Fix location:**
@@ -420,7 +420,7 @@ the runtime only installs a dependency if the activity declares it
 the author's machine (where it happens to be installed) but `ImportError`s
 elsewhere.
 
-**User-visible symptom:** verifier blocks ship; on a fresh host the activity
+**User-visible symptom:** verifier blocks directory verification; on a fresh host the activity
 fails the first time the import executes.
 
 **Fix location:**

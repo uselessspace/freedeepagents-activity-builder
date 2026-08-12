@@ -58,7 +58,7 @@ source.addEventListener('preview_navigate', (event) => {
 });
 ```
 
-The packaged `frontend-base` already wires this event into `useDsl()`:
+The bundled `frontend-base` already wires this event into `useDsl()`:
 
 ```tsx
 const { data, navigation } = useDsl();

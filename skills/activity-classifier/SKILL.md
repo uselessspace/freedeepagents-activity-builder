@@ -2,9 +2,9 @@
 name: activity-classifier
 description: >-
   活动构建第 2 步·分类定型。读 Activity Brief，把活动定到几个技术轴：card-only 还是
-  static-preview、要不要 tool / image、怎么打包交付。brief 写完、动手实现之前用。
+  static-preview、要不要 tool / image。brief 写完、动手实现之前用。
   Use after an Activity Brief exists to classify an FDA activity into card-only
-  or Static Preview, tool capability, image capability, and package delivery axes.
+  or Static Preview, tool capability, image capability, and interaction axes.
 ---
 
 # Activity Classifier
@@ -56,8 +56,6 @@ An empty list means no opt-in runtime tool.
 - `mixed` when both classes of interaction exist. Direct `api/asr` remains a
   platform endpoint, not an Agent turn.
 
-`delivery_target` defaults to `.fda.tgz`.
-
 `runtime_mode` is derived from `frontend_axis`, not chosen independently:
 `card-only` → `Card-only`, `static-preview` → `Static Preview`.
 
@@ -72,12 +70,12 @@ An empty list means no opt-in runtime tool.
 - Any non-`none` `spa_interaction_axis` requires `static-preview`.
 - `runtime_capabilities` maps directly to `manifest.capabilities`; do not list
   `ctx.llm`, handlers, Preview Agent Turns, upload, or navigation there.
-- **No half-preview mode.** Ship either a complete Card-only activity or a
+- **No half-preview mode.** Deliver either a complete Card-only activity or a
   complete Static Preview one — never a partial frontend.
 - External services and business decisions live in activity-owned tools and
   skills. Do not move activity policy into `app/` or
   `schemas/`.
-- The classification fixes **which files the activity must ship** — it does not
+- The classification fixes **which files the activity directory must contain** — it does not
   constrain the design. Do not pattern-match the new activity onto an existing
   one; design from the Brief, bounded only by the platform contract (cards
   validate, tools call cleanly, the web surface wires up).
@@ -95,7 +93,6 @@ End this stage with a block named exactly:
 - navigation_axis:
 - spa_interaction_axis:
 - runtime_mode:
-- delivery_target: .fda.tgz
 - implementation_notes:
 ```
 

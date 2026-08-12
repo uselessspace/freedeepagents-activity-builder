@@ -199,7 +199,7 @@ Args:
 
 langchain 的 docstring 解析器会把 `Args:` 段里出现的 brace-style 对象（如 `{topic_id, name, results}`）当作新参数名扫，遇到函数签名里没有的就 `ValueError` 终止加载。把对象字段用句号 / 列表式英文展开即可绕过。
 
-### 自查（package release 前跑一次）
+### 自查（开发目录验收前跑一次）
 
 用随包脚本，别手写：`.venv/bin/python <package>/skills/activity-verify/scripts/strict-tool-schema-check.py --activity <id>`（无平台仓库时改用 `python3 <package>/testkit/fda_testkit.py activities/<id>`，它也查每个工具的 strict 形态）。全部 `ok` 才算干净——出 trace 时碰到 `BadRequestError: Invalid tool parameters schema : field 'anyOf'` 几乎都是上面三条规则之一没遵守。
 

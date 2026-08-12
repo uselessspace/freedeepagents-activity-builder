@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Internal helper: pre-warm node_modules cache for one Static Preview
-# activity's site/. Sourced by install-activity.sh (in this same tools/
-# directory) and the repo-side scripts/prewarm-templates.sh.
+# activity's site/. Sourced by setup-runtime.sh and compatible repo-side
+# prewarm scripts.
 #
 # Usage:
-#   source scripts/_prewarm-template.sh
+#   source tools/_prewarm-template.sh
 #   prewarm_template <activity_type_id> [--force]
 #
 # Reads:

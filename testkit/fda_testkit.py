@@ -23,7 +23,7 @@ KeyError in build() or a schema-rejecting data_set in a tool surfaces locally.
 
 Zero third-party dependencies (stdlib + langchain only when your tools.py needs
 it). The data-store stub validates writes with the same JSON-Schema subset the
-packaged ``tools/activity_verifier.py`` uses, so a write your activity rejects
+bundled ``tools/activity_verifier.py`` uses, so a write your activity rejects
 in production is rejected here too.
 """
 

@@ -133,7 +133,7 @@ cat <<EOF
      This populates runtime/sandbox_cache/node_modules/$ACTIVITY_ID/.
      (For purely-local dev outside the runtime, you may still run
       "cd activities/$ACTIVITY_ID/site && npm install"; host node_modules is
-      not used by install-activity.sh.)
+      not used by the runtime.)
 
   3) Build:
        cd activities/$ACTIVITY_ID/site && npm run build

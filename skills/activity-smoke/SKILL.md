@@ -1,19 +1,19 @@
 ---
 name: activity-smoke
 description: >-
-  独立工具·端到端冒烟。确认装好的活动真能服务一个 turn——检查该 turn 的 trace.jsonl 里
-  card_item / turn_completed / done 三个 SSE 事件齐不齐。装完活动、想确认它真能跑时用。
+  独立工具·端到端冒烟。确认开发目录同步后的活动真能服务一个 turn——检查该 turn 的
+  trace.jsonl 里 card_item / turn_completed / done 三个 SSE 事件齐不齐。想确认它真能跑时用。
   不替你起 uvicorn、不伪造 LLM——你来驱动那一个 turn，它负责判定证据。
-  Use to confirm an FDA activity actually serves a turn end-to-end after install.
+  Use to confirm an FDA activity actually serves a turn end-to-end after directory sync.
   Specifies the evidence standard (card_item / turn_completed / done events in
-  trace.jsonl) and ships a minimal parser.
+  trace.jsonl) and includes a minimal parser.
 ---
 
 # Activity Smoke
 
-> **何时用**：活动装好后确认"真能跑出东西"。判定失败 → 带同一个 `turn_id` 转 `/activity-diagnostician`。
+> **何时用**：活动目录同步后确认"真能跑出东西"。判定失败 → 带同一个 `turn_id` 转 `/activity-diagnostician`。
 
-Dynamic verification. The smoke is "an installed activity successfully
+Dynamic verification. The smoke is "a synced activity successfully
 served one user turn" — not "every code path works".
 
 ## Evidence standard
@@ -100,13 +100,13 @@ route to `activity-diagnostician`.
 
 ## When to run
 
-- After `activity-packager` installs a new package.
+- After `activity-dev-cli` syncs a development directory.
 - After `activity-builder` applies a fix that the static `activity-verify`
   can't confirm (LLM behavior, prompt wording, turn boundary correctness).
 - Periodically against deployed instances for regression catching.
 
 ## Hand-off
 
-- `result: PASS` → record the line in Ship Verification.
+- `result: PASS` → record the line in Development Verification.
 - `result: FAIL` → route to `activity-diagnostician` with `turn_id`; the
   parser already pulled out the first error event for you.

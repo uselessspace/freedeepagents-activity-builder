@@ -10,10 +10,11 @@
 # GENERATED — do not edit by hand. Regenerate after the root
 # requirements.txt changes:
 #   .venv/bin/python .claude/skills/freedeepagents-activity-builder/tools/gen-python-baseline.py
-# python: 3.12.13   distributions in closure: 96   import names: 97
+# python: 3.12.13   distributions in closure: 78   import names: 77
 annotated_doc
 annotated_types
 anthropic
+anydoc
 anyio
 boto3
 botocore
@@ -23,18 +24,14 @@ certifi
 cffi
 charset_normalizer
 click
-cobble
 cryptography
 dateutil
 deepagents
-defusedxml
 distro
 docstring_parser
 dotenv
-et_xmlfile
 fastapi
 filetype
-flatbuffers
 google
 h11
 httpcore
@@ -54,34 +51,18 @@ langchain_protocol
 langgraph
 langgraph_sdk
 langsmith
-lxml
-magika
-mammoth
 markdownify
-firecrawl-anydoc
 multipart
-numpy
-onnxruntime
 openai
-openpyxl
 orjson
 ormsgpack
 packaging
-pandas
-pdfminer
-pdfplumber
-PIL
-pptx
 prometheus_client
 pyasn1
 pyasn1_modules
 pycparser
 pydantic
 pydantic_core
-pypdfium2
-pypdfium2_cfg
-pypdfium2_cli
-pypdfium2_raw
 python_multipart
 regex
 requests
@@ -104,7 +85,6 @@ uvloop
 watchfiles
 wcmatch
 websockets
-xlsxwriter
 xxhash
 yaml
 zstandard

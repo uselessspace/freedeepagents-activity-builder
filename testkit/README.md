@@ -83,7 +83,7 @@ legal in production (`app/card_system/data_store.py`).
 ## Fidelity & limits
 
 - The data-store stub validates every write against `data.schema.json` with the
-  same JSON-Schema subset the packaged verifier uses — a write your activity
+  same JSON-Schema subset the bundled verifier uses — a write your activity
   rejects in production is rejected here too.
 - It does **not** run the LLM, the sandbox, card rendering, or image/tts
   capabilities. It exercises the deterministic Python: tool construction, tool

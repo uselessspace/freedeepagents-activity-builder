@@ -1,7 +1,7 @@
 {
   "name": "freedeepagents-activity-builder",
-  "version": "0.4.33",
-  "description": "Guides coding agents through designing, building, packaging, verifying, and live-debugging FDA intelligent activities.",
+  "version": "0.4.34",
+  "description": "Guides coding agents through designing, building, verifying, directory-syncing, and live-debugging FDA intelligent activities.",
   "author": {
     "name": "Useless Space",
     "email": "noreply@uselessspace.dev",
@@ -25,7 +25,7 @@
   "interface": {
     "displayName": "FreeDeepAgents Activity Builder",
     "shortDescription": "Build, verify, and safely live-debug FDA intelligent activities.",
-    "longDescription": "Guides coding agents through activity brief capture, runtime classification, card or Static Preview implementation, packaging, install verification, and safe fda-dev CLI workflows for shared development runtimes.",
+    "longDescription": "Guides coding agents through activity brief capture, runtime classification, card or Static Preview implementation, deterministic directory verification, and safe fda-dev CLI workflows for shared development runtimes.",
     "developerName": "Useless Space",
     "category": "Developer Tools",
     "capabilities": [
@@ -35,7 +35,7 @@
     "websiteURL": "https://github.com/uselessspace/freedeepagents-activity-builder",
     "defaultPrompt": [
       "帮我设计并生成一个 FDA 智能活动",
-      "Build a FreeDeepAgents activity and package it",
+      "Build and verify a FreeDeepAgents activity directory",
       "Classify this activity idea into Card-only or Static Preview"
     ],
     "brandColor": "#2563EB"

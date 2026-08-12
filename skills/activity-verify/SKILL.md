@@ -1,119 +1,68 @@
 ---
 name: activity-verify
 description: >-
-  独立工具·静态校验。打包前快速（under 5s、不调 LLM）跑 bundled verifier + strict-tool
-  schema 自检，返回 ship-ready 或一份待修清单。活动文件改完、想先确认合法/合规时用。
-  Use to statically verify an FDA activity before pack / install / smoke.
-  Runs the bundled activity verifier and the strict-tool-schema self-check.
-  Returns ship-ready / list of fixes; no LLM call needed.
+  活动构建第 6 步·开发目录验收。对目标活动目录运行 bundled
+  verifier、strict-tool schema 和离线 testkit，形成 Development Verification。
+  默认终态是可供 FDA Dev Client / fda-dev 同步的活动目录。
+  Use after semantic review to validate an FDA activity directory before Dev
+  Client sync or handoff.
 ---
 
 # Activity Verify
 
-> **何时用**：文件写完、打包前做静态体检。只静态查——要确认真能跑一个 turn 用 `/activity-smoke`。
+> **何时用**：review 已清零 CONFLICT，要验收开发目录时。默认主链路到这里完成。
 
-Static, fast (< 5s for the whole repo). Two checks combined.
+完整终态流程和证据格式由
+[`../../workflows/06-verify-directory.md`](../../workflows/06-verify-directory.md)
+唯一维护；按其顺序执行，不另造一套门禁。
 
-## Python runtime
+## Required deterministic checks
 
-The two checks have **different** requirements:
+1. **Bundled verifier**（Python ≥3.10、stdlib only）：
 
-- **Check 1 (bundled verifier)** is pure static AST analysis — stdlib only,
-  no platform repo, no venv. Any Python **≥ 3.10** works (`python3` on PATH
-  is fine; 3.9 crashes on `sys.stdlib_module_names`).
-- **Check 2 (strict-tool-schema script)** imports your `tools.py`, which
-  typically does `from app.card_system import data_store` — so it needs an
-  FDA repo checkout on `sys.path` and a Python with the activity-runtime
-  dependencies (`langchain_core` etc.). Use **one** of:
-  - `.venv/bin/python <command>` — when the repo uses the canonical
-    `.venv` (this is the default for FreeDeepAgents).
-  - `uv run python <command>` — when the repo is managed with uv.
+   ```bash
+   python3 <package>/tools/activity_verifier.py <project-root>
+   ```
 
-  A plain `python` / `python3` on PATH almost always lacks `langchain_core`
-  and will fail with `ModuleNotFoundError`.
+   必须保留完整输出与 `scanned N activities`；不得管给 `grep`。任意 ERROR 阻断。
 
-**No platform repo?** Run the offline testkit instead of Check 2 — it stubs
-`app.*`, builds `make_tools`, and checks each tool's strict-mode shape with
-zero third-party deps: `python3 <package>/testkit/fda_testkit.py activities/<id>`
-(see [../../testkit/README.md](../../testkit/README.md)).
+2. **Strict-tool schema**（仅 manifest 声明 `tools_module` 时）：
 
-## Check 1 — Bundled verifier
+   ```bash
+   .venv/bin/python <package>/skills/activity-verify/scripts/strict-tool-schema-check.py \
+     --activity <activity_type_id>
+   ```
 
-```bash
-python3 <package>/tools/activity_verifier.py <repo-root>
-```
+   使用目标 FDA runtime 的 Python/依赖；普通系统 Python 往往没有
+   `langchain_core`。无平台 repo 时由下一项 testkit 覆盖工具 schema。
 
-Exit code:
-- `0` with no `ERROR ...` lines → schema / manifest / runtime / card-template
-  contracts all hold.
-- `0` with `WARNING ...` lines → record them in `Ship Verification`, don't
-  block.
-- non-zero or any `ERROR ...` line → ship blocked; for each error, route to
-  `activity-diagnostician` (most map to E8 manifest/runtime whitelist or
-  E10 Static Preview module).
+3. **Offline testkit**：
 
-An `imports third-party package '<pkg>' but it is not declared in
-activities/<id>/requirements.txt` error means the activity imports a package
-that is neither stdlib, platform-baseline, nor declared. Fix it by adding a
-pinned line to that activity's `requirements.txt` (the runtime shares one venv,
-so an undeclared import `ImportError`s on a fresh host). See
-[../../references/python-dependencies.md](../../references/python-dependencies.md).
+   ```bash
+   python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
+   ```
 
-## Check 2 — Strict-tool-schema self-check (activity-owned tools)
+   它运行 `make_tools(ctx)` / `dsl_builder.build()`、校验 typed-KV 写入，并检查
+   strict-mode 非法 schema。无 `tools_module` / `dsl_builder_module` 的分支可合法 skip。
 
-For activities with `manifest.tools_module` set, run:
+Static Preview 还必须在 `site/` 运行 `npm run lint` + `npm run build`，并确认
+`site/dist/index.html`。这些产物留在同一个活动目录中。
 
-```bash
-.venv/bin/python <package>/skills/activity-verify/scripts/strict-tool-schema-check.py \
-    --activity <activity_type_id>
-```
+## Development Verification
 
-What it does:
+按 workflow 06 输出 `## Development Verification`：至少包含活动目录、Builder
+路径/版本、Semantic review、Verifier、Strict-tool schema、Testkit、前端 build、
+warnings 和 changed files。
 
-1. Imports `activities/<activity_type_id>/tools.py` and calls `make_tools(_Ctx())`.
-2. For each `@tool`, dumps `t.args_schema.model_json_schema()`.
-3. Asserts no `anyOf` branch lacks a `type` / `$ref` / `anyOf` field
-   (DeepSeek strict-mode requirement; matches E1 in
-   `skills/activity-diagnostician/references/error-classes.md`).
-4. Asserts no `"items": {}` empty array schema (same).
-5. Prints `<tool_name>: ok` per tool, or a problem report.
-
-Exit code 0 = all tools clean.
-
-The script uses stdlib + the runtime's existing langchain dependency; no extra install.
-
-## Combined output contract
-
-```markdown
-## Verification
-- verifier: 0 ERROR / <n> WARNING
-- strict-tool-schema: <m> tool(s) ok
-- ship-ready: yes / no
-- pending fixes: <list, or "none">
-```
-
-`ship-ready: yes` requires both checks at 0 errors. WARNINGs are listed but
-don't flip the gate; they get acknowledged in the packager's Ship Verification
-block.
-
-This skill is static-only. The Ship Verification gate additionally always
-requires the offline **testkit smoke** (`python3 <package>/testkit/fda_testkit.py
-activities/<id>`, no platform repo needed) — see
-[workflows/06-verify-and-ship.md](../../workflows/06-verify-and-ship.md) step 3.5.
-
-## When to run
-
-- After every `activity-builder` scaffold pass.
-- After any edit (via `activity-builder`) to `tools.py`, `data.schema.json`,
-  `manifest.json`, `runtime.json`, or any `card_templates/*.json`.
-- As the first step of `activity-packager` re-pack mode.
-- After applying a fix proposed by `activity-diagnostician`.
+`development-ready: yes` 要求本地确定性检查全部通过。若已安装并登录 FDA Dev
+Client，再转 `../activity-dev-cli/SKILL.md` 用活动目录做 `doctor` / `status` /
+`sync --dry-run`，已有首次 GUI 同步时执行
+`message --sync-first --new --smoke --pull-logs-on-error`，把真实 turn 证据补进同一
+block。首次 GUI 上传尚未完成时记录 deferred，不伪造同步成功。
 
 ## Hand-off
 
-- `ship-ready: yes` → ensure the current `activity-review` has `CONFLICT: 0`, then route to `activity-packager`.
-- 如果共享 dev runtime 可用，可在静态检查通过后转
-  `activity-dev-cli` → `activity-smoke`；CLI 真 turn 是动态证据，不属于本
-  skill 的静态门禁。
-- `ship-ready: no` → for each pending fix, route to `activity-diagnostician`
-  to map the error to a class, then `activity-builder` to apply the fix.
+- 本地门禁通过 → 交付 `activities/<activity_type_id>/`。
+- 共享 dev runtime 可用 → `/activity-dev-cli` → `/activity-smoke`。
+- 任一检查失败 → `/activity-diagnostician` 定因 → `/activity-builder` 修复 →
+  `/activity-review`（若语义改变）→ 重新 verify。

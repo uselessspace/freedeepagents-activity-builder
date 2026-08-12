@@ -10,7 +10,7 @@ description: >-
 
 # Activity Frontend
 
-> **何时用**：仅 `frontend_axis = static-preview` 或用户明确要更丰富前端时；card-only 活动跳过本步，进入 `/activity-review`，清零 CONFLICT 后再打包。
+> **何时用**：仅 `frontend_axis = static-preview` 或用户明确要更丰富前端时；card-only 活动跳过本步，进入 `/activity-review`，清零 CONFLICT 后验收目录。
 
 Use only when `frontend_axis` is `static-preview` or the user explicitly asks
 for a richer frontend. Do not vendor external frontend skill source into this
@@ -108,4 +108,5 @@ Optional shadcn MCP examples or local UI skills may inspire patterns — they ar
 not hard dependencies and their source must not be copied into this package.
 
 Route back to `../activity-builder/SKILL.md` for file integration, then run
-`../activity-review/SKILL.md`; only a CONFLICT-free result enters packager.
+`../activity-review/SKILL.md`; a CONFLICT-free result enters
+`../activity-verify/SKILL.md`.

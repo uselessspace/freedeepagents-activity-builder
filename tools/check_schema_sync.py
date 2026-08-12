@@ -10,7 +10,7 @@ runtime's ``app.models`` pydantic models — otherwise it drifts (exactly the
 This MAINTAINER tool runs where ``app.models`` is importable (the platform repo
 / CI / pre-commit) and asserts that all three faces of each contract agree —
 the pydantic model (runtime truth), the authoring schema external devs validate
-against, and the verifier whitelist that gates ship:
+against, and the verifier whitelist that gates directory verification:
 
   * card block/item models ↔ card-template.schema.json $defs (properties,
     required, ``Literal`` enums, closed objects),
@@ -193,12 +193,12 @@ def main() -> int:
         if not s["closed"]:
             problems.append(f"{name}: schema $def should be closed (additionalProperties:false) to mirror StrictModel")
 
-    # ── manifest / runtime: model ↔ shipped schema ↔ verifier whitelist ──────
+    # ── manifest / runtime: model ↔ bundled schema ↔ verifier whitelist ──────
     # This is the guard that would have caught the read_document / sandbox_env
     # drift (verifier whitelist lagging the model). All three faces of each
     # contract must agree: the pydantic model (runtime truth), the authoring
     # schema (what external devs validate against), and the verifier constant
-    # (the ship gate).
+    # (the directory verification gate).
     manifest_contract_fields = set(models.ActivityManifest.model_fields)
     runtime_fields = set(models.ActivityRuntimeConfig.model_fields)
     caps_literal = set(_capabilities_literal(models.ActivityManifest))
@@ -221,7 +221,7 @@ def main() -> int:
             if p:
                 problems.append(p)
     except Exception as exc:  # noqa: BLE001
-        problems.append(f"could not import the packaged activity_verifier to check its whitelists: {exc}")
+        problems.append(f"could not import the bundled activity_verifier to check its whitelists: {exc}")
 
     for model_set, schema_name in (
         (manifest_contract_fields, "manifest.schema.json"),
@@ -248,7 +248,7 @@ def main() -> int:
         problems.append(p)
 
     if problems:
-        print(f"✗ schema sync: {len(problems)} mismatch(es) between app.models and the packaged schemas/verifier\n")
+        print(f"✗ schema sync: {len(problems)} mismatch(es) between app.models and the bundled schemas/verifier\n")
         for p in problems:
             print(f"  - {p}")
         print("\nFix: edit the schema / verifier constant (or app/models.py) so all faces agree.")

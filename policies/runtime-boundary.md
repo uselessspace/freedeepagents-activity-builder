@@ -6,7 +6,7 @@ Generic runtime code (`app/`, `schemas/`) stays activity-neutral.
 
 ## Verifier-enforced invariants
 
-The verifier (`tools/activity_verifier.py`) scans for these patterns in `app/` / `schemas/` and refuses to ship if any are found:
+The verifier (`tools/activity_verifier.py`) scans for these patterns in `app/` / `schemas/` and blocks directory verification if any are found:
 
 | Pattern checked | Reason |
 |---|---|

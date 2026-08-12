@@ -54,8 +54,8 @@ activities/project-map/
    the same DSL stream and selects the relevant activity view or business
    object. This event is transient, user-scoped UX—not browser automation,
    durable state, or a manifest capability.
-6. Packaging produces `.fda.tgz`; `bash <package>/tools/install-activity.sh <pkg>` rebuilds
-   `site/dist/` when needed.
+6. Directory verification keeps the finished project at `activities/<id>/` for
+   FDA Dev Client / `fda-dev` directory sync.
 
 ## Optional recording and ASR
 

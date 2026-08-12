@@ -95,30 +95,31 @@ Any failure → check error → fix one thing → re-run. See [../policies/fix-l
 
 Capture screenshots at mobile and desktop widths for any visual or layout-heavy
 activity. Fix text overflow, missing images, blank canvases, and overlapping UI
-before packaging.
+before directory handoff or sync.
 
-## Step 6: prepare the runtime cache *(platform-repo / install-side step)*
+## Step 6: choose the runtime validation path
 
-> **External developers without the platform repo: skip this step.**
-> `setup-runtime.sh` needs an FDA repo checkout (Dockerfile.sandbox) + Docker —
-> it's run by whoever installs your `.fda.tgz`, not by you. For local UI work,
-> `npm run build` in `site/` is enough; record the cache/build line as
-> "deferred to maintainer" in Ship Verification.
+For the default FDA Dev Client workflow, keep the project under
+`activities/<id>/` and use `fda-dev --folder activities/<id>`. Static Preview
+activities are rebuilt during `sync` / `message --sync-first`; no hand-built
+archive or local install step is required.
 
-After authoring or any future `package.json` bump, the installer runs:
+If developing against a local FDA platform repo instead, prepare its Linux
+runtime cache after authoring or any `package.json` bump:
 
 ```bash
 bash <package>/tools/setup-runtime.sh <id>
 ```
 
-It's idempotent and pre-warms `runtime/sandbox_cache/node_modules/<id>/` if `site/package.json` is newer than the cache's `.fda-ok` sentinel (or the cache doesn't exist yet). Packaged installs run the same cache prewarm and then build `site/dist/` when needed.
+It's idempotent and pre-warms `runtime/sandbox_cache/node_modules/<id>/` if
+`site/package.json` is newer than the cache's `.fda-ok` sentinel (or the cache
+doesn't exist yet).
 
 The cache exists because the host may be macOS/arm64 while runtime build uses Linux. Native binaries (rollup, esbuild, ...) differ — sharing the host's `node_modules/` can crash the build.
 
-> **Whenever you edit `site/package.json`, re-run `setup-runtime.sh <id>`** before smoke-testing packaged/runtime behavior. Force a clean cache rebuild with `--force`.
-
-Packaged verification must also run `bash <package>/tools/install-activity.sh <pkg>` so the
-Linux build path is tested, not only the host `npm run build` path.
+> **Whenever you edit `site/package.json`, re-run `setup-runtime.sh <id>`**
+> before smoke-testing a local runtime. Force a clean cache rebuild with
+> `--force`. Shared FDA Dev Client development uses `fda-dev` sync instead.
 
 ## Step 7: confirm manifest + build output
 
@@ -138,11 +139,11 @@ Re-open `activities/<id>/manifest.json` and confirm:
 If user wants UI polish:
 ```
 Frontend derived for <id>. Engaging optional frontend polish workflow.
-Proceeding to 05-frontend-polish.md, then 06-verify-and-ship.md.
+Proceeding to 05-frontend-polish.md, then directory verification in 06-verify-directory.md.
 ```
 
 Otherwise:
 ```
 Frontend derived for <id>. Static Preview complete.
-Proceeding to 06-verify-and-ship.md.
+Proceeding to directory verification in 06-verify-directory.md.
 ```

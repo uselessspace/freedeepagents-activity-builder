@@ -2,9 +2,9 @@
 
 > **Single source of truth** for how an activity declares the third-party
 > Python packages its `tools.py` / `dsl_builder.py` / `handlers.py` (and any
-> helper modules they ship) need. The runtime that consumes this file:
-> `app/dev_sync.py` (uv-installs on upload), the repo `Dockerfile` (bakes it
-> at image build), and `tools/install-activity.sh` (local install). The
+> helper modules in the activity directory) need. The runtime paths that consume this file:
+> `app/dev_sync.py` (uv-installs on upload) and the repo `Dockerfile` (bakes it
+> at image build). The
 > activity verifier (`tools/activity_verifier.py`) enforces completeness.
 
 ## Contents
@@ -36,7 +36,7 @@ So:
 
 - A package you import but don't declare is **not installed on a fresh host** →
   the activity `ImportError`s the first time that import runs. The verifier
-  blocks this before it ships.
+  blocks this before directory handoff/sync.
 - Because the venv is shared, **a dependency you add is global**. It can collide
   with the platform's own pins or another activity's. Add as few as possible
   (see "Prefer stdlib or a capability" below).
@@ -54,7 +54,7 @@ Do **not** declare (the verifier already treats these as available):
   verifier reads it).
 - **First-party `app.*`** — `from app.something import x` is the host package,
   always importable.
-- **Sibling modules you ship** — a helper like `_graph.py`, or a skill
+- **Sibling modules included in the activity** — a helper like `_graph.py`, or a skill
   `scripts/` module imported after a `sys.path` insert, is local, not a
   dependency.
 
@@ -107,7 +107,7 @@ cost, not a convenience. Before adding one, ask:
 
 Only add a real third-party package when neither fits.
 
-## How it gets installed (you don't run the installer yourself)
+## How dependencies reach the runtime
 
 The runtime venv has no `pip` module, so installs go through **uv**
 (`uv pip install -p <interpreter> -r requirements.txt`), falling back to
@@ -115,12 +115,10 @@ The runtime venv has no `pip` module, so installs go through **uv**
 
 | Path | When | Mechanism |
 |---|---|---|
-| `POST /dev/sync` upload | on every upload where `requirements.txt` changed | `uv pip install -p <interpreter> -r requirements.txt` into the host venv, pip fallback (`app/dev_sync.py::_py_install_cmd`) |
+| FDA Dev Client / `fda-dev` directory sync | on every upload where `requirements.txt` changed | `uv pip install -p <interpreter> -r requirements.txt` into the host venv, pip fallback (`app/dev_sync.py::_py_install_cmd`) |
 | Runtime startup | when host activities already exist | uv installs changed `activities/*/requirements.txt` into the running interpreter and records `runtime/activity-dependencies.json` |
-| `tools/install-activity.sh` | local `.fda.tgz` install | uv (pip fallback) installs the activity's `requirements.txt` after extraction |
-
-`pack-activity.sh` bundles `requirements.txt` automatically (it lives under
-`activities/<id>/`).
+`requirements.txt` already lives under `activities/<id>/` and is uploaded with
+the rest of the development directory.
 
 ## The verifier check
 

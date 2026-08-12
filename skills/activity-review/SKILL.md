@@ -4,8 +4,8 @@ description: >-
   独立工具·语义级质量自审。由当前在场的编码 agent 执行——通读活动指令/工具/卡片，
   对照活动自身声明的意图 + 插件 policies，找指令自相矛盾、卡片编排不成立、承诺与
   能力错配等"逻辑冲突"。verify 查契约、smoke 验运行，本工具看"设计自不自洽"。
-  不动平台、不调用外部服务。新建或改造活动在打包前必须执行；CONFLICT 阻止交给
-  packager，SMELL / NOTE 允许记录取舍。
+  不动平台、不调用外部服务。新建或改造活动在开发目录验收前必须执行；CONFLICT
+  阻止进入 verify / sync，SMELL / NOTE 允许记录取舍。
   Use to self-audit an FDA activity's agent design for logic conflicts the
   deterministic verifier can't catch (contradictory instructions, broken card
   orchestration, promise-vs-capability mismatch). Run BY the in-session coding
@@ -14,7 +14,7 @@ description: >-
 
 # Activity Review
 
-> **何时用**：活动定义写完或改完、打包前。站位：补足 `/activity-verify` 的确定性契约检查与 `/activity-smoke` 的运行证据。
+> **何时用**：活动定义写完或改完、目录验收前。站位：补足 `/activity-verify` 的确定性契约检查与 `/activity-smoke` 的运行证据。
 
 语义级、由**你（在场编码 agent）**亲自读文件并推理——不调外部服务、不需要 API key、不碰同步链路。
 
@@ -47,7 +47,7 @@ description: >-
 - **SMELL（质量异味）** — 自洽性弱、易跑偏、承诺与能力不一致但尚未到"兑现不了"。
 - **NOTE（优化建议）** — 可选打磨。
 
-`CONFLICT` 必须修复后再进入 packager；`SMELL` / `NOTE` 是非阻塞建议，可记录接受理由。
+`CONFLICT` 必须修复后再进入 verify / sync；`SMELL` / `NOTE` 是非阻塞建议，可记录接受理由。
 
 ## 输出契约
 
@@ -75,6 +75,6 @@ description: >-
 
 ## 何时跑 / hand-off
 
-- `activity-builder` 写完或改完 agent 定义后、打包前执行。
+- `activity-builder` 写完或改完 agent 定义后、目录验收前执行。
 - 有 CONFLICT → `/activity-builder` 改 → 重新 review；清零后再 `/activity-verify`。
-- 仅 SMELL/NOTE → 记录取舍并进入 `activity-packager`。
+- 仅 SMELL/NOTE → 记录取舍并进入 `activity-verify`。

@@ -43,8 +43,6 @@ Capture the smallest useful brief:
 - `external_capabilities`: APIs, databases, browser/search, files, payments,
   models, or other services.
 - `persistence`: typed-KV fields, larger artifacts, secrets, indexes, or none.
-- `delivery_target`: default `.fda.tgz` unless the user explicitly asks for a
-  different target.
 
 ## Conversation Style
 
@@ -81,7 +79,6 @@ End this stage with a block named exactly:
 - spa_interaction:
 - external_capabilities:
 - persistence:
-- delivery_target: .fda.tgz
 ```
 
 Then route to `../activity-classifier/SKILL.md`.

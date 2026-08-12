@@ -74,5 +74,5 @@ Tool returns `{"error": "..."}`; **never auto-retry the same prompt+source** (th
 
 ```
 Image tooling integrated for <id>.
-Proceeding to <04-derive-frontend.md | 06-verify-and-ship.md>.
+Proceeding to <04-derive-frontend.md | 06-verify-directory.md>.
 ```

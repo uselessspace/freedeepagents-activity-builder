@@ -1,5 +1,18 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.34 (2026-08-12)
+
+交付模型统一为 FDA Dev Client / `fda-dev --folder` 直接同步的
+`activities/<activity_type_id>/` 开发目录。
+
+- 主链路改为 brief → classify → build → frontend（按需）→ review → verify；
+  `activity-verify` 统一收集 verifier、strict-tool schema、testkit 与前端 build 证据。
+- 删除 Classification 的 `delivery_target` 轴、`activity-packager` Skill 及手工
+  pack/install 脚本，避免 Coding Agent 把传输实现误解为开发交付步骤。
+- `Development Verification` 取代默认 `Ship Verification`；已有首次 GUI 同步时可用
+  `fda-dev message --sync-first --new --smoke` 补真实运行证据，否则明确 deferred。
+- 终态 workflow 更名为 `06-verify-directory.md`，主链只保留目录开发、验收与同步。
+
 ## 0.4.33 (2026-08-12)
 
 收紧 Builder 的地址、模板完成度与发布门禁，避免未完成 scaffold 或混用旧插件缓存后仍被判定可交付。

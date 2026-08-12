@@ -3,7 +3,7 @@
 ## Allowed fields
 
 `manifest.json` is a **closed whitelist**: any field outside it →
-`ERROR manifest.json: has disallowed field: <name>` → blocks ship. For the
+`ERROR manifest.json: has disallowed field: <name>` → blocks directory verification. For the
 per-field list (with types, examples, and which are required), see the field
 reference — it's the single authority, kept in sync with the verifier and the
 schema by `check_schema_sync.py`:
