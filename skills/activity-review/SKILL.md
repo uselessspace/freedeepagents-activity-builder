@@ -69,7 +69,7 @@ description: >-
 …
 
 ### 下一步
-- 有 CONFLICT → /activity-builder 改 → /activity-verify 复核契约。
+- 有 CONFLICT → /activity-builder 改 → 重新 review；清零后再 /activity-verify。
 - 仅 SMELL/NOTE → 自行取舍。
 ```
 

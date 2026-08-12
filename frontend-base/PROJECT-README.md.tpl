@@ -1,17 +1,15 @@
 # {{ACTIVITY_NAME}}
 
-FreeDeepAgents activity frontend, derived from `<package>/frontend-base/`.
+FreeDeepAgents activity frontend derived from the Activity Builder Static Preview base.
 
 ## Develop
 
 Two paths — pick by where you want to run:
 
-**Runtime / packaged install** (the way users actually use this):
-
-```bash
-packages/freedeepagents-activity-builder/tools/setup-runtime.sh {{ACTIVITY_ID}}
-npm run build  # creates site/dist/
-```
+**Runtime / packaged install**: use the Activity Builder's
+`install-activity.sh` command printed by the packager. It prewarms dependencies
+and builds `site/dist/`; do not assume the Builder is vendored at
+a fixed repo-local path in the target checkout.
 
 **Local dev outside the runtime** (faster inner loop while authoring):
 
@@ -23,13 +21,13 @@ npm run build        # production bundle to dist/
 ```
 
 If this frontend uses npm `file:` dependencies, keep those packages inside this
-activity directory (for example `file:vendor/<package>`). Runtime installs only
+activity directory (for example `file:vendor/local-widget`). Runtime installs only
 receive the activity package, so `file:../../../packages/...` and other paths
 outside the activity are rejected by the verifier.
 
-When the host `package.json` changes (you added/removed a dep), re-run
-`packages/freedeepagents-activity-builder/tools/setup-runtime.sh {{ACTIVITY_ID}} --force` so packaged/runtime
-builds use the new deps.
+When `package.json` changes, rerun `setup-runtime.sh {{ACTIVITY_ID}} --force`
+from the same Builder bundle used for packaging, or reinstall the `.fda.tgz`,
+so packaged/runtime builds use the new dependencies.
 
 ## What's where
 
@@ -49,14 +47,16 @@ and is not available from the local mock server.
 
 ## Shared base modules — do not edit
 
-These came from `<package>/frontend-base/` and are kept in sync across all derived activities:
+These came from the Builder's `frontend-base/` and are kept in sync across all derived activities:
 
 - `src/lib/{http,api-base,asset-url}.ts`
 - `src/hooks/{useApi,useDsl}.ts`
 - `src/components/{ErrorBoundary,LoadingSpinner,ApiErrorBanner}.tsx`
 - `src/styles/index.css`
 
-If you need to change one of these, change it in `_base/` and re-derive (or cherry-pick the change).
+If every activity should receive a change, update the Builder's source
+`frontend-base/` and re-derive. Activity-specific behavior belongs outside
+these shared files.
 
 ## Static Preview manifest
 

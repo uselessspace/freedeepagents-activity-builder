@@ -49,10 +49,15 @@ license: MIT
 
 > **改完想立刻在共享 dev runtime 测一轮？** 先用 `/activity-dev-cli` 做 `doctor` / `status`，再用 `message --sync-first --new --smoke --pull-logs-on-error` 完成同步、真 turn、证据判定和失败日志回收。统一规范见 [`references/dev-agent-cli.md`](references/dev-agent-cli.md)。
 
+> **单一包根原则**：一次构建只使用当前已加载插件包里的 Skill、脚本、模板和
+> schema。开始实现前读取该包 `.codex-plugin/plugin.json` 或
+> `.claude-plugin/plugin.json` 的版本；不要混用 repo checkout 与旧插件缓存。
+
 ## 两条铁律（动手前必读）
 
 - **先 Brief 后 Classification 再 scaffold**，不要上来就建文件。默认交付 `.fda.tgz`。
 - **活动逻辑只进 `activities/<id>/`**，绝不碰通用 runtime（`app/` / `schemas/`）。完整边界 + 理由见 [`policies/runtime-boundary.md`](policies/runtime-boundary.md)。
+- scaffold 中的 `TODO_ACTIVITY_AUTHOR` 是阻断标记，不是示例文案；全部替换后才能 review / verify / pack。
 
 **完工门禁**由 [`/activity-packager`](skills/activity-packager/SKILL.md) 把关：semantic review `CONFLICT: 0` + verifier 0 ERROR + 离线 testkit + 安装 + 冒烟（`card_item` / `turn_completed` / `done`）。证据不齐就说还差什么，别说"做完了"。
 

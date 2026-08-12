@@ -1,18 +1,25 @@
 # Changelog — freedeepagents-activity-builder
 
-## 0.4.33 (2026-08-11)
+## 0.4.33 (2026-08-12)
 
-修复 Go developer preview 下用户上传资源与 AI artifact 被错误拼成重复 Preview
-路径的问题。
+收紧 Builder 的地址、模板完成度与发布门禁，避免未完成 scaffold 或混用旧插件缓存后仍被判定可交付。
 
-- `frontend-base/src/lib/asset-url.ts` 现在区分 Go developer proxy 与 FDA 直连
-  mount；代理外层的数据库活动类型 ID（`dat_...`）不再与上传 URL 中的 manifest
-  slug 做错误的等值比较。
-- 保留实例 ID 校验，并继续在 FDA 直连 mount 下同时校验活动类型，避免跨实例或
-  跨活动资源被改写到当前 Preview。
-- 将 `/api/v1/developer/...` 与 FDA canonical `/v1/...` 识别为宿主绝对资源路径，
-  避免 artifact URL 被再次追加到当前 Preview 根目录。
-- Codex / Claude plugin manifest 与 schema bundle 版本升级到 **0.4.33**。
+- scaffold 的 host/cards Skills 改为薄入口，删除 Runtime 不可访问的 Builder
+  `<package>` 引用；cards Skill 统一为必选呈现目录。
+- 新增 `TODO_ACTIVITY_AUTHOR` / unresolved id / Builder-only 路径残留校验；
+  原样 scaffold 不能再通过 verifier 或进入 packager。
+- verifier 发布命令统一显式 `<project-root>`，移除会隐藏错误与替换退出码的
+  `grep` gate；Ship Verification 记录 Builder 包路径与版本。
+- 上传改图示例直接使用 `upload_name`，不再解析 opaque URL；前端派生 README
+  不再假定 Builder 位于 repo-local 固定地址。
+- `frontend-base/src/lib/asset-url.ts` 区分 Go developer proxy 与 FDA 直连
+  mount：代理外层的数据库活动类型 ID 不再与上传 URL 中的 manifest slug 做错误
+  等值比较，同时保留实例隔离与 FDA 直连活动类型校验。
+- `/api/v1/developer/...` 与 FDA canonical `/v1/...` 作为宿主绝对资源路径原样
+  保留，避免用户上传和 AI artifact URL 被再次拼到当前 Preview 根目录。
+- pack metadata 不再依赖 `.venv` 生成，install metadata 解析支持目标 repo venv
+  或系统 Python；setup-runtime 统一使用当前 Builder 包的 prewarm helper。
+- 兼容说明对齐 DeepAgents 0.7.x / LangChain Core 1.x；插件版本升级到 0.4.33。
 
 ## 0.4.32 (2026-08-07)
 

@@ -169,16 +169,21 @@ def make_handlers(ctx):
 
 ### 改图：编辑用户在预览页上传的照片（`ctx.image_edit` + `source_upload`）
 
-让用户在预览页传一张照片、再点"修复 / 改图"：先 `POST api/upload` 拿到上传名（url 末段 `<sha>.<ext>`），作为 `source_upload` 传给 `ctx.image_edit` 即可——`source_upload` 是 image_edit 专指**预览页上传产物**的 source（见下文 source 表）。
+让用户在预览页传一张照片、再点"修复 / 改图"：直接读取 `POST api/upload`
+响应里的 `upload_name`，作为 `source_upload` 传给 `ctx.image_edit`。不要从 opaque
+`url` 中切割文件名。若旧客户端只有完整 canonical URL，应升级响应契约或同时回传
+`resource_ref.upload_name`；不要假定 `source_upload` 接受 URL。`source_upload` 是
+image_edit 专指**预览页上传产物**的 source（见下文 source 表）。
 
 ```python
 def make_handlers(ctx):
-    def restore_photo(upload: str = "") -> dict:
+    def restore_photo(upload_name: str = "") -> dict:
         edit = getattr(ctx, "image_edit", None)
         if edit is None:
             return {"ok": False, "error": "image edit unavailable"}
-        name = upload.rstrip("/").split("/")[-1].split("?")[0]   # url → <sha>.<ext>
-        res = edit(source_upload=name, prompt="修复这张老照片：去噪、修补、增强清晰度，保持原貌", store="auto")
+        if not upload_name:
+            return {"ok": False, "error": "upload_name is required"}
+        res = edit(source_upload=upload_name, prompt="修复这张老照片：去噪、修补、增强清晰度，保持原貌", store="auto")
         if not isinstance(res, dict) or res.get("error"):
             return {"ok": False, "error": (res or {}).get("error", "edit failed")}
         arts = res.get("artifacts") or []
@@ -193,7 +198,7 @@ def make_handlers(ctx):
 或页面时，直接保存这个引用，不要为了“可管理”再复制一份 upload：
 
 ```python
-res = ctx.image_edit(source_upload=name, prompt="…", store="auto")
+res = ctx.image_edit(source_upload=upload_name, prompt="…", store="auto")
 art = (res.get("artifacts") or [None])[0]
 photo = {
     "image_url": art["file_url"],
@@ -247,7 +252,7 @@ result = image_edit(
     source_file_id: str | None = None,
     source_path: str | None = None,
     source_url: str | None = None,
-    source_upload: str | None = None,# 预览页上传产物（POST api/upload 的名字 <sha>.<ext>，或其 url）
+    source_upload: str | None = None,# 预览页上传产物（POST api/upload 返回的 upload_name）
     size: str = "1024x1024",
     strength: float = 0.7,           # 0.0=接近原图 / 1.0=大幅改造（wanxiang 当前忽略；保留接口为未来 provider 准备）
     style: str | None = None,
@@ -318,7 +323,7 @@ result = image_edit(
 | `source_file_id` | 当前 turn 用户上传文件的 `file_id`（如 `file_0`）| 用户传了照片 |
 | `source_path` | sandbox 虚拟路径 `/instance/...` | 罕用；优先用前两种 |
 | `source_url` | http(s) URL（受 allowlist 约束）| 用户给了公共 URL |
-| `source_upload` | 预览页上传产物的名字（`POST api/upload` 返回 url 的末段 `<sha>.<ext>`，或整条 url）| 终端用户在**预览页**传的照片想直接改（如「修复老照片」按钮）；handler 路径首选 |
+| `source_upload` | 预览页上传产物的名字（直接使用 `POST api/upload` 返回的 `upload_name` 或 `resource_ref.upload_name`；不接受 URL）| 终端用户在**预览页**传的照片想直接改（如「修复老照片」按钮）；handler 路径首选；不要解析 opaque URL |
 
 > `sources`（多图）只按前缀自动识别 artifact / file / sandbox / url 四类，**不含 upload**；要改预览页上传的图用单数 `source_upload`。
 

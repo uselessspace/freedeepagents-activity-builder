@@ -68,9 +68,15 @@ cat <<EOF
 Next steps (in order):
   1) Open and finish authoring:
        activities/$ACTIVITY_ID/manifest.json
+       activities/$ACTIVITY_ID/runtime.json
        activities/$ACTIVITY_ID/data.schema.json   (typed-KV business data shape — properties + default + x-auto-inject)
        activities/$ACTIVITY_ID/AGENTS.md
        activities/$ACTIVITY_ID/skills/$ACTIVITY_ID-host/SKILL.md
+       activities/$ACTIVITY_ID/skills/$ACTIVITY_ID-cards/SKILL.md
+       activities/$ACTIVITY_ID/card_templates/$ACTIVITY_ID.welcome.json
+       activities/$ACTIVITY_ID/card_templates/$ACTIVITY_ID.intake.json
+     Replace every TODO_ACTIVITY_AUTHOR marker. The verifier intentionally
+     rejects unfinished markers and Builder-only path placeholders.
   2) Static Preview only — add dsl_builder_module; add tools_module,
      handlers_module, and preview_actions.json only for the classified
      interaction surfaces
@@ -80,7 +86,7 @@ Next steps (in order):
      all-comment starter. Don't declare stdlib / platform-baseline / app.*
      (see $PACKAGE_ROOT/references/python-dependencies.md).
   4) Run verifier (Python >= 3.10, no platform repo needed):
-       python $PACKAGE_ROOT/tools/activity_verifier.py
+       python3 $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
   5) Run the offline testkit smoke (no platform repo needed):
-       python $PACKAGE_ROOT/testkit/fda_testkit.py activities/$ACTIVITY_ID
+       python3 $PACKAGE_ROOT/testkit/fda_testkit.py $TARGET_DIR
 EOF

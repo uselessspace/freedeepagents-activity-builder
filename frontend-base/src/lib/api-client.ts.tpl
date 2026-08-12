@@ -2,10 +2,10 @@
  * Static Preview API client.
  *
  * Production runtime exposes:
- *   - GET /preview/<activity_type_id>/<instance_id>/api/dsl.json
- *   - GET /preview/<activity_type_id>/<instance_id>/api/dsl/stream
+ *   - GET /preview/{activity_type_id}/{instance_id}/api/dsl.json
+ *   - GET /preview/{activity_type_id}/{instance_id}/api/dsl/stream
  *
- * Because the built app is served below `/preview/<activity_type_id>/<instance_id>/`, relative
+ * Because the built app is served below `/preview/{activity_type_id}/{instance_id}/`, relative
  * requests to `/api/...` are constructed through `apiUrl()`.
  */
 

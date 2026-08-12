@@ -9,17 +9,17 @@
 #
 # Do NOT declare:
 #   - Python stdlib (json, pathlib, datetime, ...)
-#   - platform baseline packages (langchain*, fastapi, pydantic, httpx, numpy,
-#     pandas, jinja2, ...) — full list:
-#     <package>/references/runtime-python-baseline.txt, where <package> is your
-#     freedeepagents-activity-builder install dir (NOT this activity dir)
+#   - packages already supplied by the target FDA runtime. Use the target
+#     runtime's pinned requirements/baseline as the authority; do not guess a
+#     version from another Builder checkout.
 #   - first-party app.* imports
 #   - sibling modules you ship inside this activity
 #
 # Rules: pin with == ; lazy-import heavy deps inside the function that needs
 # them ; prefer the stdlib or a runtime capability (image / tts / read_document)
 # before adding a new dependency — the runtime shares ONE venv across all
-# activities. Full guidance: <package>/references/python-dependencies.md
+# activities. The Builder's python-dependencies reference owns the authoring
+# rules; it is development documentation and is not a runtime file path.
 #
 # pip can't install system tools (ffmpeg, poppler, ...). If you shell out to
 # one, note it here as e.g.  `# system: ffmpeg`  so the host image provisions it.

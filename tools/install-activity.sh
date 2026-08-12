@@ -69,6 +69,12 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/_prewarm-template.sh"
 
+PYTHON_BIN="$ROOT/.venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+  PYTHON_BIN="$(command -v python3 || command -v python || true)"
+fi
+[ -n "$PYTHON_BIN" ] || { echo "error: Python interpreter not found" >&2; exit 1; }
+
 docker_arch_flag() {
   case "$(uname -m)" in
     arm64|aarch64) echo "--platform linux/arm64" ;;
@@ -126,13 +132,26 @@ tar -xzf "$PACKAGE" -C "$WORK_DIR"
 META="$WORK_DIR/fda-package.json"
 [ -f "$META" ] || { echo "error: package missing fda-package.json (not a valid .fda.tgz)" >&2; exit 1; }
 
-read -r ACTIVITY_ID HAS_FRONTEND <<EOF
-$(.venv/bin/python -c "
+if ! META_FIELDS="$("$PYTHON_BIN" - "$META" <<'PY'
 import json
-m = json.load(open('$META'))
-print(m['activity_type_id'], 'yes' if m.get('has_frontend') else 'no')
-")
-EOF
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    metadata = json.load(handle)
+if metadata.get("package_version") != 3:
+    raise SystemExit("unsupported package_version")
+activity_id = metadata.get("activity_type_id")
+if not isinstance(activity_id, str) or not activity_id:
+    raise SystemExit("invalid activity_type_id")
+if metadata.get("items") != [f"activities/{activity_id}"]:
+    raise SystemExit("invalid package items")
+print(activity_id, "yes" if metadata.get("has_frontend") else "no")
+PY
+)"; then
+  echo "error: invalid fda-package.json metadata" >&2
+  exit 1
+fi
+read -r ACTIVITY_ID HAS_FRONTEND <<<"$META_FIELDS"
 
 echo "    activity:  $ACTIVITY_ID"
 [ "$HAS_FRONTEND" = "yes" ] && echo "    frontend:  activities/$ACTIVITY_ID/site" || echo "    frontend:  (none)"
@@ -146,15 +165,23 @@ fi
 
 MANIFEST="$WORK_DIR/activities/$ACTIVITY_ID/manifest.json"
 [ -f "$MANIFEST" ] || { echo "error: missing manifest.json in package" >&2; exit 1; }
-.venv/bin/python -c "import json; json.load(open('$MANIFEST'))" || { echo "error: manifest.json is not valid JSON" >&2; exit 1; }
-
-read -r IS_STATIC_PREVIEW <<EOF
-$(.venv/bin/python -c "
+"$PYTHON_BIN" - "$MANIFEST" <<'PY' || { echo "error: manifest.json is not valid JSON" >&2; exit 1; }
 import json
-m = json.load(open('$MANIFEST'))
-print('yes' if m.get('dsl_builder_module') else 'no')
-")
-EOF
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    json.load(handle)
+PY
+
+IS_STATIC_PREVIEW="$("$PYTHON_BIN" - "$MANIFEST" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    manifest = json.load(handle)
+print("yes" if manifest.get("dsl_builder_module") else "no")
+PY
+)"
 
 [ "$IS_STATIC_PREVIEW" = "yes" ] && echo "    preview:   Static Preview (will ensure site/dist)" || echo "    preview:   Card-only"
 

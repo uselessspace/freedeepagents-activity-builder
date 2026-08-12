@@ -96,7 +96,7 @@ manifest.json：
 ## verifier 检查
 
 ```bash
-python tools/activity_verifier.py
+python3 <package>/tools/activity_verifier.py <project-root>
 ```
 
 会针对每个活动 manifest：

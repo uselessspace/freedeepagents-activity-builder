@@ -1,6 +1,6 @@
 {
   "name": "{{ACTIVITY_ID}}",
-  "description": "{{ACTIVITY_NAME}} — FreeDeepAgents activity frontend, derived from <package>/frontend-base.",
+  "description": "{{ACTIVITY_NAME}} — FreeDeepAgents Static Preview frontend.",
   "private": true,
   "version": "0.1.0",
   "type": "module",

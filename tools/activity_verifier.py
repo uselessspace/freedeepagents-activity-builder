@@ -108,6 +108,22 @@ WRONG_ARTIFACT_FIELDS = {
 }
 KNOWN_BLOCK_TYPES = {"markdown", "info", "form", "action", "image", "audio"}
 
+# Scaffold authoring markers and Builder-only addresses must never reach a
+# packaged activity. They are deliberately allowed in this Builder package's
+# templates, then rejected after those templates are copied under activities/.
+AUTHORING_RESIDUE_PATTERNS = (
+    (re.compile(r"TODO_ACTIVITY_AUTHOR"), "unfinished TODO_ACTIVITY_AUTHOR marker"),
+    (re.compile(r"<package>"), "unresolved Builder package placeholder '<package>'"),
+    (re.compile(r"<activity_type_id>"), "unresolved activity placeholder '<activity_type_id>'"),
+    (re.compile(r"<id>"), "unresolved activity placeholder '<id>'"),
+    (
+        re.compile(r"packages/freedeepagents-activity-builder"),
+        "hardcoded repo-local Builder path; use the active package root during authoring",
+    ),
+    (re.compile(r"(?:写完后替换|复制本模板后)"), "unfinished scaffold authoring instruction"),
+    (re.compile(r"\btemplate-(?:welcome|intake|result|error)\b"), "unscoped template assignment id"),
+)
+
 # Names reserved by the runtime — activity tools.py must not register
 # any @tool with one of these names or LangGraph dispatch will collide.
 # Source of truth: app/activity_tools.py:BUILTIN_TOOL_NAMES. Keep them
@@ -182,6 +198,7 @@ def verify_project(root: Path | str) -> list[VerificationIssue]:
 
     _verify_runtime_configs(project_root, issues)
     _verify_activity_contract_files(project_root, issues)
+    _verify_no_authoring_residue(project_root, issues)
     _verify_card_template_field_names(project_root, issues)
     _verify_card_template_schema_conformance(project_root, issues)
     _verify_capabilities(project_root, issues)
@@ -416,6 +433,54 @@ def _contains_welcome_placeholder(value: object) -> bool:
     if isinstance(value, dict):
         return any(_contains_welcome_placeholder(item) for item in value.values())
     return False
+
+
+def _verify_no_authoring_residue(root: Path, issues: list[VerificationIssue]) -> None:
+    """Reject unfinished scaffold prose and Builder-only paths in shipped files."""
+    activities_dir = root / "activities"
+    if not activities_dir.exists():
+        return
+    excluded_parts = {"node_modules", "dist", "__pycache__", ".git", "fda-logs"}
+    text_suffixes = {
+        ".md",
+        ".json",
+        ".txt",
+        ".py",
+        ".ts",
+        ".tsx",
+        ".js",
+        ".jsx",
+        ".html",
+        ".css",
+    }
+    for activity_dir in sorted(path for path in activities_dir.iterdir() if path.is_dir()):
+        # Development namespaces may group multiple activities below one
+        # directory. Only direct, installable activity roots own a manifest.
+        if not (activity_dir / "manifest.json").is_file():
+            continue
+        for path in sorted(activity_dir.rglob("*")):
+            if not path.is_file() or path.suffix not in text_suffixes:
+                continue
+            if excluded_parts.intersection(path.relative_to(activity_dir).parts):
+                continue
+            text = _read(path)
+            if text is None:
+                continue
+            for pattern, label in AUTHORING_RESIDUE_PATTERNS:
+                match = pattern.search(text)
+                if match is None:
+                    continue
+                line_no = text.count("\n", 0, match.start()) + 1
+                issues.append(
+                    _issue(
+                        "error",
+                        root,
+                        path,
+                        f"line {line_no}: {label}. Finish authoring the activity and replace "
+                        "the reference with an activity-local runtime path before review/package.",
+                    )
+                )
+                break
 
 
 def _verify_generic_runtime_references(root: Path, activity_ids: set[str], issues: list[VerificationIssue]) -> None:

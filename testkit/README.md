@@ -10,8 +10,10 @@ implementations.
 
 **Python**: ≥ 3.9 (tested floor; 3.10+ fine). The testkit itself has zero
 third-party deps; importing *your* `tools.py` still needs whatever it imports
-(typically `langchain_core` — any 0.3.x works). Note the bundled verifier has a
-higher floor (≥ 3.10), see `INSTALL.md` "Toolchain requirements".
+(typically `langchain_core`). Install the same major version as the target FDA
+runtime; current FDA uses LangChain Core 1.x, so do not downgrade to 0.3.x just
+for the testkit. The bundled verifier has a higher floor (≥ 3.10), see
+`INSTALL.md` "Toolchain requirements".
 
 ## What it covers vs the verifier
 
@@ -28,7 +30,7 @@ The verifier checks files; the testkit **runs your code**. Use both.
 ## CLI smoke
 
 ```bash
-python testkit/fda_testkit.py path/to/activities/<id>
+python3 testkit/fda_testkit.py path/to/activities/<id>
 ```
 
 ```

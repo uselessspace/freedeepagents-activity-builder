@@ -34,7 +34,7 @@ The two checks have **different** requirements:
 
 **No platform repo?** Run the offline testkit instead of Check 2 — it stubs
 `app.*`, builds `make_tools`, and checks each tool's strict-mode shape with
-zero third-party deps: `python <package>/testkit/fda_testkit.py activities/<id>`
+zero third-party deps: `python3 <package>/testkit/fda_testkit.py activities/<id>`
 (see [../../testkit/README.md](../../testkit/README.md)).
 
 ## Check 1 — Bundled verifier
@@ -97,7 +97,7 @@ don't flip the gate; they get acknowledged in the packager's Ship Verification
 block.
 
 This skill is static-only. The Ship Verification gate additionally always
-requires the offline **testkit smoke** (`python <package>/testkit/fda_testkit.py
+requires the offline **testkit smoke** (`python3 <package>/testkit/fda_testkit.py
 activities/<id>`, no platform repo needed) — see
 [workflows/06-verify-and-ship.md](../../workflows/06-verify-and-ship.md) step 3.5.
 

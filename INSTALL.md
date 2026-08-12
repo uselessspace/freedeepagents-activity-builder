@@ -3,6 +3,16 @@
 This package can be used as a Codex plugin, a Claude plugin, or a repo-local
 skill symlink. All forms point at the same internal workflow skills.
 
+## Compatibility preflight
+
+Use one Builder bundle per run. Read its plugin manifest version and do not mix
+scripts/templates from a repo checkout with Skills loaded from a different
+plugin cache. Builder 0.4.33 targets the current FDA contract based on Python
+3.12, DeepAgents 0.7.x, and LangChain Core 1.x. For another target runtime,
+its `app/models.py` and pinned requirements are authoritative; run
+`tools/check_schema_sync.py` in that runtime or install the Builder release
+paired with it. A newer Builder can author fields an older runtime rejects.
+
 > **Install the whole package, not individual skills.** The skills cross-link
 > each other and the shared `policies/` / `references/` / `workflows/` /
 > `schemas/` / `testkit/` dirs with package-relative paths (e.g.
@@ -64,7 +74,7 @@ plugin.json 的 `skills` 数组只是显式声明 + 排序，不是白名单。�
 
 ```text
 /activity-verify        静态校验（verifier + strict-tool schema，<5s）
-/activity-review        语义自审（找逻辑冲突/承诺错配，调在场 LLM，非阻塞）
+/activity-review        本地语义自审（CONFLICT 阻断；SMELL / NOTE 可记录取舍）
 /activity-smoke         端到端冒烟（核 trace.jsonl 的 card_item / turn_completed / done）
 /activity-diagnostician 失败排查（turn_id / 错误日志 / 症状 → 根因 + 修复）
 /activity-dev-cli       共享 dev runtime（连通、状态、同步、拉取、真 turn、日志）
@@ -148,9 +158,9 @@ holding your `activities/`); `<package>` is where this plugin is installed:
 ```bash
 # 1. static structure + schema conformance (zero deps, no platform repo).
 #    Pass <project-root> explicitly; confirm the "scanned N activities" line.
-python <package>/tools/activity_verifier.py <project-root>
+python3 <package>/tools/activity_verifier.py <project-root>
 # 2. run the activity's Python offline (make_tools + dsl_builder.build)
-python <package>/testkit/fda_testkit.py activities/<activity_type_id>
+python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
 ```
 
 ### Toolchain requirements (per tool)
@@ -158,7 +168,7 @@ python <package>/testkit/fda_testkit.py activities/<activity_type_id>
 | Tool | Python | Needs platform repo? | Third-party deps |
 |---|---|---|---|
 | `tools/activity_verifier.py` | **≥ 3.10**（3.9 启动即报错退出——依赖 `sys.stdlib_module_names`） | 否（纯静态 AST） | 无（stdlib only） |
-| `testkit/fda_testkit.py` | **≥ 3.9**（实测下限；3.10+ 同样支持） | 否（自带 `app.*` stubs） | 自身零依赖；但它会 import 你的 `tools.py`，其依赖（典型为 `langchain_core`）需自行安装。平台运行时随 `langchain-community==0.4.1` 携带 `langchain_core` 0.3.x；本地 ≥ 0.3 系即可 |
+| `testkit/fda_testkit.py` | **≥ 3.9**（实测下限；3.10+ 同样支持） | 否（自带 `app.*` stubs） | 自身零依赖；但它会 import 你的 `tools.py`，其依赖（典型为 `langchain_core`）需自行安装。使用目标 runtime 的同一主版本；当前 FDA 为 LangChain Core 1.x，不要为 testkit 单独降级到 0.3.x |
 | `skills/activity-verify/scripts/strict-tool-schema-check.py` | 跟随 FDA 仓库 venv（当前 3.12） | **是**（`tools.py` 的 `app.card_system` import 需仓库在 `sys.path`） | `langchain_core` |
 | `tools/check_schema_sync.py` | 跟随 FDA 仓库 venv | **是**（比对 `app.models`，维护者侧守卫） | 平台 venv 全量 |
 

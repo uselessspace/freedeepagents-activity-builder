@@ -1,12 +1,12 @@
 {
-  "assignment_id": "template-welcome",
+  "assignment_id": "template-activity-welcome",
   "card": {
     "version": "1.0",
     "template": "template-activity.welcome",
     "blocks": [
       {
         "type": "markdown",
-        "content": "## 欢迎使用模板活动\n\n在这里说明活动能帮助用户完成什么，以及用户可以如何开始。"
+        "content": "## 欢迎使用模板活动\n\nTODO_ACTIVITY_AUTHOR：说明活动能帮助用户完成什么，以及用户可以如何开始。"
       },
       {
         "type": "action",

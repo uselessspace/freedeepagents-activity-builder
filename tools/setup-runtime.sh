@@ -54,6 +54,7 @@ while [ $# -gt 0 ]; do
 done
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$REPO_ROOT"
 
 IMAGE="freedeepagents-sandbox-node:latest"
@@ -104,7 +105,8 @@ fi
 echo ""
 echo "==> Step 2/2: per-activity node_modules cache"
 
-source "$REPO_ROOT/scripts/_prewarm-template.sh"
+ROOT="$REPO_ROOT"
+source "$SCRIPT_DIR/_prewarm-template.sh"
 
 # Collect target activities
 if [ -n "$TARGET_ACTIVITY" ]; then
