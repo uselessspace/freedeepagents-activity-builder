@@ -10,6 +10,7 @@ type PreviewMount = {
   activityTypeId: string;
   activityId: string;
   prefix: string;
+  isGoDeveloperProxy: boolean;
 };
 
 type StoredPreviewUpload = {
@@ -36,6 +37,7 @@ function parseCurrentPreviewMount(prefix: string): PreviewMount | null {
       activityTypeId: parts[4],
       activityId: parts[6],
       prefix: `/${parts.slice(0, previewIdx + 1).join('/')}`,
+      isGoDeveloperProxy: true,
     };
   }
 
@@ -44,6 +46,7 @@ function parseCurrentPreviewMount(prefix: string): PreviewMount | null {
       activityTypeId: parts[previewIdx + 1],
       activityId: parts[previewIdx + 2],
       prefix: `/${parts.slice(0, previewIdx + 3).join('/')}`,
+      isGoDeveloperProxy: false,
     };
   }
   return null;
@@ -68,15 +71,26 @@ function rewritePreviewPathForCurrentProxy(src: string): string | null {
   const mount = parseCurrentPreviewMount(BASE_PREFIX);
   const upload = parseStoredPreviewUpload(src);
   if (!mount || !upload) return null;
-  if (mount.activityTypeId !== upload.activityTypeId || mount.activityId !== upload.activityId) {
+  // The Go developer proxy identifies an activity type with its database id
+  // (for example `dat_...`), while FDA upload URLs use the manifest slug. The
+  // developer activity id is shared by both routes and is the stable identity
+  // for this mount, so only direct FDA mounts can compare the type segment.
+  const activityTypeMismatch =
+    !mount.isGoDeveloperProxy && mount.activityTypeId !== upload.activityTypeId;
+  if (activityTypeMismatch || mount.activityId !== upload.activityId) {
     return null;
   }
   return `${mount.prefix}/${upload.rest}`;
 }
 
+function isHostAbsoluteAssetPath(src: string): boolean {
+  return src.startsWith('/v1/') || src.startsWith('/api/v1/developer/');
+}
+
 export function resolveAssetUrl(src: string): string {
   if (!src) return src;
   if (/^(https?:|data:|blob:)/i.test(src)) return src;
+  if (isHostAbsoluteAssetPath(src)) return src;
   const proxiedPreviewPath = rewritePreviewPathForCurrentProxy(src);
   if (proxiedPreviewPath) return proxiedPreviewPath;
   if (BASE_PREFIX && src.startsWith(BASE_PREFIX + '/')) return src;

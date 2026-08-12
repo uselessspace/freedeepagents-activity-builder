@@ -119,15 +119,15 @@ cat <<EOF
 ──── Next steps ────
 
   1) Author your domain:
-       ../data.schema.json      ← typed-KV business data shape
-       ../dsl_builder.py        ← build(instance_dir) returns the AppDsl dict
-       ../tools.py              ← optional make_tools(ctx) for UI actions
-       src/lib/types.ts        ← your domain types
-       src/lib/api-client.ts   ← /api/dsl.json + /api/dsl/stream helpers
-       src/components/         ← your UI
-       vite.config.ts          ← keep base: './'
+       activities/$ACTIVITY_ID/data.schema.json
+       activities/$ACTIVITY_ID/dsl_builder.py
+       activities/$ACTIVITY_ID/tools.py              ← optional Agent tools
+       activities/$ACTIVITY_ID/site/src/lib/types.ts
+       activities/$ACTIVITY_ID/site/src/lib/api-client.ts
+       activities/$ACTIVITY_ID/site/src/components/
+       activities/$ACTIVITY_ID/site/vite.config.ts   ← keep base: './'
 
-  2) Make the frontend cache ready for runtime/package builds:
+  2) Platform-repo/install-side only — prepare the runtime cache:
        bash $PACKAGE_ROOT/tools/setup-runtime.sh $ACTIVITY_ID
 
      This populates runtime/sandbox_cache/node_modules/$ACTIVITY_ID/.
@@ -143,6 +143,6 @@ cat <<EOF
      Add "tools_module": "tools" only if this activity defines in-process tools.
 
   5) Verify:
-       python $PACKAGE_ROOT/tools/activity_verifier.py
+       python3 $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
 
 EOF

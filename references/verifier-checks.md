@@ -5,11 +5,11 @@ Source of truth: `<package>/tools/activity_verifier.py`. This doc summarizes wha
 ## Invocation
 
 ```bash
-python <package>/tools/activity_verifier.py [<root>]
+python3 <package>/tools/activity_verifier.py <project-root>
 ```
 
-`<root>` defaults to the current directory; it must be the **project root that
-contains `activities/`** (not an individual activity dir, not the plugin dir).
+Pass `<project-root>` explicitly; it must be the **project root that contains
+`activities/`** (not an individual activity dir, not the plugin dir).
 The verifier scans every `activities/<id>/manifest.json` directly under it.
 Requires **Python ≥ 3.10** (stdlib only, no platform repo; 3.9 exits with a clear
 version error — see INSTALL.md "Toolchain requirements").
@@ -51,6 +51,7 @@ expect.
 | 19 | **No relative imports in `tools.py`** | `tools.py` / helpers use `from . import x` — the runtime loads them by file path (no package context), so relative imports `ImportError` | load siblings via the file-path loader (see `references/activity-python-modules.md`) |
 | 20 | **DeepAgents skill-loading integrity** (companion to #12) | `app/runner` reintroduces a `_skill_instruction_text` helper or globs/rglobs `SKILL.md` itself — both bypass native progressive disclosure | keep skills flowing through `create_deep_agent(skills=...)` |
 | 21 | **Static Preview frontend `file:` dependency boundary** | `site/package.json` has `file:` dependencies that are missing, absolute, or resolve outside `activities/<id>/` (for example `file:../../../packages/...`) | vendor the dependency inside the activity, such as `file:vendor/<package>`, so the activity package installs without the Runtime monorepo |
+| 22 | **Authoring residue / Builder-only address** | shipped activity text still contains `TODO_ACTIVITY_AUTHOR`, `<id>`, `<activity_type_id>`, `<package>`, template-only assignment IDs, or a hardcoded repo-local Builder path | finish the scaffold, replace every marker, and keep Runtime Skill references under `/activity` or skill-local relative paths |
 | 22 | **No detached `ctx` work** | activity Python passes `ctx` into `asyncio.create_task`, an unawaited executor call, framework background task, `Thread(...).start()`, or a thread without `join()`; the work can outlive its tool/handler capability token | finish all `ctx`-dependent work before returning, or persist plain job data and resume it in a later handler with that handler's fresh `ctx`; activity-owned background work that never retains/calls `ctx` is not blocked by this rule; see `references/handler-context-lifecycle.md` |
 
 ## Soft warnings (advisory — record in Ship Verification, ship proceeds)
@@ -75,5 +76,7 @@ When this doc disagrees with the verifier source, **the verifier wins**. File a 
 
 ## Tips
 
-- Run with grep to focus: `python <package>/tools/activity_verifier.py 2>&1 | grep activities/<your-id>`
-- Capture output for the Ship Verification block: `python <package>/tools/activity_verifier.py 2>&1 | tee /tmp/verify.out`
+- Release gate: `python3 <package>/tools/activity_verifier.py <project-root>` and
+  keep the complete stdout including `scanned N activities`.
+- Do not pipe the gate through `grep`; it can hide generic-runtime errors and
+  replaces the verifier exit code with the filter's exit code.

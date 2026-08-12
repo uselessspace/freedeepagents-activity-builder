@@ -1,9 +1,8 @@
 /**
  * Shared HTTP request helper for FreeDeepAgents frontend templates.
  *
- * Source of truth: <package>/frontend-base/src/lib/http.ts
- * Do NOT edit copies in derived templates — change here, re-derive (or
- * cherry-pick the file directly).
+ * Source of truth: the frontend base in the active Activity Builder bundle.
+ * Keep derived copies aligned by re-deriving from that same bundle.
  */
 
 import { BASE } from './api-base';

@@ -10,7 +10,7 @@ description: >-
 
 # Activity Frontend
 
-> **何时用**：仅 `frontend_axis = static-preview` 或用户明确要更丰富前端时；card-only 活动跳过本步直接打包。
+> **何时用**：仅 `frontend_axis = static-preview` 或用户明确要更丰富前端时；card-only 活动跳过本步，进入 `/activity-review`，清零 CONFLICT 后再打包。
 
 Use only when `frontend_axis` is `static-preview` or the user explicitly asks
 for a richer frontend. Do not vendor external frontend skill source into this

@@ -14,20 +14,23 @@ Verification; this is an in-session semantic check, not a platform API call.
 ## Step 1: Run the verifier
 
 ```bash
-python <package>/tools/activity_verifier.py
+python3 <package>/tools/activity_verifier.py <project-root>
 ```
 
-Or, to see only your activity's output:
-
-```bash
-python <package>/tools/activity_verifier.py 2>&1 | grep activities/<your-id>
-```
+Always pass `<project-root>` explicitly and keep the complete stdout. Do not
+pipe the release-gate invocation through `grep`: filtering hides generic-runtime
+errors and the required `scanned N activities` line, and without `pipefail` the
+pipeline exit code belongs to `grep` rather than the verifier.
 
 Parse the output:
 - Lines starting `ERROR ` → BLOCK ship
 - Lines starting `WARNING ` → don't block but must be acknowledged in the Ship Verification block
 
-Exit code: `0` if no errors, `1` if any errors.
+Exit code: `0` if no errors, `1` if verification found errors, `2` if the
+invocation itself is invalid (for example Python <3.10 or zero activities found).
+`tools/pack-activity.sh` reruns this same full-project command and refuses to
+create an archive on any non-zero result; the explicit Step 1 run remains
+required because its complete stdout belongs in Ship Verification.
 
 ## Step 2: Fix one causal class at a time
 
@@ -71,7 +74,7 @@ needs **only the shipped testkit**, not a checked-out platform runtime, so it's
 the verification step external developers can always run:
 
 ```bash
-python <package>/testkit/fda_testkit.py activities/<id>
+python3 <package>/testkit/fda_testkit.py activities/<id>
 ```
 
 It stubs `app.card_system` / `app.errors`, runs `make_tools(ctx)` and
@@ -142,11 +145,12 @@ Before the Ship Verification block: every "ready" / "完成" claim must sit imme
 ## Ship Verification
 
 - **Semantic review**: CONFLICT 0; accepted SMELL/NOTE: <list + reason, or "none">
+- **Builder bundle**: <absolute package path> · version <plugin.json version>; no mixed checkout/cache assets
 - **Verifier**: 0 errors. Output:
   ```
   <paste full stdout, including warnings>
   ```
-- **Testkit smoke**: `python <package>/testkit/fda_testkit.py activities/<id>` → <paste result line>
+- **Testkit smoke**: `python3 <package>/testkit/fda_testkit.py activities/<id>` → <paste result line>
 - **Runtime setup/build**: `bash <package>/tools/setup-runtime.sh <id>` and, for Static Preview, `npm run build` or `bash <package>/tools/install-activity.sh <pkg>` → `site/dist/index.html` exists
 - **E2E smoke**: <method> <url> → <status>; events: <list>; output_card "<title>" emitted. *(Platform-runtime step — if you don't have the runtime, record "deferred to maintainer runtime smoke" and the maintainer pastes it.)*
 - **Suggested smoke inputs** *(optional)*: <随包指定的必测输入，如 "大纲 turn 同 turn 出封面" 这类历史事故线>；maintainer 跑 E2E 时照此复现。

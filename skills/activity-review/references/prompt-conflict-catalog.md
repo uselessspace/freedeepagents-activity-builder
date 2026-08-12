@@ -17,6 +17,8 @@
 | 把 `tools_module` 当作所有 Static Preview 的必选项 | 只读 DSL 或 handler-only SPA 不需要 Agent tools | `dsl_builder_module` 必选；tools/handlers/preview_actions 按分类选用 |
 | 假设上传前必须已有聊天 turn | 成功 upload/handler/direct ASR 本身会创建并归属实例交互 | 不制造 bootstrap turn；只读页面/DSL 仍不创建空实例 |
 | 保存 `storage_key`、`sandbox_path` 或 presigned URL 作为业务身份 | 这些是部署位置或短期地址 | 保存 `resource_ref` / `artifact_id`，渲染使用返回的 opaque URL |
+| 最终活动 Skill 链接 `<package>/policies/...` 或硬编码 repo-local Builder 路径 | Builder 不在活动 Docker 的 `/activity` 挂载里，Runtime Agent 无法读取 | 把必要护栏写成活动本地指令；开发期参考不进入已上传 Skill |
+| scaffold 仍有 `TODO_ACTIVITY_AUTHOR`、`<id>` 或“写完后替换”却继续打包 | 模板示例会成为 Runtime Agent 的真实指令 | 完成 authoring residue 清理；让 verifier 阻断任何残留 |
 | “放进 Markdown code fence 就不用 JSON 转义” | 工具参数本身仍经过 JSON | 先产生正确字符串，再按 JSON 规则转义；代码围栏只影响显示 |
 | 通用 `app/` 理解某活动 DSL，或禁止活动 SPA 理解自己的 DSL | 混淆共享前端与活动前端边界 | 通用 UI 只懂共享协议；`activities/<type>/site/` 可懂自己的私有 DSL |
 | side effect 失败仍返回 `ok: true` 且无 degraded/warnings | 形成不完整 fanout 的假成功 | 每个副作用隔离；主写成功但附属失败时显式 `degraded` + `warnings` |

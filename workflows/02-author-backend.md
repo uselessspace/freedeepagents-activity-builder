@@ -31,13 +31,15 @@ Where `<package>` resolves to wherever this skill is installed (typically `packa
 | 3 | data schema | `activities/<id>/data.schema.json` | [../references/data-store-tools.md](../references/data-store-tools.md) — declares the activity's typed-KV business shape with `default`, `properties`, optional per-key `x-auto-inject` |
 | 4 | activity entrypoint | `activities/<id>/AGENTS.md` (≤80 lines) | [../policies/agents-md-thin.md](../policies/agents-md-thin.md) |
 | 5 | host skill | `activities/<id>/skills/<id>-host/SKILL.md` (≤120 lines) | [../references/host-skill-template.md](../references/host-skill-template.md) |
-| 6 | card templates | mandatory static `activities/<id>/card_templates/<id>.welcome.json` + empty `.welcome.vars.json`; other `*.json` templates pair with matching `*.vars.json` | [../references/card-block-types.md](../references/card-block-types.md) — **the 6 block types** (`markdown` / `info` / `form` / `action` / `image` / `audio`) with schema, FormField rules, form-vs-action decision tree. The welcome JSON is persisted during server sync and displayed directly by the frontend, so it must contain fixed copy only—no `{{...}}` anywhere—and its vars schema must declare zero variables. Vars schema: `<package>/schemas/card-vars.schema.json`. Activities needing an intake form (collecting user input by fields) use a `form` block here; activities that only need a few clickable options use `action` instead. |
-
-Optional 7th: `activities/<id>/skills/<id>-cards/` — split out only if host SKILL.md exceeds 120 lines because of card-related content.
+| 6 | cards skill | `activities/<id>/skills/<id>-cards/SKILL.md` | Mandatory presentation-only catalog for fixed templates and literal `assignment_id` values; business intent remains in the host Skill. |
+| 7 | card templates | mandatory static `activities/<id>/card_templates/<id>.welcome.json` + empty `.welcome.vars.json`; other `*.json` templates pair with matching `*.vars.json` | [../references/card-block-types.md](../references/card-block-types.md) — **the 6 block types** (`markdown` / `info` / `form` / `action` / `image` / `audio`) with schema, FormField rules, form-vs-action decision tree. The welcome JSON is persisted during server sync and displayed directly by the frontend, so it must contain fixed copy only—no `{{...}}` anywhere—and its vars schema must declare zero variables. Vars schema: `<package>/schemas/card-vars.schema.json`. Activities needing an intake form (collecting user input by fields) use a `form` block here; activities that only need a few clickable options use `action` instead. |
 
 > The scaffold also drops `output.schema.json` (a `$ref` to the shared
-> transport schema) and a `<id>-cards/` skill stub. `output.schema.json` is
+> transport schema). `output.schema.json` is
 > auto-generated, not verified, and not authored by you — **leave it as-is**.
+> The host/cards Skills, manifest description, and welcome copy intentionally
+> contain `TODO_ACTIVITY_AUTHOR`; every marker must be replaced before the
+> verifier will pass.
 
 ## Step 3 (Static Preview only): declare DSL + the interaction surfaces actually needed
 
@@ -110,6 +112,8 @@ or a runtime capability before adding a dependency. Full rules:
       missing/duplicate delivery is harmless
 - [ ] Activity @tools (in `tools.py`) wrap typed-KV writes with user-semantic names; tool names do not collide with built-ins
 - [ ] AGENTS.md ≤80 lines; routes to `skills/<id>-host/SKILL.md`
+- [ ] `skills/<id>-cards/SKILL.md` exists and is the presentation-only card catalog referenced by AGENTS/host
+- [ ] no `TODO_ACTIVITY_AUTHOR`, `<package>`, `<id>`, or `<activity_type_id>` residue remains in shipped activity instructions
 - [ ] host SKILL.md ≤120 lines; supporting files under `workflows/`/`policies/`/`references/`
 - [ ] `<id>.welcome.json` exists, contains no `{{...}}`, and `<id>.welcome.vars.json` has empty `properties` with `additionalProperties: false`
 

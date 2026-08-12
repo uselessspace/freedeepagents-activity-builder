@@ -21,6 +21,10 @@ From the FreeDeepAgents repo root, package the activity:
 bash <package>/tools/pack-activity.sh <activity_type_id>
 ```
 
+The pack script reruns the bundled verifier against the explicit detected
+project root and creates no archive unless it exits 0. Keep the full output as
+the verifier evidence; do not pipe it through a filter.
+
 Use the produced `dist/<activity_type_id>-*.fda.tgz` unless the repository's pack
 script reports a different path.
 
@@ -41,7 +45,7 @@ assets when needed, and leave the activity runnable.
   SMELL/NOTE items may be recorded as review decisions.
 - Run the activity verifier and fix every ERROR.
 - Run the offline testkit smoke:
-  `python <package>/testkit/fda_testkit.py activities/<activity_type_id>`
+  `python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>`
   (no platform repo needed; see [../../testkit/README.md](../../testkit/README.md)).
 - Use `../../references/output-validation.md` for trace review and offline
   output validation when a smoke run looks wrong.
@@ -63,7 +67,9 @@ assets when needed, and leave the activity runnable.
 End with a `## Ship Verification` block. Its **exact format is owned by**
 [workflows/06-verify-and-ship.md](../../workflows/06-verify-and-ship.md) Step 6 —
 use that block verbatim (Semantic review / Verifier / Testkit smoke / Runtime
-setup-build / E2E smoke / Warnings acknowledged / Files changed). Don't invent
+setup-build / E2E smoke / Warnings acknowledged / Files changed). Record the
+Builder package path and plugin version too, so evidence cannot silently mix a
+repo checkout with a stale installed cache. Don't invent
 a second format.
 
 Completion rule (also from workflow 06):

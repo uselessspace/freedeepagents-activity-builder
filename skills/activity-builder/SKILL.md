@@ -3,7 +3,7 @@ name: activity-builder
 description: >-
   活动构建第 3 步·实现。在 Brief + Classification 都有之后，scaffold 并填活动文件
   （manifest / runtime.json / data.schema / AGENTS.md / host skill / card_templates，
-  含 form 表单卡）。业务逻辑只进 activities/<activity_type_id>/，绝不碰通用 runtime（app / schemas）。
+  含 form 表单卡）。业务逻辑只进对应 activity 目录，绝不碰通用 runtime（app / schemas）。
   Use after Activity Brief and Activity Classification exist to scaffold and
   implement FDA activity files without putting business logic in generic runtime code.
 ---
@@ -60,6 +60,7 @@ Create or update only the activity folder:
 - `activities/<activity_type_id>/output.schema.json` (scaffolded `$ref` placeholder — leave as-is)
 - `activities/<activity_type_id>/AGENTS.md`
 - `activities/<activity_type_id>/skills/<activity_type_id>-host/SKILL.md`
+- `activities/<activity_type_id>/skills/<activity_type_id>-cards/SKILL.md`
 - `activities/<activity_type_id>/card_templates/*.json`
 - `activities/<activity_type_id>/card_templates/*.vars.json`
 - optional `activities/<activity_type_id>/tools.py`
@@ -71,7 +72,10 @@ it must be fully static: no `{{...}}` placeholders anywhere. Its paired
 `additionalProperties: false`).
 
 Use card-system output, typed-KV state, and a thin `AGENTS.md`. Put business
-policy in activity skills and supporting files.
+policy in activity skills and supporting files. The scaffolded host and cards
+Skills contain `TODO_ACTIVITY_AUTHOR` markers; replace every marker before
+review or verification. A packaged activity must not contain Builder-only
+`<package>` references or unresolved `<id>` placeholders.
 
 ## Static Preview Build
 
@@ -113,5 +117,4 @@ DOM targets. Persist the result first and let the SPA render it from DSL/data.
 ## Done Criteria
 
 Do not claim done. Route to `../activity-review/SKILL.md`; any CONFLICT returns
-here for repair. Then use `../activity-packager/SKILL.md` for packaging and evidence.
-- **可选共享环境预检**：若已安装并登录 `fda-dev`，可转 `../activity-dev-cli/SKILL.md` 先跑只读 `doctor`、`status` 和 `sync --dry-run`。不要在实现阶段把实际同步当成静态校验或完工证据。
+here for repair. Then use `../activity-packager/SKILL.md` for packaging and evidence. 若已安装并登录 `fda-dev`，可转 `../activity-dev-cli/SKILL.md` 先跑只读 `doctor`、`status` 和 `sync --dry-run`；不要把实际同步当成静态校验或完工证据。

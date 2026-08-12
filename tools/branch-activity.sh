@@ -90,6 +90,9 @@ fi
 cat <<EOF
 
   5) Verify:
-       python $PACKAGE_ROOT/tools/activity_verifier.py 2>&1 | grep activities/$NEW_ID
+       python3 $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
+
+     Treat only verifier exit 0 as ship-ready. Do not pipe through grep: a
+     filter can hide errors from this activity or from shared runtime files.
 
 EOF

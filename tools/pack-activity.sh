@@ -9,6 +9,9 @@
 # Usage:
 #   bash <package>/tools/pack-activity.sh <activity_type_id> [--out <dir>]
 #
+# Packaging is a release boundary: the bundled verifier is run against the
+# explicit project root before any archive is created.
+#
 # What it packs:
 #   - activities/<activity_type_id>/        everything under the activity dir
 #                                           (manifest, schemas, AGENTS.md,
@@ -46,13 +49,27 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$ACTIVITY_ID" ] || usage
+if ! [[ "$ACTIVITY_ID" =~ ^[a-z][a-z0-9-]{1,30}$ ]]; then
+  echo "error: activity_type_id must match ^[a-z][a-z0-9-]{1,30}$" >&2
+  exit 1
+fi
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ACTIVITY_DIR="$ROOT/activities/$ACTIVITY_ID"
 MANIFEST="$ACTIVITY_DIR/manifest.json"
 
 [ -d "$ACTIVITY_DIR" ] || { echo "error: activity dir not found: $ACTIVITY_DIR" >&2; exit 1; }
 [ -f "$MANIFEST" ] || { echo "error: manifest.json not found: $MANIFEST" >&2; exit 1; }
+
+PYTHON_BIN="$ROOT/.venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+  PYTHON_BIN="$(command -v python3 || command -v python || true)"
+fi
+[ -n "$PYTHON_BIN" ] || { echo "error: Python interpreter not found; cannot run verifier" >&2; exit 1; }
+
+echo "==> Verifying project before packaging"
+"$PYTHON_BIN" "$SCRIPT_DIR/activity_verifier.py" "$ROOT"
 
 mkdir -p "$ROOT/$OUT_DIR"
 TIMESTAMP="$(date -u +%Y%m%d-%H%M%S)"
@@ -82,22 +99,17 @@ else
   HAS_FRONTEND=0
 fi
 
-# Write package metadata so install-activity.sh can validate
-META_TMP="$(mktemp)"
-trap 'rm -f "$META_TMP"' EXIT
-cat > "$META_TMP" <<JSON
+WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "$WORK_DIR"' EXIT
+cat > "$WORK_DIR/fda-package.json" <<JSON
 {
   "package_version": 3,
   "activity_type_id": "$ACTIVITY_ID",
   "has_frontend": $( [ "$HAS_FRONTEND" = 1 ] && echo true || echo false ),
   "packed_at": "$TIMESTAMP",
-  "items": $(printf '%s\n' "${ITEMS[@]}" | .venv/bin/python -c "import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))" 2>/dev/null || printf '"see-items"')
+  "items": ["activities/$ACTIVITY_ID"]
 }
 JSON
-
-WORK_DIR="$(mktemp -d)"
-trap 'rm -rf "$WORK_DIR"; rm -f "$META_TMP"' EXIT
-cp "$META_TMP" "$WORK_DIR/fda-package.json"
 
 echo "==> Packing $ACTIVITY_ID"
 echo "    activity:  activities/$ACTIVITY_ID"

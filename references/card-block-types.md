@@ -12,7 +12,7 @@
 
 > **约束执行层级**（本文出现「必填 / 必须 / 不要」时，按此判断有多硬）：
 > - 🔴 **pydantic 强制**：违反 → runtime emit 时 `OutputCard` 校验失败，卡发不出。这是最硬的一档，`schemas/card-template.schema.json` 逐字段镜像它（`tools/check_schema_sync.py` 保证两者同步）。
-> - 🟡 **verifier 强制**：违反 → `python tools/activity_verifier.py` 报 ERROR（exit 1），ship 前必修；运行时不一定立刻炸。
+> - 🟡 **verifier 强制**：违反 → `python3 <package>/tools/activity_verifier.py <project-root>` 报 ERROR（exit 1），ship 前必修；运行时不一定立刻炸。`<package>` 必须是当前实际加载的 Builder 根目录，不要用 `grep` 过滤 verifier 输出。
 > - ⚪ **仅约定**：pydantic / verifier 都不拦，但违反会降低质量或踩可读性坑（如 `title` 填空串能过校验但卡片难看）。
 > 没标注的约束默认 🔴。
 
