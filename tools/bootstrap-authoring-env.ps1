@@ -57,8 +57,10 @@ function Get-CheckedDownload(
 
 function Get-PythonMinor([string]$PythonExe) {
     try {
-        $versionText = (& $PythonExe --version 2>&1 | Select-Object -First 1)
-        if ($LASTEXITCODE -eq 0 -and "$versionText" -match '^Python\s+(\d+\.\d+)(?:\.|$)') {
+        $versionOutput = @(& $PythonExe --version 2>&1)
+        $nativeExitCode = $LASTEXITCODE
+        $versionText = $versionOutput[0]
+        if ($nativeExitCode -eq 0 -and "$versionText" -match '^Python\s+(\d+\.\d+)(?:\.|$)') {
             return $Matches[1]
         }
     } catch {}
@@ -67,8 +69,10 @@ function Get-PythonMinor([string]$PythonExe) {
 
 function Get-NodeMajor([string]$NodeExe) {
     try {
-        $versionText = (& $NodeExe --version 2>&1 | Select-Object -First 1)
-        if ($LASTEXITCODE -eq 0 -and "$versionText" -match '^v(\d+)\.') {
+        $versionOutput = @(& $NodeExe --version 2>&1)
+        $nativeExitCode = $LASTEXITCODE
+        $versionText = $versionOutput[0]
+        if ($nativeExitCode -eq 0 -and "$versionText" -match '^v(\d+)\.') {
             return $Matches[1]
         }
     } catch {}
@@ -100,8 +104,10 @@ if (Test-Path -LiteralPath $VenvDir) {
         $py = Get-Command "py.exe" -ErrorAction SilentlyContinue
         if ($py) {
             try {
-                $versionText = (& $py.Source -3.12 --version 2>&1 | Select-Object -First 1)
-                if ($LASTEXITCODE -eq 0 -and "$versionText" -match '^Python\s+3\.12(?:\.|$)') {
+                $versionOutput = @(& $py.Source -3.12 --version 2>&1)
+                $nativeExitCode = $LASTEXITCODE
+                $versionText = $versionOutput[0]
+                if ($nativeExitCode -eq 0 -and "$versionText" -match '^Python\s+3\.12(?:\.|$)') {
                     $UsePyLauncher = $true
                     $BasePython = $py.Source
                 }
@@ -228,7 +234,8 @@ if (Test-Path -LiteralPath $managedNode -PathType Container) {
 
 Write-Host ""
 Write-Host "Authoring environment ready."
-$ProjectPythonVersion = (& $ProjectPython --version 2>&1 | Select-Object -First 1)
+$ProjectPythonOutput = @(& $ProjectPython --version 2>&1)
+$ProjectPythonVersion = $ProjectPythonOutput[0]
 Write-Host "Python: $ProjectPython ($ProjectPythonVersion)"
 if ($WithNode) { Write-Host "Node: $NodeExe ($(& $NodeExe --version)); npm $(& $NpmExe --version)" }
 Write-Host "Load it in a new PowerShell session with: . `"$EnvFile`""

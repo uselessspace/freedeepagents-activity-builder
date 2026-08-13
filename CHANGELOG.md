@@ -1,5 +1,16 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.39 (2026-08-13)
+
+修复 Windows PowerShell 5.1 原生命令版本检查的退出码竞态。
+
+- Python、`py.exe` 与 Node 的 `--version` 检查先完整捕获输出并立即保存
+  `$LASTEXITCODE`，再从已完成的输出数组读取首行。
+- 删除原生命令后接 `Select-Object -First 1` 的提前终止管道，避免正常进程仍在退出时
+  `$LASTEXITCODE` 被观察为 `-1`，进而误报 Python/Node 版本不兼容。
+- 保留非零退出码门禁，避免只凭一个伪造或残缺的版本文本放行失败进程。
+- 回归测试阻止再次引入 `--version ... | Select-Object -First 1` 形态。
+
 ## 0.4.38 (2026-08-13)
 
 修复 Windows PowerShell 5.1 的环境 bootstrap 兼容性。

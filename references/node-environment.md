@@ -7,7 +7,7 @@ Card-only activities skip Node setup entirely.
 ## Supported baseline
 
 - The current FDA runtime builds Static Preview projects in `node:20-slim`.
-- Builder 0.4.38 supports Node 20 or 22 with npm 10.x for local authoring.
+- Builder 0.4.39 supports Node 20 or 22 with npm 10.x for local authoring.
 - Prefer Node 20 for the closest match to the runtime. An existing compatible
   Node 22 environment may be reused; do not downgrade it merely for parity.
 - For another target runtime, its Docker image and the activity's
