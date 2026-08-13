@@ -4,6 +4,10 @@
 
 ## 怎么用
 
+仅 Static Preview 需要 Node。派生/构建前按
+[`references/node-environment.md`](../references/node-environment.md) 检查环境：
+支持 Node 20/22 + npm 10，推荐 Node 20 以对齐 runtime；Card-only 跳过。
+
 ```bash
 bash <builder-root>/tools/derive-frontend.sh <activity-id> --name "<English Name>" --accent "#7c4dff"
 ```
@@ -31,7 +35,6 @@ bash <builder-root>/tools/derive-frontend.sh <activity-id> --name "<English Name
 | `src/lib/http.ts` | `request<T>()` HTTP 助手 + `JsonError` 类 |
 | `src/lib/api-base.ts` | `BASE_PREFIX`、`BASE`、`apiUrl()` |
 | `src/lib/asset-url.ts` | `resolveAssetUrl()` |
-| `src/hooks/useApi.ts` | `{ data, error, loading, retry }` |
 | `src/hooks/useDsl.ts` | Static Preview DSL fetch + SSE 订阅；返回最新 `preview_navigate` 事件 |
 | `src/components/{ErrorBoundary,LoadingSpinner,ApiErrorBanner}.tsx` | 通用 UI 原语 |
 

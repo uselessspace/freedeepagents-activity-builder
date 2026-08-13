@@ -19,6 +19,11 @@ Use only when `frontend_axis` is `static-preview` or the user explicitly asks
 for a richer frontend. Do not vendor external frontend skill source into this
 package.
 
+Before deriving or building `site/`, follow
+[`../../references/node-environment.md`](../../references/node-environment.md).
+Reuse Node 20 or 22 with npm 10; prefer Node 20 to mirror the runtime. Do not
+install Node for a Card-only activity.
+
 ## UI Type Decision
 
 Choose one primary UI type:
@@ -98,11 +103,11 @@ Contract-wiring (unique to this step):
 - Before editing derived shared files, read
   `../../policies/dont-touch-frontend-base.md`.
 
-Visual stack (built in — no external skill to vendor): Tailwind for layout and
-responsive states; motion sparingly for transitions/feedback/direct manipulation
-(not decoration); lucide icons for actions; shadcn-style patterns for dialogs,
-tabs, menus, inputs, sliders, and tables. The per-archetype polish budget,
-motion example, and mobile/desktop screenshot check live in
+Visual stack: Tailwind is built in. Add `motion`, `lucide-react`, `clsx`, or
+`tailwind-merge` only when imported; they are not default dependencies.
+Use shadcn-style patterns for dialogs, tabs, menus, inputs, sliders, and tables.
+The per-archetype polish budget, optional dependency commands, motion example,
+and mobile/desktop screenshot check live in
 [../../workflows/05-frontend-polish.md](../../workflows/05-frontend-polish.md).
 
 ## Optional Enhancers

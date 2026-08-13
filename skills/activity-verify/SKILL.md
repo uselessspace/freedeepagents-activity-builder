@@ -53,14 +53,19 @@ runtime 环境。两者都必须替换为实际解释器路径。
    它运行 `make_tools(ctx)` / `dsl_builder.build()`、校验 typed-KV 写入，并检查
    strict-mode 非法 schema。无 `tools_module` / `dsl_builder_module` 的分支可合法 skip。
 
-Static Preview 还必须在 `site/` 运行 `npm run lint` + `npm run build`，并确认
-`site/dist/index.html`。这些产物留在同一个活动目录中。
+Static Preview 还必须先按
+[`../../references/node-environment.md`](../../references/node-environment.md)
+解析 Node 20/22 + npm 10，再在 `site/` 运行依赖安装、`npm run lint` +
+`npm run build`，并确认 `site/dist/index.html`。Card-only 跳过 Node；构建产物
+可留在开发目录作为本地证据，但 source sync 会排除 `dist/` 并在服务端重建。
 
 ## Development Verification
 
 按 workflow 06 输出 `## Development Verification`：至少包含活动目录、Builder
 路径/版本、项目 Python 路径/版本与 reused/created 状态、Semantic review、
-Verifier、Strict-tool schema、Testkit、前端 build、warnings 和 changed files。
+Verifier、Strict-tool schema、Testkit；Static Preview 还记录 Node/npm
+路径、版本、reused/selected 状态、依赖命令与前端 build；最后记录 warnings 和
+changed files。
 
 `development-ready: yes` 要求本地确定性检查全部通过。若已安装并登录 FDA Dev
 Client，再转 `../activity-dev-cli/SKILL.md` 用活动目录做 `doctor` / `status` /

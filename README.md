@@ -93,9 +93,10 @@ testkit line.
 ## Frontend Capability
 
 The plugin includes a lightweight frontend guidance skill instead of copying
-external UI skills. It covers Tailwind, motion, lucide, shadcn-style component
-patterns, and UI archetypes such as dashboards, games, canvas tools, timelines,
-graphs, pet/avatar experiences, and form workflows.
+external UI skills. Tailwind ships in the base; motion, lucide, and class-name
+helpers are installed only when an activity imports them. The guidance covers
+shadcn-style component patterns and UI archetypes such as dashboards, games,
+canvas tools, timelines, graphs, pet/avatar experiences, and form workflows.
 
 Static Preview activities may also use Agent-driven navigation: successful
 activity tools/handlers call `ctx.emit_preview_navigation(...)`, and the SPA
@@ -136,6 +137,12 @@ environment preflight. A Coding Agent reuses a compatible
 `<project-root>/.venv` or creates it there before running Python tools; it does
 not install globally, into a separate plugin cache, or into the uploaded
 activity directory.
+
+Static Preview activities additionally use the conditional
+[Node environment preflight](references/node-environment.md): Node 20 or 22
+with npm 10 is supported, Node 20 is recommended to mirror the runtime, and a
+compatible existing Node 22 installation may be reused. Card-only activities
+skip Node setup entirely.
 
 ## Verification Authority
 

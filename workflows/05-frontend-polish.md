@@ -9,14 +9,21 @@ Use external UI libraries, shadcn examples, or local UI skills as inspiration
 only. Do not vendor external skill source into this package. Activity-specific
 frontend code belongs in `activities/<id>/site/`.
 
-## Built-In Stack
+## Minimal stack
 
-The `frontend-base/` already includes enough for polished activity UI:
+The `frontend-base/` includes Tailwind v4 for layout and responsive styling.
+Keep that dependency set until the selected design actually imports more:
 
-- Tailwind v4 for layout and responsive styling
-- `motion` for restrained transitions and direct-manipulation feedback
-- `lucide-react` for recognizable action icons
-- `clsx` + `tailwind-merge` for component variants
+```bash
+# Run only the line whose packages the activity will import.
+npm install motion lucide-react
+npm install clsx tailwind-merge
+```
+
+Use `motion` for restrained transitions, `lucide-react` for recognizable
+icons, and `clsx` + `tailwind-merge` only when component variants need them.
+The install updates the activity's `package.json` and lockfile; never add all
+four speculatively.
 
 ## Polish Budget
 

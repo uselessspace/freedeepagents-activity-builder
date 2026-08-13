@@ -1,5 +1,23 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.36 (2026-08-13)
+
+为 Static Preview 开发链路补齐与 FDA runtime 对齐的 Node 环境前置检查。
+
+- 仅 Static Preview 要求 Node；Card-only 明确跳过，避免无前端活动被迫安装额外工具链。
+- 本地创作支持 Node 20/22 + npm 10，推荐 Node 20 对齐当前 `node:20-slim`
+  runtime，同时允许复用兼容的 Node 22。
+- 前端模板新增 `.nvmrc` 与 `package.json.engines`，派生工程直接携带可执行的版本约束。
+- 明确首次无 lockfile 用 `npm install` 并保留生成的 `package-lock.json`，之后使用
+  `npm ci`；禁止静默远程安装、全局 npm 安装和覆盖已有 lockfile。
+- Development Verification 新增 Node/npm 路径、版本、环境选择、依赖命令与构建证据。
+- 区分本地 `site/dist` 构建证据与上传源码：开发同步排除生成的 `dist` /
+  `node_modules`，并在服务端重建前端。
+- Ponytail 清理删除无入口的 output-validation 文档、重复 seed-defect fixture 和未使用
+  `useApi` hook；对应能力已由现有 smoke/verify、review catalog 与 `request()` 覆盖。
+- 前端模板只保留实际 import 的依赖与 Vite 必需配置；motion、lucide 与 class-name
+  helpers 改为 polish 阶段按需安装，不削减可选视觉能力。
+
 ## 0.4.35 (2026-08-13)
 
 修正独立 GitHub 仓库与 FreeDeepAgents monorepo 两种 Builder 布局混用导致的安装路径错误。

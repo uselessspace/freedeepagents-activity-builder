@@ -6,7 +6,7 @@ In a derived `activities/<id>/site/` project, the following files came from `<bu
 
 ```
 src/lib/{http, api-base, asset-url}.ts
-src/hooks/{useApi, useDsl}.ts
+src/hooks/useDsl.ts
 src/components/{ErrorBoundary, LoadingSpinner, ApiErrorBanner}.tsx
 src/styles/index.css
 ```

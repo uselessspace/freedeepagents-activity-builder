@@ -19,6 +19,14 @@ directory or a separate plugin cache. Replace `<project-python>` with that
 environment's interpreter. `<runtime-python>` is the target FDA repository's
 fully provisioned interpreter and is only needed by the strict check.
 
+## Step 0.6: Resolve Node for Static Preview only
+
+Card-only activities skip this step. When `site/package.json` exists, follow
+[`../references/node-environment.md`](../references/node-environment.md): reuse
+Node 20 or 22 with npm 10, preferring Node 20 to mirror the current runtime.
+Record executable paths, versions, and reused/selected state. Do not silently
+install or replace a global Node runtime.
+
 ## Step 1: Run the verifier
 
 ```bash
@@ -66,14 +74,17 @@ Card-only activities skip this step. Static Preview activities run:
 
 ```bash
 cd activities/<activity_type_id>/site
-npm install
+node --version
+npm --version
+if [ -f package-lock.json ]; then npm ci; else npm install; fi
 npm run lint
 npm run build
 ```
 
-Confirm `site/dist/index.html`. Keep the build output in the same activity
-directory; FDA Dev Client syncs the folder, and `fda-dev --sync-first`
-rebuilds Static Preview server-side as needed.
+Confirm local `site/dist/index.html`. It may remain in the development directory
+as evidence, but FDA source sync excludes generated `dist/` and `node_modules/`;
+`fda-dev --sync-first` rebuilds Static Preview server-side as needed. Do not
+package or treat either generated directory as uploaded source.
 
 ## Step 5: Add live dev evidence when available
 
@@ -106,11 +117,12 @@ be handed off after Steps 0–4; record live smoke as deferred, not passed.
 - **Activity directory**: <absolute project-root>/activities/<id>
 - **Builder bundle**: <absolute package path> · version <plugin version>; no mixed checkout/cache assets
 - **Project Python**: <absolute interpreter path> · <version> · <reused / created>
+- **Frontend Node**: <not applicable / absolute node + npm paths · versions · reused / selected>
 - **Semantic review**: CONFLICT 0; accepted SMELL/NOTE: <list + reason, or "none">
 - **Verifier**: 0 ERROR / <n> WARNING; full output: <paste including scanned line>
 - **Strict-tool schema**: <m tools ok / covered by testkit / not applicable>
 - **Testkit smoke**: <command> → <paste result line>
-- **Frontend build**: <not applicable / lint + build passed; site/dist/index.html exists>
+- **Frontend build**: <not applicable / npm ci or npm install; lint + build passed; site/dist/index.html exists>
 - **FDA Dev Client / fda-dev**: <events and result / deferred: first GUI upload required / unavailable>
 - **Warnings acknowledged**: <reason or "none">
 - **Files changed**: <git diff --stat>

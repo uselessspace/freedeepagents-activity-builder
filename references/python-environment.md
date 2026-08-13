@@ -75,7 +75,7 @@ The bundled verifier is stdlib-only. A compatible interpreter is enough:
 
 The offline testkit has no dependencies of its own, but importing an
 activity's `tools.py` may need target-baseline modules such as
-`langchain_core`, plus packages declared by that activity. For Builder 0.4.35
+`langchain_core`, plus packages declared by that activity. For Builder 0.4.36
 and the current FDA baseline, use the validated pins rather than an old
 LangChain major:
 

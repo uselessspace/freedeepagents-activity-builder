@@ -24,7 +24,7 @@ to a standalone clone.
 
 Use one Builder bundle per run. Read its plugin manifest version and do not mix
 scripts/templates from a repo checkout with Skills loaded from a different
-plugin cache. Builder 0.4.35 targets the current FDA contract based on Python
+plugin cache. Builder 0.4.36 targets the current FDA contract based on Python
 3.12, DeepAgents 0.7.x, and LangChain Core 1.x. For another target runtime,
 its `app/models.py` and pinned requirements are authoritative; run
 `tools/check_schema_sync.py` in that runtime or install the Builder release
@@ -45,6 +45,24 @@ into the system interpreter. If Python 3.12 itself is unavailable, report that
 fact and ask the user to install or authorize installation of it. Full
 cross-platform commands, dependency layers, and evidence requirements are in
 [`references/python-environment.md`](references/python-environment.md).
+
+### Coding Agent Node-environment preflight (Static Preview only)
+
+Card-only activities do not need Node. When the activity contains
+`site/package.json`, check Node before deriving or building: Builder 0.4.36
+supports Node 20 or 22 with npm 10, and recommends Node 20 because the current
+FDA frontend build runtime uses `node:20-slim`. A compatible existing Node 22
+installation is valid and does not need to be downgraded.
+
+If no compatible Node exists, use an already-installed version manager to
+select Node 20. If none is available, report the situation and ask the user to
+install or authorize Node 20 LTS; do not silently run remote installers, use
+administrator privileges, or change the global runtime. The activity project
+pins the preference with `site/.nvmrc`, constrains compatibility through
+`site/package.json.engines`, installs dependencies locally in
+`site/node_modules/`, and keeps `site/package-lock.json`. Full cross-platform
+logic and evidence requirements are in
+[`references/node-environment.md`](references/node-environment.md).
 
 > **Install the whole package, not individual skills.** The skills cross-link
 > each other and the shared `policies/` / `references/` / `workflows/` /
@@ -194,7 +212,7 @@ The plugin should guide the coding agent through these stages:
 1. Write `## Activity Brief`.
 2. Write `## Activity Classification`.
 3. Generate or update `activities/<activity_type_id>/`.
-4. Build `site/dist/` for Static Preview activities.
+4. For Static Preview only, resolve Node and build `site/dist/`.
 5. Verify the activity directory:
 
 ```bash
@@ -220,6 +238,11 @@ uses npm `file:` dependencies, the targets must live inside the activity
 directory, such as `file:vendor/<dependency>`. Do not point at the host Runtime
 monorepo (`file:../../../packages/...`); verifier rejects those paths because
 the synced activity must remain self-contained.
+
+Before those frontend commands, follow
+[`references/node-environment.md`](references/node-environment.md). Use
+`npm ci` when a lockfile exists; use `npm install` only for the first derivation
+without one, then retain the generated `package-lock.json`.
 
 ## Verify
 
@@ -247,6 +270,10 @@ not an arbitrary global Python.
 | `testkit/fda_testkit.py` | **≥ 3.9**（实测下限；3.10+ 同样支持） | 否（自带 `app.*` stubs） | 自身零依赖；但它会 import 你的 `tools.py`，其依赖（典型为 `langchain_core`）需自行安装。使用目标 runtime 的同一主版本；当前 FDA 为 LangChain Core 1.x，不要为 testkit 单独降级到 0.3.x |
 | `skills/activity-verify/scripts/strict-tool-schema-check.py` | 跟随 FDA 仓库 venv（当前 3.12） | **是**（`tools.py` 的 `app.card_system` import 需仓库在 `sys.path`） | `langchain_core` |
 | `tools/check_schema_sync.py` | 跟随 FDA 仓库 venv | **是**（比对 `app.models`，维护者侧守卫） | 平台 venv 全量 |
+
+Static Preview additionally requires Node 20 or 22 and npm 10.x for local
+lint/build; Node 20 is the recommended runtime-aligned choice. Card-only has no
+Node requirement.
 
 When FDA Dev Client / `fda-dev` is available, sync and smoke the directory:
 

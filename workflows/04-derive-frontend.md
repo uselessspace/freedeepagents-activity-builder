@@ -3,6 +3,14 @@
 Skip for Card-only activities. Start from the `## Frontend Decision` block from
 `skills/activity-frontend/SKILL.md`; if it is missing, write it before deriving.
 
+## Step 0: resolve the frontend runtime
+
+Follow [`../references/node-environment.md`](../references/node-environment.md)
+before deriving or building. Reuse Node 20 or 22 with npm 10; prefer Node 20 to
+mirror the current `node:20-slim` runtime. If no compatible Node exists, use an
+already-installed version manager to select Node 20 or ask the user to install
+or authorize it. Do not silently mutate the machine or install a global latest.
+
 ## Step 1: derive
 
 ```bash
@@ -66,9 +74,9 @@ Typical files:
 | `src/lib/types.ts` | Your domain TypeScript types (replace placeholder `AppState`) |
 | `src/lib/api-client.ts` | REST methods wrapping `request<T>()` from `lib/http.ts` |
 | `src/components/...` | Activity UI components |
-| `src/hooks/...` | Activity-specific hooks (base ships `useDsl` and `useApi`) |
+| `src/hooks/...` | Activity-specific hooks (base ships only the runtime-wired `useDsl`) |
 | `src/App.tsx` | Replace `<DomainView/>` with the real UI |
-| `vite.config.ts` | Set `base: './'`; keep `build.outDir = 'dist'` |
+| `vite.config.ts` | Keep `base: './'`; Vite's native build output remains `dist/` |
 | `package.json` | Include build script; dependencies must install in Linux Docker |
 
 The runtime serves `site/dist/`. Local `npm run dev` uses `src/lib/mock-dsl.ts`
@@ -83,11 +91,18 @@ through an installed preview. Full contract:
 
 ```bash
 cd activities/<id>/site
-npm install        # ~3-30s depending on cache; host-side, NOT the runtime cache
+node --version     # Node 20 or 22
+npm --version      # npm 10.x
+if [ -f package-lock.json ]; then npm ci; else npm install; fi
 npm run lint       # tsc --noEmit, must be 0 errors
 npm run build      # vite build, must succeed
 npm run dev        # optional authoring preview only
 ```
+
+The conditional chooses exactly one dependency command: `npm ci` when
+`package-lock.json` exists, otherwise `npm install` once. Keep the generated
+lockfile. Never overwrite a user lockfile or use a global install to bypass a
+missing dependency.
 
 These run on the **host** and use `activities/<id>/site/node_modules/` on the host disk. They're for fast iteration while authoring. Runtime installation uses a Linux Docker cache and runs `npm run build` again if `site/dist/index.html` is missing.
 

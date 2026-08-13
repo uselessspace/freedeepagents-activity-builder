@@ -127,25 +127,34 @@ cat <<EOF
        activities/$ACTIVITY_ID/site/src/components/
        activities/$ACTIVITY_ID/site/vite.config.ts   ← keep base: './'
 
-  2) Platform-repo/install-side only — prepare the runtime cache:
+  2) Resolve the Static Preview Node environment using:
+       $PACKAGE_ROOT/references/node-environment.md
+
+     Reuse Node 20 or 22 with npm 10; prefer Node 20 to mirror the runtime.
+     Card-only activities never run this frontend derivation.
+
+  3) Install dependencies and build:
+       cd activities/$ACTIVITY_ID/site
+       node --version && npm --version
+       if [ -f package-lock.json ]; then npm ci; else npm install; fi
+       npm run lint && npm run build
+
+     Choose one dependency command; keep the generated package-lock.json.
+
+  4) Platform-repo/install-side only — prepare the runtime cache:
        bash $PACKAGE_ROOT/tools/setup-runtime.sh $ACTIVITY_ID
 
      This populates runtime/sandbox_cache/node_modules/$ACTIVITY_ID/.
-     (For purely-local dev outside the runtime, you may still run
-      "cd activities/$ACTIVITY_ID/site && npm install"; host node_modules is
-      not used by the runtime.)
+     Host node_modules is not used by the runtime.
 
-  3) Build:
-       cd activities/$ACTIVITY_ID/site && npm run build
-
-  4) Ensure activities/$ACTIVITY_ID/manifest.json has:
+  5) Ensure activities/$ACTIVITY_ID/manifest.json has:
        "dsl_builder_module": "dsl_builder"
      Add "tools_module": "tools" only if this activity defines in-process tools.
 
-  5) Resolve or create $REPO_ROOT/.venv using:
+  6) Resolve or create $REPO_ROOT/.venv using:
        $PACKAGE_ROOT/references/python-environment.md
 
-  6) Verify with that environment:
+  7) Verify with that environment:
        <project-python> $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
 
 EOF

@@ -12,8 +12,14 @@ Static Preview sync rebuilds the frontend server-side.
 
 **Local dev outside the runtime** (faster inner loop while authoring):
 
+This project supports Node 20 or 22 with npm 10. `.nvmrc` selects the preferred
+Node 20 runtime when your existing version manager supports it; a compatible
+Node 22 installation may be reused.
+
 ```bash
-npm install          # local node_modules; independent of the cache
+node --version
+npm --version
+if [ -f package-lock.json ]; then npm ci; else npm install; fi
 npm run dev          # vite at http://localhost:5173, using mock DSL fallback
 npm run lint         # tsc --noEmit
 npm run build        # production bundle to dist/
@@ -49,7 +55,7 @@ and is not available from the local mock server.
 These came from the Builder's `frontend-base/` and are kept in sync across all derived activities:
 
 - `src/lib/{http,api-base,asset-url}.ts`
-- `src/hooks/{useApi,useDsl}.ts`
+- `src/hooks/useDsl.ts`
 - `src/components/{ErrorBoundary,LoadingSpinner,ApiErrorBanner}.tsx`
 - `src/styles/index.css`
 
