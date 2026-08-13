@@ -1,5 +1,17 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.40 (2026-08-13)
+
+修复 Windows PowerShell 5.1 生成 UTF-8 BOM 导致项目配置不可用的问题。
+
+- `pip.ini` 改用 .NET `UTF8Encoding(false)` 写入；首字节直接为 `[global]`，兼容
+  pip / Python `configparser`。
+- `.gitignore` 与 `authoring-env.ps1` 同步改为 UTF-8 无 BOM；重复运行可清理由旧版
+  bootstrap 写入的 `.gitignore` BOM，避免首条 `.venv/` 规则失效。
+- 脚本在生成后读取文件首三字节并拒绝 `EF BB BF`，把编码要求变成运行时门禁。
+- 回归测试阻止重新使用 Windows PowerShell 5.1 会写 BOM 的
+  `Set-Content` / `Add-Content -Encoding utf8` 路径。
+
 ## 0.4.39 (2026-08-13)
 
 修复 Windows PowerShell 5.1 原生命令版本检查的退出码竞态。

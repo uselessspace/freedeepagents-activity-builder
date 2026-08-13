@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 $PythonVersion = "3.12.13"
 $PythonRelease = "20260807"
 $NodeVersion = "20.20.2"
+$Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $env:PIP_INDEX_URL = $PipIndex
 $env:npm_config_registry = $NpmRegistry
 
@@ -26,9 +27,31 @@ New-Item -ItemType Directory -Force -Path $ToolsDir | Out-Null
 
 function Add-GitIgnoreEntry([string]$Entry) {
     $ignoreFile = Join-Path $ProjectRoot ".gitignore"
-    $lines = if (Test-Path -LiteralPath $ignoreFile) { @(Get-Content -LiteralPath $ignoreFile) } else { @() }
+    $content = if (Test-Path -LiteralPath $ignoreFile) { [System.IO.File]::ReadAllText($ignoreFile) } else { "" }
+    if ($content.Length -gt 0 -and $content[0] -eq [char]0xFEFF) { $content = $content.Substring(1) }
+    $lines = @($content -split "\r?\n")
+    $changed = $false
     if ($lines -notcontains $Entry) {
-        Add-Content -LiteralPath $ignoreFile -Value $Entry -Encoding utf8
+        if ($content.Length -gt 0 -and -not $content.EndsWith("`n") -and -not $content.EndsWith("`r")) {
+            $content += [Environment]::NewLine
+        }
+        $content += $Entry + [Environment]::NewLine
+        $changed = $true
+    }
+    $hasBom = $false
+    if (Test-Path -LiteralPath $ignoreFile) {
+        $bytes = [System.IO.File]::ReadAllBytes($ignoreFile)
+        $hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+    }
+    if ($changed -or $hasBom) {
+        [System.IO.File]::WriteAllText($ignoreFile, $content, $script:Utf8NoBom)
+    }
+}
+
+function Assert-NoUtf8Bom([string]$Path) {
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        throw "Generated file must be UTF-8 without BOM: $Path"
     }
 }
 
@@ -157,11 +180,14 @@ if (Test-Path -LiteralPath $VenvDir) {
     Write-Host "Created project environment: $VenvDir"
 }
 
-@"
+$PipConfigPath = Join-Path $VenvDir "pip.ini"
+$PipConfig = @"
 [global]
 index-url = $PipIndex
 timeout = 60
-"@ | Set-Content -LiteralPath (Join-Path $VenvDir "pip.ini") -Encoding utf8
+"@
+[System.IO.File]::WriteAllText($PipConfigPath, $PipConfig, $Utf8NoBom)
+Assert-NoUtf8Bom $PipConfigPath
 
 $LocalNodeBin = $null
 if ($WithNode) {
@@ -218,9 +244,10 @@ if ($WithNode) {
 
 Add-GitIgnoreEntry ".venv/"
 Add-GitIgnoreEntry ".fda-tools/"
+Assert-NoUtf8Bom (Join-Path $ProjectRoot ".gitignore")
 
 $EnvFile = Join-Path $ToolsDir "authoring-env.ps1"
-@'
+$EnvContent = @'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $env:VIRTUAL_ENV = Join-Path $projectRoot ".venv"
 $env:Path = (Join-Path $env:VIRTUAL_ENV "Scripts") + ";" + $env:Path
@@ -230,7 +257,9 @@ $managedNode = Join-Path $projectRoot ".fda-tools\node-v20.20.2"
 if (Test-Path -LiteralPath $managedNode -PathType Container) {
     $env:Path = $managedNode + ";" + $env:Path
 }
-'@ | Set-Content -LiteralPath $EnvFile -Encoding utf8
+'@
+[System.IO.File]::WriteAllText($EnvFile, $EnvContent, $Utf8NoBom)
+Assert-NoUtf8Bom $EnvFile
 
 Write-Host ""
 Write-Host "Authoring environment ready."
