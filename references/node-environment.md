@@ -7,7 +7,7 @@ Card-only activities skip Node setup entirely.
 ## Supported baseline
 
 - The current FDA runtime builds Static Preview projects in `node:20-slim`.
-- Builder 0.4.37 supports Node 20 or 22 with npm 10.x for local authoring.
+- Builder 0.4.38 supports Node 20 or 22 with npm 10.x for local authoring.
 - Prefer Node 20 for the closest match to the runtime. An existing compatible
   Node 22 environment may be reused; do not downgrade it merely for parity.
 - For another target runtime, its Docker image and the activity's
@@ -70,9 +70,7 @@ bash <builder-root>/tools/bootstrap-authoring-env.sh \
 Windows PowerShell:
 
 ```powershell
-& "<builder-root>\tools\bootstrap-authoring-env.ps1" `
-  -ProjectRoot "<project-root>" `
-  -WithNode
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "<builder-root>\tools\bootstrap-authoring-env.ps1" -ProjectRoot "<project-root>" -WithNode
 ```
 
 Replace placeholders with actual absolute paths. The scripts write a project
@@ -81,6 +79,8 @@ when a local Node was installed. Override `FDA_NODE_MIRROR` and
 `FDA_NPM_REGISTRY` to use an enterprise mirror. No overseas source is a default
 fallback, and the scripts never use `curl | sh`, `sudo`, global npm installs,
 or an OS package-manager mutation.
+The Windows `Bypass` is limited to that child process; it changes no persistent
+execution-policy scope and cannot override enforced organization Group Policy.
 
 ## Install and verify dependencies
 

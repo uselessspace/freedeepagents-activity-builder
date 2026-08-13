@@ -1,5 +1,17 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.38 (2026-08-13)
+
+修复 Windows PowerShell 5.1 的环境 bootstrap 兼容性。
+
+- 删除传给原生 Python / Node 命令的 `-c` / `-p` 嵌套引号代码，改为解析
+  `--version`，避免 Windows PowerShell 5.1 剥离双引号后自检必然失败。
+- `Invoke-WebRequest` 增加 `-UseBasicParsing`，兼容未初始化 IE 引擎的 Windows
+  PowerShell 5.1 / Windows Server 环境。
+- Windows 文档入口统一为 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File`；
+  Bypass 仅影响该子进程，不持久修改用户/机器策略，组织 Group Policy 仍保持优先。
+- 回归测试新增 PowerShell 5.1 危险参数模式与执行策略入口断言。
+
 ## 0.4.37 (2026-08-13)
 
 为 Coding Agent 增加可重复执行的项目本地 Python / Node 国内镜像引导脚本。

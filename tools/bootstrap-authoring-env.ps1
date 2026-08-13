@@ -40,12 +40,12 @@ function Get-CheckedDownload(
     [string]$TempDir
 ) {
     Write-Host "Downloading $FileName"
-    Invoke-WebRequest -Uri "$Base/$VersionDir/$FileName" -OutFile $Destination
+    Invoke-WebRequest -UseBasicParsing -Uri "$Base/$VersionDir/$FileName" -OutFile $Destination
     $sumFile = Join-Path $TempDir "SHA256SUMS"
     try {
-        Invoke-WebRequest -Uri "$Base/$VersionDir/SHASUMS256.txt" -OutFile $sumFile
+        Invoke-WebRequest -UseBasicParsing -Uri "$Base/$VersionDir/SHASUMS256.txt" -OutFile $sumFile
     } catch {
-        Invoke-WebRequest -Uri "$Base/$VersionDir/SHA256SUMS" -OutFile $sumFile
+        Invoke-WebRequest -UseBasicParsing -Uri "$Base/$VersionDir/SHA256SUMS" -OutFile $sumFile
     }
     $pattern = "\s\*?{0}$" -f [regex]::Escape($FileName)
     $line = Get-Content -LiteralPath $sumFile | Where-Object { $_ -match $pattern } | Select-Object -First 1
@@ -56,7 +56,23 @@ function Get-CheckedDownload(
 }
 
 function Get-PythonMinor([string]$PythonExe) {
-    try { return (& $PythonExe -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>$null) } catch { return $null }
+    try {
+        $versionText = (& $PythonExe --version 2>&1 | Select-Object -First 1)
+        if ($LASTEXITCODE -eq 0 -and "$versionText" -match '^Python\s+(\d+\.\d+)(?:\.|$)') {
+            return $Matches[1]
+        }
+    } catch {}
+    return $null
+}
+
+function Get-NodeMajor([string]$NodeExe) {
+    try {
+        $versionText = (& $NodeExe --version 2>&1 | Select-Object -First 1)
+        if ($LASTEXITCODE -eq 0 -and "$versionText" -match '^v(\d+)\.') {
+            return $Matches[1]
+        }
+    } catch {}
+    return $null
 }
 
 $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
@@ -84,8 +100,11 @@ if (Test-Path -LiteralPath $VenvDir) {
         $py = Get-Command "py.exe" -ErrorAction SilentlyContinue
         if ($py) {
             try {
-                $minor = & $py.Source -3.12 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>$null
-                if ($minor -eq "3.12") { $UsePyLauncher = $true; $BasePython = $py.Source }
+                $versionText = (& $py.Source -3.12 --version 2>&1 | Select-Object -First 1)
+                if ($LASTEXITCODE -eq 0 -and "$versionText" -match '^Python\s+3\.12(?:\.|$)') {
+                    $UsePyLauncher = $true
+                    $BasePython = $py.Source
+                }
             } catch {}
         }
     }
@@ -142,7 +161,7 @@ $LocalNodeBin = $null
 if ($WithNode) {
     $node = Get-Command "node.exe" -ErrorAction SilentlyContinue
     $npm = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
-    $nodeMajor = if ($node) { & $node.Source -p 'process.versions.node.split(".")[0]' 2>$null } else { $null }
+    $nodeMajor = if ($node) { Get-NodeMajor $node.Source } else { $null }
     $npmMajor = if ($npm) { ((& $npm.Source --version 2>$null) -split "\.")[0] } else { $null }
     if (($nodeMajor -in @("20", "22")) -and $npmMajor -eq "10") {
         $NodeExe = $node.Source
@@ -182,7 +201,7 @@ if ($WithNode) {
             }
         }
         $managedNpm = Join-Path $NodeHome "npm.cmd"
-        $nodeMajor = & $managedNode -p 'process.versions.node.split(".")[0]'
+        $nodeMajor = Get-NodeMajor $managedNode
         $npmMajor = ((& $managedNpm --version) -split "\.")[0]
         if ($nodeMajor -ne "20" -or $npmMajor -ne "10") { throw "Managed Node/npm failed its version check" }
         Write-Host "${NodeAction}: $managedNode ($(& $managedNode --version))"
@@ -209,6 +228,7 @@ if (Test-Path -LiteralPath $managedNode -PathType Container) {
 
 Write-Host ""
 Write-Host "Authoring environment ready."
-Write-Host "Python: $(& $ProjectPython -c 'import sys; print(sys.executable, sys.version.split()[0])')"
+$ProjectPythonVersion = (& $ProjectPython --version 2>&1 | Select-Object -First 1)
+Write-Host "Python: $ProjectPython ($ProjectPythonVersion)"
 if ($WithNode) { Write-Host "Node: $NodeExe ($(& $NodeExe --version)); npm $(& $NpmExe --version)" }
 Write-Host "Load it in a new PowerShell session with: . `"$EnvFile`""

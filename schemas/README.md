@@ -2,7 +2,7 @@
 
 Canonical schemas for FreeDeepAgents activity files. Use them in your editor (VS Code: add `"json.schemas"` mapping in settings) or in CI to validate authored files.
 
-**Bundle version: 0.4.37** — this schema bundle ships inside the plugin and tracks `.claude-plugin/plugin.json`. `tools/check_schema_sync.py` (run in the platform repo / CI) proves `card-template.schema.json` matches the runtime's `app.models` field-for-field, so an authored file that passes these schemas also passes the runtime's `OutputCard` validation at emit time.
+**Bundle version: 0.4.38** — this schema bundle ships inside the plugin and tracks `.claude-plugin/plugin.json`. `tools/check_schema_sync.py` (run in the platform repo / CI) proves `card-template.schema.json` matches the runtime's `app.models` field-for-field, so an authored file that passes these schemas also passes the runtime's `OutputCard` validation at emit time.
 
 | File | Validates |
 |---|---|
@@ -69,7 +69,7 @@ For local authoring, **`tools/activity_verifier.py`** is the executable gate: it
 
 两套 schema 各管一段：
 
-- **创作期**（你本地）：`<builder-root>/schemas/*` + `activity_verifier.py` 校验你写的文件，随插件版本走（当前 `Bundle version: 0.4.37`，见顶部）。
+- **创作期**（你本地）：`<builder-root>/schemas/*` + `activity_verifier.py` 校验你写的文件，随插件版本走（当前 `Bundle version: 0.4.38`，见顶部）。
 - **加载 / emit 期**（部署后）：平台 runtime 的 `app.models`（pydantic）才是最终权威——bundled schema 与 verifier 只是它的离线镜像，`check_schema_sync.py`（在平台仓库 / CI 跑）逐字段证明两者一致。**两者分歧时以 runtime 为准。**
 
 当 bundle 与 runtime 版本不一致：

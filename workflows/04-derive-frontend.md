@@ -17,9 +17,9 @@ bash <builder-root>/tools/bootstrap-authoring-env.sh \
   --with-node
 ```
 
-Use `bootstrap-authoring-env.ps1 -ProjectRoot <project-root> -WithNode` on
-Windows. The script changes no global runtime and has no overseas-source
-fallback.
+On Windows, use the process-scoped command from `node-environment.md`
+(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ... -WithNode`). The
+script changes no global runtime or persistent policy and has no overseas-source fallback.
 
 ## Step 1: derive
 

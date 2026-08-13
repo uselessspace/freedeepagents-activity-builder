@@ -24,7 +24,7 @@ to a standalone clone.
 
 Use one Builder bundle per run. Read its plugin manifest version and do not mix
 scripts/templates from a repo checkout with Skills loaded from a different
-plugin cache. Builder 0.4.37 targets the current FDA contract based on Python
+plugin cache. Builder 0.4.38 targets the current FDA contract based on Python
 3.12, DeepAgents 0.7.x, and LangChain Core 1.x. For another target runtime,
 its `app/models.py` and pinned requirements are authoritative; run
 `tools/check_schema_sync.py` in that runtime or install the Builder release
@@ -51,7 +51,7 @@ mirror overrides, dependency layers, and evidence requirements are in
 ### Coding Agent Node-environment preflight (Static Preview only)
 
 Card-only activities do not need Node. When the activity contains
-`site/package.json`, check Node before deriving or building: Builder 0.4.37
+`site/package.json`, check Node before deriving or building: Builder 0.4.38
 supports Node 20 or 22 with npm 10, and recommends Node 20 because the current
 FDA frontend build runtime uses `node:20-slim`. A compatible existing Node 22
 installation is valid and does not need to be downgraded.
@@ -76,11 +76,14 @@ bash <builder-root>/tools/bootstrap-authoring-env.sh \
 ```
 
 ```powershell
-# Windows PowerShell; omit -WithNode for Card-only
-& "<builder-root>\tools\bootstrap-authoring-env.ps1" `
-  -ProjectRoot "<project-root>" `
-  -WithNode
+# Windows PowerShell 5.1+; omit -WithNode for Card-only
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "<builder-root>\tools\bootstrap-authoring-env.ps1" -ProjectRoot "<project-root>" -WithNode
 ```
+
+`-ExecutionPolicy Bypass` applies only to this child PowerShell process; the
+command does not persistently change the user's or machine's execution policy.
+If organization Group Policy still blocks the script, stop and ask the
+administrator instead of changing a broader policy scope.
 
 The defaults use npmmirror for Python/Node distributions, Tsinghua PyPI for
 Python packages, and npmmirror for npm packages. They do not silently fall back

@@ -60,14 +60,16 @@ bash <builder-root>/tools/bootstrap-authoring-env.sh \
 Windows PowerShell:
 
 ```powershell
-& "<builder-root>\tools\bootstrap-authoring-env.ps1" `
-  -ProjectRoot "<project-root>"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "<builder-root>\tools\bootstrap-authoring-env.ps1" -ProjectRoot "<project-root>"
 ```
 
 Replace both placeholders with real absolute paths. The scripts refuse to
 overwrite an incompatible or incomplete `.venv` / managed runtime. They also
 write `.fda-tools/authoring-env.sh` or `authoring-env.ps1`; source that file in
 a new shell to restore the project-local PATH and domestic pip/npm indexes.
+The Windows command's `Bypass` is process-only and does not persistently change
+execution policy. An enforced organization Group Policy still wins; do not
+weaken it—ask the administrator when it blocks the script.
 
 Defaults can be replaced by an enterprise mirror without editing the script:
 
@@ -90,7 +92,7 @@ The bundled verifier is stdlib-only. A compatible interpreter is enough:
 
 The offline testkit has no dependencies of its own, but importing an
 activity's `tools.py` may need target-baseline modules such as
-`langchain_core`, plus packages declared by that activity. For Builder 0.4.37
+`langchain_core`, plus packages declared by that activity. For Builder 0.4.38
 and the current FDA baseline, use the validated pins rather than an old
 LangChain major:
 
