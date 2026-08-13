@@ -5,13 +5,15 @@
 ## 怎么用
 
 ```bash
-bash <package>/tools/derive-frontend.sh <activity-id> --name "<English Name>" --accent "#7c4dff"
+bash <builder-root>/tools/derive-frontend.sh <activity-id> --name "<English Name>" --accent "#7c4dff"
 ```
 
-`<package>` 是本插件根目录（仓库内典型路径 `packages/freedeepagents-activity-builder/`）。脚本会：
+`<builder-root>` 是包含 `SKILL.md`、`tools/` 和 `frontend-base/` 的插件根目录；
+独立 GitHub clone 中就是仓库根目录，FreeDeepAgents monorepo 中则位于其
+`packages/` 下。脚本会：
 
 1. 校验 `<activity-id>` 满足 `^[a-z][a-z0-9-]{1,30}$`
-2. `cp -r <package>/frontend-base/ activities/<activity-id>/site/`
+2. `cp -r <builder-root>/frontend-base/ activities/<activity-id>/site/`
 3. 把所有 `.tpl` 文件去后缀，并替换 token：
    - `{{ACTIVITY_ID}}` → 活动 id
    - `{{ACTIVITY_NAME}}` → English short name

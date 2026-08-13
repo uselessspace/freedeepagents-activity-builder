@@ -3,7 +3,7 @@
 #
 # Branches an existing activity into a new one.
 #
-# - <package> is the directory containing this script's parent (auto-detected).
+# - <builder-root> is the directory containing this script's parent (auto-detected).
 # - <repo> is the git root if inside a git repo, else the current dir.
 
 set -euo pipefail
@@ -37,7 +37,21 @@ TARGET_DIR="$REPO_ROOT/activities/$NEW_ID"
 echo "[branch] copying activities/$SOURCE_ID/ → activities/$NEW_ID/"
 cp -R "$SOURCE_DIR" "$TARGET_DIR"
 
-SOURCE_NAME=$(python3 -c "import json; print(json.load(open('$SOURCE_DIR/manifest.json'))['name'])")
+if [ -x "$REPO_ROOT/.venv/bin/python" ]; then
+  PROJECT_PYTHON="$REPO_ROOT/.venv/bin/python"
+elif [ -x "$REPO_ROOT/.venv/Scripts/python.exe" ]; then
+  PROJECT_PYTHON="$REPO_ROOT/.venv/Scripts/python.exe"
+elif command -v python3 >/dev/null 2>&1; then
+  PROJECT_PYTHON="$(command -v python3)"
+elif command -v python >/dev/null 2>&1; then
+  PROJECT_PYTHON="$(command -v python)"
+else
+  echo "ERROR: no Python interpreter found; create $REPO_ROOT/.venv first." >&2
+  echo "See $PACKAGE_ROOT/references/python-environment.md" >&2
+  exit 2
+fi
+
+SOURCE_NAME=$("$PROJECT_PYTHON" -c "import json,sys; print(json.load(open(sys.argv[1]))['name'])" "$SOURCE_DIR/manifest.json")
 echo "[branch] source display name: $SOURCE_NAME"
 
 echo "[branch] substituting in file contents"
@@ -89,8 +103,11 @@ fi
 
 cat <<EOF
 
-  5) Verify:
-       python3 $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
+  5) Resolve or create $REPO_ROOT/.venv using:
+       $PACKAGE_ROOT/references/python-environment.md
+
+  6) Verify with that environment:
+       <project-python> $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
 
      Do not pipe through grep: a filter can hide errors from this activity or
      from shared runtime files. Verifier exit 0 is required, then complete

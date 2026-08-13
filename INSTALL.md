@@ -3,15 +3,48 @@
 This package can be used as a Codex plugin, a Claude plugin, or a repo-local
 skill symlink. All forms point at the same internal workflow skills.
 
+## Resolve the two roots first
+
+`<builder-root>` always means the directory containing this `INSTALL.md`,
+`SKILL.md`, `skills/`, and `tools/`. Do not type the angle-bracket placeholder
+literally.
+
+| Checkout layout | `<builder-root>` |
+|---|---|
+| Standalone [`uselessspace/freedeepagents-activity-builder`](https://github.com/uselessspace/freedeepagents-activity-builder) clone | the cloned repository root |
+| FreeDeepAgents monorepo checkout | `<FreeDeepAgents-root>/packages/freedeepagents-activity-builder` |
+| Installed Codex/Claude plugin | the installed directory containing the root `SKILL.md` |
+
+`<project-root>` is different: it is the repository where the generated
+`activities/` directory lives. Commands below must use the actual root for the
+layout you installed; never append `packages/freedeepagents-activity-builder`
+to a standalone clone.
+
 ## Compatibility preflight
 
 Use one Builder bundle per run. Read its plugin manifest version and do not mix
 scripts/templates from a repo checkout with Skills loaded from a different
-plugin cache. Builder 0.4.34 targets the current FDA contract based on Python
+plugin cache. Builder 0.4.35 targets the current FDA contract based on Python
 3.12, DeepAgents 0.7.x, and LangChain Core 1.x. For another target runtime,
 its `app/models.py` and pinned requirements are authoritative; run
 `tools/check_schema_sync.py` in that runtime or install the Builder release
 paired with it. A newer Builder can author fields an older runtime rejects.
+
+### Coding Agent Python-environment preflight
+
+Before running any Builder Python command, resolve a compatible project-local
+interpreter. Reuse `<project-root>/.venv` when it matches the target runtime;
+if it does not exist, create it in `<project-root>` with Python 3.12 for the
+current FDA target. Never create it inside `activities/<activity_type_id>/` or
+in a separate installed plugin/cache that is not the project root. If a
+writable standalone Builder clone is also the activity project, its root
+`.venv` is valid because `<builder-root>` and `<project-root>` are the same.
+
+Do not overwrite an incompatible `.venv`, silently downgrade Python, or install
+into the system interpreter. If Python 3.12 itself is unavailable, report that
+fact and ask the user to install or authorize installation of it. Full
+cross-platform commands, dependency layers, and evidence requirements are in
+[`references/python-environment.md`](references/python-environment.md).
 
 > **Install the whole package, not individual skills.** The skills cross-link
 > each other and the shared `policies/` / `references/` / `workflows/` /
@@ -19,14 +52,14 @@ paired with it. A newer Builder can author fields an older runtime rejects.
 > `../../workflows/06-verify-directory.md`). Those resolve only when the full
 > package tree is intact. Extracting a single `skills/<one>/` directory into
 > `~/.claude/skills/` strands every cross-reference — symlink or copy the
-> **entire** `packages/freedeepagents-activity-builder/` directory instead.
+> **entire** `<builder-root>/` directory instead.
 
 ## Codex Plugin
 
 The Codex manifest is:
 
 ```text
-packages/freedeepagents-activity-builder/.codex-plugin/plugin.json
+<builder-root>/.codex-plugin/plugin.json
 ```
 
 Install or register the package with the Codex plugin mechanism used in your
@@ -48,13 +81,21 @@ and directory verification.
 The Claude manifest is:
 
 ```text
-packages/freedeepagents-activity-builder/.claude-plugin/plugin.json
+<builder-root>/.claude-plugin/plugin.json
 ```
 
-In Claude Code, install the package as a local plugin when supported:
+In Claude Code, install the package root as a local plugin when supported.
+For a standalone clone:
 
 ```bash
-/plugin install /absolute/path/to/packages/freedeepagents-activity-builder
+/plugin install /absolute/path/to/freedeepagents-activity-builder
+```
+
+On Windows, use the cloned root itself (quotes are recommended when the path
+contains spaces):
+
+```text
+/plugin install "C:\path\to\freedeepagents-activity-builder"
 ```
 
 安装后，`skills/` 下每个 SKILL.md 都会被**自动发现**并可用 `/<name>` 直接调用——
@@ -95,25 +136,56 @@ plugin.json 的 `skills` 数组只是显式声明 + 排序，不是白名单。�
 
 Restart Claude Code if your version scans plugins only at startup.
 
-## Repo-Local Symlink Fallback
+## Repo-Local Link Or Copy Fallback
 
 If plugin installation is unavailable, expose the package as a project skill:
 
+### macOS / Linux
+
 ```bash
-cd /path/to/FreeDeepAgents
+cd /path/to/your-project
 mkdir -p .claude/skills
-ln -s ../../packages/freedeepagents-activity-builder \
+ln -s "/absolute/path/to/freedeepagents-activity-builder" \
   .claude/skills/freedeepagents-activity-builder
 ```
 
-On systems where symlinks are inconvenient, copy the directory instead:
+Or copy the complete Builder root:
 
 ```bash
-cp -R packages/freedeepagents-activity-builder \
+cp -R "/absolute/path/to/freedeepagents-activity-builder" \
   .claude/skills/freedeepagents-activity-builder
 ```
 
-If you copy instead of symlink, repeat the copy after updating this package.
+### Windows PowerShell
+
+A directory junction avoids copying and normally does not require Developer
+Mode. Run this from your activity project, not from the Builder clone:
+
+```powershell
+Set-Location "C:\path\to\your-project"
+New-Item -ItemType Directory -Force ".claude\skills" | Out-Null
+New-Item -ItemType Junction `
+  -Path ".claude\skills\freedeepagents-activity-builder" `
+  -Target "C:\absolute\path\to\freedeepagents-activity-builder"
+```
+
+If a junction is unsuitable, copy the complete directory instead:
+
+```powershell
+Set-Location "C:\path\to\your-project"
+New-Item -ItemType Directory -Force ".claude\skills" | Out-Null
+Copy-Item -Recurse `
+  "C:\absolute\path\to\freedeepagents-activity-builder" `
+  ".claude\skills\freedeepagents-activity-builder"
+```
+
+The destination must not already contain a stale partial copy. If you copy
+instead of linking, replace that copy after every Builder update.
+
+The link/copy commands above are native PowerShell. Builder authoring helpers
+under `tools/*.sh` still require Git Bash or WSL on Windows; run them from the
+activity project's mounted path. The Python verifier and testkit can run
+directly in PowerShell through `<project-root>/.venv\Scripts\python.exe`.
 
 ## Build And Deliver An Activity Directory
 
@@ -126,30 +198,45 @@ The plugin should guide the coding agent through these stages:
 5. Verify the activity directory:
 
 ```bash
-python3 <package>/tools/activity_verifier.py <project-root>
-python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
+<project-python> <builder-root>/tools/activity_verifier.py <project-root>
+<project-python> <builder-root>/testkit/fda_testkit.py activities/<activity_type_id>
+```
+
+Replace both placeholders first and use the project environment resolved by
+the preflight. Python accepts forward slashes in absolute Windows paths, for
+example:
+
+```powershell
+& "C:/src/my-activity-project/.venv/Scripts/python.exe" `
+  "C:/src/freedeepagents-activity-builder/tools/activity_verifier.py" `
+  "C:/src/my-activity-project"
 ```
 
 The expected output remains at `activities/<activity_type_id>/`. Point FDA Dev
 Client / `fda-dev --folder` at that directory.
 
-Static Preview frontend dependencies must be package-local. If `site/package.json`
+Static Preview frontend dependencies must be activity-local. If `site/package.json`
 uses npm `file:` dependencies, the targets must live inside the activity
-directory, such as `file:vendor/<package>`. Do not point at the host Runtime
+directory, such as `file:vendor/<dependency>`. Do not point at the host Runtime
 monorepo (`file:../../../packages/...`); verifier rejects those paths because
 the synced activity must remain self-contained.
 
 ## Verify
 
 A finished activity needs evidence. Run these from `<project-root>` (the repo
-holding your `activities/`); `<package>` is where this plugin is installed:
+holding your `activities/`); `<builder-root>` is where this plugin is installed:
+
+First resolve or create `<project-root>/.venv` using
+[`references/python-environment.md`](references/python-environment.md). The
+commands below use `<project-python>` for that environment's actual interpreter,
+not an arbitrary global Python.
 
 ```bash
 # 1. static structure + schema conformance (zero deps, no platform repo).
 #    Pass <project-root> explicitly; confirm the "scanned N activities" line.
-python3 <package>/tools/activity_verifier.py <project-root>
+<project-python> <builder-root>/tools/activity_verifier.py <project-root>
 # 2. run the activity's Python offline (make_tools + dsl_builder.build)
-python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
+<project-python> <builder-root>/testkit/fda_testkit.py activities/<activity_type_id>
 ```
 
 ### Toolchain requirements (per tool)

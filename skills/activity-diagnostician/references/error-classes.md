@@ -249,7 +249,7 @@ references are estimates rather than real data.
 
 - Edit `Dockerfile.sandbox` to `apt-get install -y ca-certificates &&
   update-ca-certificates`, then rebuild the image via
-  `bash <package>/tools/setup-runtime.sh --force`. Every sandbox script
+  `bash <builder-root>/tools/setup-runtime.sh --force`. Every sandbox script
   benefits after this — including future activities.
 
 **Validation:**
@@ -427,7 +427,7 @@ fails the first time the import executes.
 - Add a pinned line (`<pkg>==<version>`) to `activities/<id>/requirements.txt`.
 - If the import is genuinely a *platform* dependency you added to the host's own
   `requirements.txt`, regenerate the baseline instead:
-  `.venv/bin/python <package>/tools/gen-python-baseline.py`.
+  `<runtime-python> <builder-root>/tools/gen-python-baseline.py`.
 - Authoritative reference: `references/python-dependencies.md`.
 
 **Validation:** `activity-verify` exits 0 ERROR; on a clean venv,

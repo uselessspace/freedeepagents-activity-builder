@@ -111,12 +111,16 @@ WRONG_ARTIFACT_FIELDS = {
 # templates, then rejected after those templates are copied under activities/.
 AUTHORING_RESIDUE_PATTERNS = (
     (re.compile(r"TODO_ACTIVITY_AUTHOR"), "unfinished TODO_ACTIVITY_AUTHOR marker"),
-    (re.compile(r"<package>"), "unresolved Builder package placeholder '<package>'"),
+    (re.compile(r"<builder-root>"), "unresolved Builder root placeholder '<builder-root>'"),
+    (re.compile(r"<package>"), "unresolved legacy Builder package placeholder '<package>'"),
+    (re.compile(r"<project-python>"), "unresolved project Python placeholder '<project-python>'"),
+    (re.compile(r"<runtime-python>"), "unresolved runtime Python placeholder '<runtime-python>'"),
+    (re.compile(r"<(?:project|repo)-root>"), "unresolved project root placeholder"),
     (re.compile(r"<activity_type_id>"), "unresolved activity placeholder '<activity_type_id>'"),
     (re.compile(r"<id>"), "unresolved activity placeholder '<id>'"),
     (
-        re.compile(r"packages/freedeepagents-activity-builder"),
-        "hardcoded repo-local Builder path; use the active package root during authoring",
+        re.compile(r"(?:packages[\\/])?freedeepagents-activity-builder[\\/]"),
+        "hardcoded Builder path; use the active Builder root only during authoring",
     ),
     (re.compile(r"(?:写完后替换|复制本模板后)"), "unfinished scaffold authoring instruction"),
     (re.compile(r"\btemplate-(?:welcome|intake|result|error)\b"), "unscoped template assignment id"),
@@ -1597,7 +1601,7 @@ def _verify_frontend_file_dependencies(root: Path, issues: list[VerificationIssu
                             root,
                             package_path,
                             f"frontend file: dependency {name!r} target {target_text!r} escapes activity directory; "
-                            "use an activity-local vendor path such as file:vendor/<package>",
+                            "use an activity-local vendor path such as file:vendor/<dependency>",
                         )
                     )
 

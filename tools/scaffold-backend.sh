@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # scaffold-backend.sh <activity-id> [display-name]
 #
-# Copies <package>/templates/activity-template/ → <repo>/activities/<id>/
+# Copies <builder-root>/templates/activity-template/ → <repo>/activities/<id>/
 # and substitutes "template-activity" → <id> in file content and paths.
 # Optionally substitutes "模板活动" → <display-name>.
 #
-# - <package> is the directory containing this script's parent (auto-detected).
+# - <builder-root> is the directory containing this script's parent (auto-detected).
 # - <repo> is the git root if inside a git repo, else the current dir.
 
 set -euo pipefail
@@ -85,8 +85,10 @@ Next steps (in order):
      ==) in activities/$ACTIVITY_ID/requirements.txt — the scaffold ships an
      all-comment starter. Don't declare stdlib / platform-baseline / app.*
      (see $PACKAGE_ROOT/references/python-dependencies.md).
-  4) Run verifier (Python >= 3.10, no platform repo needed):
-       python3 $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
-  5) Run the offline testkit smoke (no platform repo needed):
-       python3 $PACKAGE_ROOT/testkit/fda_testkit.py $TARGET_DIR
+  4) Resolve or create the project-local Python environment first:
+       $REPO_ROOT/.venv  (see $PACKAGE_ROOT/references/python-environment.md)
+  5) Run verifier (Python >= 3.10, no platform repo needed):
+       <project-python> $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
+  6) Run the offline testkit smoke (no platform repo needed):
+       <project-python> $PACKAGE_ROOT/testkit/fda_testkit.py $TARGET_DIR
 EOF

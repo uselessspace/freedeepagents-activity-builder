@@ -5,19 +5,21 @@ All runtime modes pass through here. Stop before any frontend / image / verifica
 > Run scaffold + later verifier from **`<project-root>`** (your repo holding
 > `activities/`). The scaffold creates `activities/<id>/` under the git root, or
 > the current directory if not in a git repo — so don't run it from inside
-> `<package>`.
+> `<builder-root>`.
 
 Activities run in **card-system mode** with **typed-KV business data** (`runtime.json.data_schema_enabled: true`). The scaffolded template, host SKILL.md, and policies all reference the card-system tool surface (`card_emit_template`, `artifact_emit`, `memory_add`, plus retract variants). Business state lives in typed-KV `/instance/data.json` (declared via `data.schema.json`) and is mutated through activity @tools or the generic `data_*` tools. Runtime-derived state (`phase` / counts / `last_*_id`) is computed at turn end from emitted cards and injected via `current_instance_state`. When done, just stop; the runtime assembles the final output from your tool calls. 工具的权威签名与调用范例见 [../references/card-system-tools.md](../references/card-system-tools.md)；活动 @tool 参数 schema（DeepSeek strict 模式）与其他输出纪律见 [../policies/llm-output-discipline.md](../policies/llm-output-discipline.md)。
 
 ## Step 1: Scaffold from template
 
 ```bash
-bash <package>/tools/scaffold-backend.sh <activity-id> "<display-name>"
+bash <builder-root>/tools/scaffold-backend.sh <activity-id> "<display-name>"
 ```
 
-Where `<package>` resolves to wherever this skill is installed (typically `packages/freedeepagents-activity-builder/`). The script:
+`<builder-root>` resolves to the directory containing the loaded Builder's
+`SKILL.md`, `tools/`, and `templates/`. It is the repository root in a
+standalone clone and the Builder package directory in a monorepo. The script:
 1. Validates the id (`^[a-z][a-z0-9-]{1,30}$`)
-2. `cp -r <package>/templates/activity-template/ activities/<id>/`
+2. `cp -r <builder-root>/templates/activity-template/ activities/<id>/`
 3. Substitutes `template-activity` → `<id>` and `模板活动` → `<display-name>` in file contents
 4. Renames files/dirs containing `template-activity`
 5. Prints next-step checklist
@@ -26,13 +28,13 @@ Where `<package>` resolves to wherever this skill is installed (typically `packa
 
 | # | Artifact | Path | Reference |
 |---|---|---|---|
-| 1 | manifest | `activities/<id>/manifest.json` | [../references/manifest-fields.md](../references/manifest-fields.md) + `<package>/schemas/manifest.schema.json` |
-| 2 | runtime config | `activities/<id>/runtime.json` | [../references/runtime-config.md](../references/runtime-config.md) + `<package>/schemas/runtime.schema.json` (set `data_schema_enabled: true`) |
+| 1 | manifest | `activities/<id>/manifest.json` | [../references/manifest-fields.md](../references/manifest-fields.md) + `<builder-root>/schemas/manifest.schema.json` |
+| 2 | runtime config | `activities/<id>/runtime.json` | [../references/runtime-config.md](../references/runtime-config.md) + `<builder-root>/schemas/runtime.schema.json` (set `data_schema_enabled: true`) |
 | 3 | data schema | `activities/<id>/data.schema.json` | [../references/data-store-tools.md](../references/data-store-tools.md) — declares the activity's typed-KV business shape with `default`, `properties`, optional per-key `x-auto-inject` |
 | 4 | activity entrypoint | `activities/<id>/AGENTS.md` (≤80 lines) | [../policies/agents-md-thin.md](../policies/agents-md-thin.md) |
 | 5 | host skill | `activities/<id>/skills/<id>-host/SKILL.md` (≤120 lines) | [../references/host-skill-template.md](../references/host-skill-template.md) |
 | 6 | cards skill | `activities/<id>/skills/<id>-cards/SKILL.md` | Mandatory presentation-only catalog for fixed templates and literal `assignment_id` values; business intent remains in the host Skill. |
-| 7 | card templates | mandatory static `activities/<id>/card_templates/<id>.welcome.json` + empty `.welcome.vars.json`; other `*.json` templates pair with matching `*.vars.json` | [../references/card-block-types.md](../references/card-block-types.md) — **the 6 block types** (`markdown` / `info` / `form` / `action` / `image` / `audio`) with schema, FormField rules, form-vs-action decision tree. The welcome JSON is persisted during server sync and displayed directly by the frontend, so it must contain fixed copy only—no `{{...}}` anywhere—and its vars schema must declare zero variables. Vars schema: `<package>/schemas/card-vars.schema.json`. Activities needing an intake form (collecting user input by fields) use a `form` block here; activities that only need a few clickable options use `action` instead. |
+| 7 | card templates | mandatory static `activities/<id>/card_templates/<id>.welcome.json` + empty `.welcome.vars.json`; other `*.json` templates pair with matching `*.vars.json` | [../references/card-block-types.md](../references/card-block-types.md) — **the 6 block types** (`markdown` / `info` / `form` / `action` / `image` / `audio`) with schema, FormField rules, form-vs-action decision tree. The welcome JSON is persisted during server sync and displayed directly by the frontend, so it must contain fixed copy only—no `{{...}}` anywhere—and its vars schema must declare zero variables. Vars schema: `<builder-root>/schemas/card-vars.schema.json`. Activities needing an intake form (collecting user input by fields) use a `form` block here; activities that only need a few clickable options use `action` instead. |
 
 > The scaffold also drops `output.schema.json` (a `$ref` to the shared
 > transport schema). `output.schema.json` is
@@ -99,8 +101,8 @@ or a runtime capability before adding a dependency. Full rules:
 ## Red-line self-check (before hand-off)
 
 - [ ] No activity-specific code in `app/` / `schemas/` ([policy](../policies/runtime-boundary.md))
-- [ ] manifest.json validates against `<package>/schemas/manifest.schema.json`
-- [ ] runtime.json validates against `<package>/schemas/runtime.schema.json` with `data_schema_enabled: true` set
+- [ ] manifest.json validates against `<builder-root>/schemas/manifest.schema.json`
+- [ ] runtime.json validates against `<builder-root>/schemas/runtime.schema.json` with `data_schema_enabled: true` set
 - [ ] Every activity @tool in `tools.py` passes the DeepSeek strict-mode schema self-check (no bare `list`/`dict` params; parameterized containers like `list[str]` / `list[dict]` are legal, JSON-encoded `str` remains the most cross-model-compatible fallback for complex/optional-field payloads — see [../policies/llm-output-discipline.md](../policies/llm-output-discipline.md) §8d; run `skills/activity-verify/scripts/strict-tool-schema-check.py` to confirm)
 - [ ] data.schema.json exists with `type: object`, a top-level `default` block, `properties` covering every business field, and `x-auto-inject` set per key (true for fields the LLM should see in the prompt; false for secrets / large sets)
 - [ ] Every third-party Python package imported by `tools.py` / `dsl_builder.py` / `handlers.py` (or their helpers) is declared, pinned with `==`, in `activities/<id>/requirements.txt`; stdlib / platform-baseline / `app.*` are NOT declared ([reference](../references/python-dependencies.md))
@@ -113,7 +115,7 @@ or a runtime capability before adding a dependency. Full rules:
 - [ ] Activity @tools (in `tools.py`) wrap typed-KV writes with user-semantic names; tool names do not collide with built-ins
 - [ ] AGENTS.md ≤80 lines; routes to `skills/<id>-host/SKILL.md`
 - [ ] `skills/<id>-cards/SKILL.md` exists and is the presentation-only card catalog referenced by AGENTS/host
-- [ ] no `TODO_ACTIVITY_AUTHOR`, `<package>`, `<id>`, or `<activity_type_id>` residue remains in completed activity instructions
+- [ ] no `TODO_ACTIVITY_AUTHOR`, Builder/project path placeholder, `<id>`, or `<activity_type_id>` residue remains in completed activity instructions
 - [ ] host SKILL.md ≤120 lines; supporting files under `workflows/`/`policies/`/`references/`
 - [ ] `<id>.welcome.json` exists, contains no `{{...}}`, and `<id>.welcome.vars.json` has empty `properties` with `additionalProperties: false`
 

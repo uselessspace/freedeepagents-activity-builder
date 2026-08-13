@@ -10,10 +10,19 @@ Run `skills/activity-review/SKILL.md`. Any CONFLICT returns to
 activity-builder and must be reviewed again after the fix. Record accepted
 SMELL/NOTE items in Development Verification.
 
+## Step 0.5: Resolve the project Python
+
+Follow [`../references/python-environment.md`](../references/python-environment.md).
+Reuse a compatible `<project-root>/.venv`; if none exists, create it there with
+the target runtime's Python minor version. Do not write into the activity
+directory or a separate plugin cache. Replace `<project-python>` with that
+environment's interpreter. `<runtime-python>` is the target FDA repository's
+fully provisioned interpreter and is only needed by the strict check.
+
 ## Step 1: Run the verifier
 
 ```bash
-python3 <package>/tools/activity_verifier.py <project-root>
+<project-python> <builder-root>/tools/activity_verifier.py <project-root>
 ```
 
 Pass `<project-root>` explicitly and keep complete stdout. Do not pipe through
@@ -33,7 +42,7 @@ Fix one causal class at a time using
 When `manifest.tools_module` is set, run with the target FDA repo environment:
 
 ```bash
-.venv/bin/python <package>/skills/activity-verify/scripts/strict-tool-schema-check.py \
+<runtime-python> <builder-root>/skills/activity-verify/scripts/strict-tool-schema-check.py \
   --activity <activity_type_id>
 ```
 
@@ -44,7 +53,7 @@ just for this check.
 ## Step 3: Run the offline testkit
 
 ```bash
-python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
+<project-python> <builder-root>/testkit/fda_testkit.py activities/<activity_type_id>
 ```
 
 It runs `make_tools(ctx)` and `dsl_builder.build()` against schema-validated
@@ -96,6 +105,7 @@ be handed off after Steps 0–4; record live smoke as deferred, not passed.
 
 - **Activity directory**: <absolute project-root>/activities/<id>
 - **Builder bundle**: <absolute package path> · version <plugin version>; no mixed checkout/cache assets
+- **Project Python**: <absolute interpreter path> · <version> · <reused / created>
 - **Semantic review**: CONFLICT 0; accepted SMELL/NOTE: <list + reason, or "none">
 - **Verifier**: 0 ERROR / <n> WARNING; full output: <paste including scanned line>
 - **Strict-tool schema**: <m tools ok / covered by testkit / not applicable>

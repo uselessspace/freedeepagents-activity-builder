@@ -11,6 +11,11 @@ description: >-
 
 # Activity Smoke
 
+`<builder-root>` 指从本 `SKILL.md` 所在目录向上两级、包含根 `SKILL.md` 与
+`tools/` 的目录；不要假定它位于目标项目的 `packages/` 下。
+解析 `<project-python>` 时遵循
+[`../../references/python-environment.md`](../../references/python-environment.md)。
+
 > **何时用**：活动目录同步后确认"真能跑出东西"。判定失败 → 带同一个 `turn_id` 转 `/activity-diagnostician`。
 
 Dynamic verification. The smoke is "a synced activity successfully
@@ -80,7 +85,7 @@ side-effect rules and output contracts are owned by `/activity-dev-cli` and
 Pure stdlib; any Python 3.10+ works.
 
 ```bash
-python3 <package>/skills/activity-smoke/scripts/parse-trace.py \
+<project-python> <builder-root>/skills/activity-smoke/scripts/parse-trace.py \
     <path>/runtime/instances/<activity_type_id>/<instance_id>/turns/<turn_id>/trace.jsonl
 ```
 

@@ -7,6 +7,12 @@
 > at image build). The
 > activity verifier (`tools/activity_verifier.py`) enforces completeness.
 
+> **Do not mix two environments:** `<project-root>/.venv` is the developer's
+> local authoring/test environment described in
+> [python-environment.md](python-environment.md). The host runtime's shared venv
+> is a separate deployment environment hydrated by FDA Dev Client / dev-sync.
+> Installing locally never replaces the activity's pinned `requirements.txt`.
+
 ## Contents
 
 - The rule · why per-activity & complete · what (NOT) to declare
@@ -143,7 +149,7 @@ To satisfy it: add a pinned line for the package. If the import is genuinely a
 host's own `requirements.txt`), regenerate the baseline instead:
 
 ```bash
-.venv/bin/python <package>/tools/gen-python-baseline.py
+<runtime-python> <builder-root>/tools/gen-python-baseline.py
 ```
 
 (Run from the FDA repo root with the runtime venv active. Re-run whenever the

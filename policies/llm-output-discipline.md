@@ -173,7 +173,7 @@ def set_brief_tool(items: str = "[]") -> dict:
     ...
 ```
 
-写法 B 仍是**跨模型兼容性最稳**的选择：① DeepSeek strict 还禁用 `minItems`/`maxItems`/`minLength`/`maxLength` 且要求 object 所有属性 required —— 复杂 `list[dict[带可选字段]]` 经 strict 转换后会把可选字段强制 required，行为可能不符预期；② LLM 序列化 tool-call 时本来就把 list 表达成字符串，`json.loads + 手工校验`还原即可（本地 Python 调用记得 `json.dumps([...])`，写法 B 代码即完整模式）。用 `<package>/skills/activity-verify/scripts/strict-tool-schema-check.py` 对自己的 tools.py 跑一遍即可确认形态合法。
+写法 B 仍是**跨模型兼容性最稳**的选择：① DeepSeek strict 还禁用 `minItems`/`maxItems`/`minLength`/`maxLength` 且要求 object 所有属性 required —— 复杂 `list[dict[带可选字段]]` 经 strict 转换后会把可选字段强制 required，行为可能不符预期；② LLM 序列化 tool-call 时本来就把 list 表达成字符串，`json.loads + 手工校验`还原即可（本地 Python 调用记得 `json.dumps([...])`，写法 B 代码即完整模式）。用 `<builder-root>/skills/activity-verify/scripts/strict-tool-schema-check.py` 对自己的 tools.py 跑一遍即可确认形态合法。
 
 > 官方约束依据：[DeepSeek strict 工具调用](https://api-docs.deepseek.com/zh-cn/guides/tool_calls) —— 每个 object 须「所有属性 required + additionalProperties:false」，且不支持 min/max 长度与项数。
 
@@ -201,7 +201,7 @@ langchain 的 docstring 解析器会把 `Args:` 段里出现的 brace-style 对�
 
 ### 自查（开发目录验收前跑一次）
 
-用随包脚本，别手写：`.venv/bin/python <package>/skills/activity-verify/scripts/strict-tool-schema-check.py --activity <id>`（无平台仓库时改用 `python3 <package>/testkit/fda_testkit.py activities/<id>`，它也查每个工具的 strict 形态）。全部 `ok` 才算干净——出 trace 时碰到 `BadRequestError: Invalid tool parameters schema : field 'anyOf'` 几乎都是上面三条规则之一没遵守。
+用随包脚本，别手写：`<runtime-python> <builder-root>/skills/activity-verify/scripts/strict-tool-schema-check.py --activity <id>`（无平台仓库时改用 `<project-python> <builder-root>/testkit/fda_testkit.py activities/<id>`，它也查每个工具的 strict 形态）。全部 `ok` 才算干净——出 trace 时碰到 `BadRequestError: Invalid tool parameters schema : field 'anyOf'` 几乎都是上面三条规则之一没遵守。
 
 ---
 
@@ -228,13 +228,13 @@ LLM 发完卡片后可以撤回再重发，但要警惕**反复撤回让自己�
 
 ## 11. host SKILL.md 推荐结构
 
-完整可复制模板的**权威是 [references/host-skill-template.md](../references/host-skill-template.md)**（含路由表 / 状态段 / 卡片约定 / Turn boundary 骨架）。与本文相关的硬要求只有三条：host SKILL.md 把本 policy 的必要运行时护栏写成活动本地指令、cards Skill 含字面 `assignment_id` 表、多步流水线处有 `## Turn boundary（HARD）` 段。不要让最终活动 Skill 链接 Builder 的 `<package>` 路径；该路径在活动 Docker 中不可见。
+完整可复制模板的**权威是 [references/host-skill-template.md](../references/host-skill-template.md)**（含路由表 / 状态段 / 卡片约定 / Turn boundary 骨架）。与本文相关的硬要求只有三条：host SKILL.md 把本 policy 的必要运行时护栏写成活动本地指令、cards Skill 含字面 `assignment_id` 表、多步流水线处有 `## Turn boundary（HARD）` 段。不要让最终活动 Skill 链接 Builder 的 `<builder-root>` 路径；该路径在活动 Docker 中不可见。
 
 ---
 
 ## 自检（活动 release 前过一遍）
 
-- [ ] host SKILL.md 已写入必要的运行时护栏，但不引用 Builder-only `<package>` 地址
+- [ ] host SKILL.md 已写入必要的运行时护栏，但不引用 Builder-only `<builder-root>` 地址
 - [ ] 卡片输出约定段含字面 assignment_id 表 + "不要自创"
 - [ ] 业务数据规则段明示活动 @tools / `data_*` 写法 + runtime-derived 字段禁写清单
 - [ ] 沙箱路径示例都是 `/activity/skills/...`（不是 `/activity/activities/...`）

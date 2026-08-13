@@ -22,9 +22,9 @@
 #   3. Print a "ready" summary listing every activity and its readiness.
 #
 # Usage:
-#   bash <package>/tools/setup-runtime.sh                # auto-detect & only do what's needed
-#   bash <package>/tools/setup-runtime.sh --force        # rebuild image + force-prewarm all caches
-#   bash <package>/tools/setup-runtime.sh <activity_type_id>  # only check/prep this activity (+ shared image)
+#   bash <builder-root>/tools/setup-runtime.sh                # auto-detect & only do what's needed
+#   bash <builder-root>/tools/setup-runtime.sh --force        # rebuild image + force-prewarm all caches
+#   bash <builder-root>/tools/setup-runtime.sh <activity_type_id>  # only check/prep this activity (+ shared image)
 #
 # Exit code:
 #   0 — runtime is ready (every prepared step succeeded)

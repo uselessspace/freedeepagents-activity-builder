@@ -17,7 +17,7 @@ phrase that's likely to be identical across reproductions. Examples:
 
 ```bash
 grep -n "<stable substring>" \
-  packages/freedeepagents-activity-builder/skills/activity-diagnostician/references/error-classes.md
+  <builder-root>/skills/activity-diagnostician/references/error-classes.md
 ```
 
 The matching `E<n>` row is your diagnosis.

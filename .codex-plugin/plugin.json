@@ -1,6 +1,6 @@
 {
   "name": "freedeepagents-activity-builder",
-  "version": "0.4.34",
+  "version": "0.4.35",
   "description": "Guides coding agents through designing, building, verifying, directory-syncing, and live-debugging FDA intelligent activities.",
   "author": {
     "name": "Useless Space",

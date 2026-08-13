@@ -72,8 +72,8 @@ it must be fully static: no `{{...}}` placeholders anywhere. Its paired
 Use card-system output, typed-KV state, and a thin `AGENTS.md`. Put business
 policy in activity skills and supporting files. The scaffolded host and cards
 Skills contain `TODO_ACTIVITY_AUTHOR` markers; replace every marker before
-review or verification. A completed activity must not contain Builder-only
-`<package>` references or unresolved `<id>` placeholders.
+review or verification. A completed activity must not contain Builder/project
+path placeholders or unresolved `<id>` placeholders.
 
 ## Static Preview Build
 

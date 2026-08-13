@@ -10,6 +10,9 @@ description: >-
 
 # Activity Frontend
 
+`<builder-root>` 指从本 `SKILL.md` 所在目录向上两级、包含根 `SKILL.md` 与
+`tools/` 的目录；不要假定它位于目标项目的 `packages/` 下。
+
 > **何时用**：仅 `frontend_axis = static-preview` 或用户明确要更丰富前端时；card-only 活动跳过本步，进入 `/activity-review`，清零 CONFLICT 后验收目录。
 
 Use only when `frontend_axis` is `static-preview` or the user explicitly asks

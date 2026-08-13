@@ -2,10 +2,10 @@
 # derive-frontend.sh <activity-id> [--name "<English Short Name>"] [--title "<Browser Title>"] [--accent "#hex"]
 #
 # Derives a new frontend project at <repo>/activities/<activity-id>/site/
-# from <package>/frontend-base/. Idempotent in the sense that it refuses to
+# from <builder-root>/frontend-base/. Idempotent in the sense that it refuses to
 # overwrite an existing target.
 #
-# - <package> is the directory containing this script's parent (auto-detected).
+# - <builder-root> is the directory containing this script's parent (auto-detected).
 # - <repo> is the git root if inside a git repo, else the current dir.
 # - The activity's backend skeleton (activities/<id>/) must already exist
 #   (run tools/scaffold-backend.sh first).
@@ -142,7 +142,10 @@ cat <<EOF
        "dsl_builder_module": "dsl_builder"
      Add "tools_module": "tools" only if this activity defines in-process tools.
 
-  5) Verify:
-       python3 $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
+  5) Resolve or create $REPO_ROOT/.venv using:
+       $PACKAGE_ROOT/references/python-environment.md
+
+  6) Verify with that environment:
+       <project-python> $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
 
 EOF

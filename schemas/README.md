@@ -2,7 +2,7 @@
 
 Canonical schemas for FreeDeepAgents activity files. Use them in your editor (VS Code: add `"json.schemas"` mapping in settings) or in CI to validate authored files.
 
-**Bundle version: 0.4.34** — this schema bundle ships inside the plugin and tracks `.claude-plugin/plugin.json`. `tools/check_schema_sync.py` (run in the platform repo / CI) proves `card-template.schema.json` matches the runtime's `app.models` field-for-field, so an authored file that passes these schemas also passes the runtime's `OutputCard` validation at emit time.
+**Bundle version: 0.4.35** — this schema bundle ships inside the plugin and tracks `.claude-plugin/plugin.json`. `tools/check_schema_sync.py` (run in the platform repo / CI) proves `card-template.schema.json` matches the runtime's `app.models` field-for-field, so an authored file that passes these schemas also passes the runtime's `OutputCard` validation at emit time.
 
 | File | Validates |
 |---|---|
@@ -12,30 +12,33 @@ Canonical schemas for FreeDeepAgents activity files. Use them in your editor (VS
 | `card-vars.schema.json` | `activities/<id>/card_templates/*.vars.json` (variable definitions for the template's placeholders) |
 | `output-artifact.schema.json` | a single entry in `ActivityAgentOutput.artifacts[]` (image_generate / image_edit output shape) |
 
-> These are the **authoring** schemas (referenced as `<package>/schemas/…` in the docs). The runtime **transport** schema `activity-output.schema.json` (the full `ActivityAgentOutput` sent to the frontend) lives at the repo root `schemas/` — it's runtime-maintained and read-only to activities, so it is intentionally not part of this authoring bundle.
+> These are the **authoring** schemas (referenced as `<builder-root>/schemas/…` in the docs). The runtime **transport** schema `activity-output.schema.json` (the full `ActivityAgentOutput` sent to the frontend) lives at the repo root `schemas/` — it's runtime-maintained and read-only to activities, so it is intentionally not part of this authoring bundle.
 
 ## VS Code wiring
 
-Add to `.vscode/settings.json` in your activity workspace:
+Add the mappings below to `.vscode/settings.json` in your activity workspace.
+Replace `/absolute/path/to/freedeepagents-activity-builder` with the actual
+`<builder-root>`. Use a `file:///C:/...` URL on Windows; do not assume the
+Builder is nested under the activity repository.
 
 ```jsonc
 {
   "json.schemas": [
     {
       "fileMatch": ["activities/*/manifest.json"],
-      "url": "./packages/freedeepagents-activity-builder/schemas/manifest.schema.json"
+      "url": "file:///absolute/path/to/freedeepagents-activity-builder/schemas/manifest.schema.json"
     },
     {
       "fileMatch": ["activities/*/runtime.json"],
-      "url": "./packages/freedeepagents-activity-builder/schemas/runtime.schema.json"
+      "url": "file:///absolute/path/to/freedeepagents-activity-builder/schemas/runtime.schema.json"
     },
     {
       "fileMatch": ["activities/*/card_templates/*.json", "!**/*.vars.json"],
-      "url": "./packages/freedeepagents-activity-builder/schemas/card-template.schema.json"
+      "url": "file:///absolute/path/to/freedeepagents-activity-builder/schemas/card-template.schema.json"
     },
     {
       "fileMatch": ["activities/*/card_templates/*.vars.json"],
-      "url": "./packages/freedeepagents-activity-builder/schemas/card-vars.schema.json"
+      "url": "file:///absolute/path/to/freedeepagents-activity-builder/schemas/card-vars.schema.json"
     }
   ]
 }
@@ -44,12 +47,19 @@ Add to `.vscode/settings.json` in your activity workspace:
 ## Programmatic validation
 
 ```python
-import json, jsonschema
+import json
+from pathlib import Path
 
-schema = json.load(open("packages/freedeepagents-activity-builder/schemas/manifest.schema.json"))
-manifest = json.load(open("activities/my-activity/manifest.json"))
+import jsonschema
+
+builder_root = Path("/absolute/path/to/freedeepagents-activity-builder")
+schema = json.loads((builder_root / "schemas" / "manifest.schema.json").read_text())
+manifest = json.loads(Path("activities/my-activity/manifest.json").read_text())
 jsonschema.validate(manifest, schema)
 ```
+
+For Windows, use a raw path such as
+`Path(r"C:\src\freedeepagents-activity-builder")`.
 
 ## Authority chain
 
@@ -59,7 +69,7 @@ For local authoring, **`tools/activity_verifier.py`** is the executable gate: it
 
 两套 schema 各管一段：
 
-- **创作期**（你本地）：`<package>/schemas/*` + `activity_verifier.py` 校验你写的文件，随插件版本走（当前 `Bundle version: 0.4.34`，见顶部）。
+- **创作期**（你本地）：`<builder-root>/schemas/*` + `activity_verifier.py` 校验你写的文件，随插件版本走（当前 `Bundle version: 0.4.35`，见顶部）。
 - **加载 / emit 期**（部署后）：平台 runtime 的 `app.models`（pydantic）才是最终权威——bundled schema 与 verifier 只是它的离线镜像，`check_schema_sync.py`（在平台仓库 / CI 跑）逐字段证明两者一致。**两者分歧时以 runtime 为准。**
 
 当 bundle 与 runtime 版本不一致：

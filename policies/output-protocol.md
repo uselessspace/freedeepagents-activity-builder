@@ -168,9 +168,9 @@ artifact_emit({
 
 ## 自检清单
 
-- [ ] `runtime.json` 字段都来自 `<package>/schemas/runtime.schema.json` 白名单，含 `"data_schema_enabled": true`
+- [ ] `runtime.json` 字段都来自 `<builder-root>/schemas/runtime.schema.json` 白名单，含 `"data_schema_enabled": true`
 - [ ] `data.schema.json` 含顶层 `default` + `properties` 覆盖所有业务字段；每个 key 有 `x-auto-inject` 显式声明
 - [ ] host SKILL.md 用 `card_emit_template` / 活动 @tool 调用 / `artifact_emit` / `memory_add` 工具语法描述每个 sub-route：每条业务路径都对应一组具体工具调用，**不**在 prose 里出现 JSON 数组形式的输出指令（任何 `metadata.card_requests=[...]` / `state=[{...}]` 写法都属于把"应当通过工具调用产生的副作用"塞回了 prose，会被 verifier 软警告）
 - [ ] 每张固定卡都用模板（`card_emit_template`），assignment_id 是字面常量
 - [ ] image_generate / image_edit 的产出由 runtime 自动 surface；LLM 不调 `artifact_emit`
-- [ ] verifier `python3 <package>/tools/activity_verifier.py <project-root>` 输出 0 ERROR
+- [ ] verifier `<project-python> <builder-root>/tools/activity_verifier.py <project-root>` 输出 0 ERROR

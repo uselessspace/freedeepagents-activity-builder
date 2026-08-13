@@ -1,11 +1,11 @@
 # Verifier checks reference
 
-Source of truth: `<package>/tools/activity_verifier.py`. This doc summarizes what gets checked.
+Source of truth: `<builder-root>/tools/activity_verifier.py`. This doc summarizes what gets checked.
 
 ## Invocation
 
 ```bash
-python3 <package>/tools/activity_verifier.py <project-root>
+<project-python> <builder-root>/tools/activity_verifier.py <project-root>
 ```
 
 Pass `<project-root>` explicitly; it must be the **project root that contains
@@ -32,12 +32,12 @@ expect.
 |---|---|---|---|
 | 1 | Manifest field whitelist | unknown field in manifest.json | delete it; move business data into `data.schema.json` if that's where it belongs |
 | 2 | Capabilities whitelist | value other than `image_generate` / `image_edit` / `tts_generate` / `read_document` / `asr` | remove or correct |
-| 3 | Runtime config whitelist | unknown field in runtime.json | delete or move it; see `<package>/schemas/runtime.schema.json` for the allowed set |
+| 3 | Runtime config whitelist | unknown field in runtime.json | delete or move it; see `<builder-root>/schemas/runtime.schema.json` for the allowed set |
 | 4 | **typed KV data store wiring** | `runtime.data_schema_enabled: true` requires `data.schema.json` to exist | add `data.schema.json`, or flip the flag back to false (新活动默认开启) |
 | 5 | **typed KV top-level default** | `data.schema.json` exists but defaults are only under `properties.*.default` | add a schema-level `default` object |
 | 6 | Contract files exist + static welcome contract | orphan card template missing `.vars.json`; exact `<id>.welcome.json` missing; welcome contains `{{...}}`; welcome vars schema is non-empty/open | add the paired vars file; add the exact welcome filename; replace welcome placeholders with fixed copy; keep welcome vars at empty `properties` + `additionalProperties: false` |
-| 6a | **Card template schema conformance** | `card_templates/*.json` violates `<package>/schemas/card-template.schema.json` — e.g. ImageItem written as `url`/`alt` (must be `read_url`/`title`/`description`), FormField `input_type: "select"` (only `text`/`textarea`/`number`/`file`/`audio`/`hidden` exist) | fix the template; the error message carries the exact `$.card.blocks[i]…` path. A template that fails here is rejected 1:1 by the runtime's OutputCard validation at emit time |
-| 6b | **Vars schema conformance** | `*.vars.json` violates `<package>/schemas/card-vars.schema.json` (wrong top-level shape, unknown var `type`, …) | fix the vars file; `{{var}}` placeholders in the template are validated against it at render time |
+| 6a | **Card template schema conformance** | `card_templates/*.json` violates `<builder-root>/schemas/card-template.schema.json` — e.g. ImageItem written as `url`/`alt` (must be `read_url`/`title`/`description`), FormField `input_type: "select"` (only `text`/`textarea`/`number`/`file`/`audio`/`hidden` exist) | fix the template; the error message carries the exact `$.card.blocks[i]…` path. A template that fails here is rejected 1:1 by the runtime's OutputCard validation at emit time |
+| 6b | **Vars schema conformance** | `*.vars.json` violates `<builder-root>/schemas/card-vars.schema.json` (wrong top-level shape, unknown var `type`, …) | fix the vars file; `{{var}}` placeholders in the template are validated against it at render time |
 | 7 | Static Preview module contracts | `tools_module` / `dsl_builder_module` points at missing file or missing `make_tools` / `build` callable | add the module or remove the manifest field |
 | 8 | Static Preview site exists | `dsl_builder_module` set but no `site/` directory | create frontend project and build it |
 | 9 | Activity tool name collision | activity tool reuses built-in names like `card_emit`, `data_set`, `execute`, `read_file` | rename the activity tool |
@@ -50,8 +50,8 @@ expect.
 | 17 | **File integrity** | a `manifest.json` / `runtime.json` / `card_templates/*.json` is unreadable or invalid JSON; `data.schema.json` isn't a JSON object; `tools.py` / `dsl_builder.py` has a `SyntaxError` | fix the malformed file (the message names it) |
 | 19 | **No relative imports in `tools.py`** | `tools.py` / helpers use `from . import x` — the runtime loads them by file path (no package context), so relative imports `ImportError` | load siblings via the file-path loader (see `references/activity-python-modules.md`) |
 | 20 | **DeepAgents skill-loading integrity** (companion to #12) | `app/runner` reintroduces a `_skill_instruction_text` helper or globs/rglobs `SKILL.md` itself — both bypass native progressive disclosure | keep skills flowing through `create_deep_agent(skills=...)` |
-| 21 | **Static Preview frontend `file:` dependency boundary** | `site/package.json` has `file:` dependencies that are missing, absolute, or resolve outside `activities/<id>/` (for example `file:../../../packages/...`) | vendor the dependency inside the activity, such as `file:vendor/<package>`, so the activity package installs without the Runtime monorepo |
-| 22 | **Authoring residue / Builder-only address** | completed activity text still contains `TODO_ACTIVITY_AUTHOR`, `<id>`, `<activity_type_id>`, `<package>`, template-only assignment IDs, or a hardcoded repo-local Builder path | finish the scaffold, replace every marker, and keep Runtime Skill references under `/activity` or skill-local relative paths |
+| 21 | **Static Preview frontend `file:` dependency boundary** | `site/package.json` has `file:` dependencies that are missing, absolute, or resolve outside `activities/<id>/` (for example `file:../../../packages/...`) | vendor the dependency inside the activity, such as `file:vendor/<dependency>`, so the activity package installs without the Runtime monorepo |
+| 22 | **Authoring residue / Builder-only address** | completed activity text still contains `TODO_ACTIVITY_AUTHOR`, `<id>`, `<activity_type_id>`, `<builder-root>`, `<project-python>`, `<runtime-python>`, `<project-root>`, template-only assignment IDs, or a hardcoded Builder path | finish the scaffold, replace every marker, and keep Runtime Skill references under `/activity` or skill-local relative paths |
 | 22 | **No detached `ctx` work** | activity Python passes `ctx` into `asyncio.create_task`, an unawaited executor call, framework background task, `Thread(...).start()`, or a thread without `join()`; the work can outlive its tool/handler capability token | finish all `ctx`-dependent work before returning, or persist plain job data and resume it in a later handler with that handler's fresh `ctx`; activity-owned background work that never retains/calls `ctx` is not blocked by this rule; see `references/handler-context-lifecycle.md` |
 
 ## Soft warnings (advisory — record in Development Verification)
@@ -76,7 +76,7 @@ When this doc disagrees with the verifier source, **the verifier wins**. File a 
 
 ## Tips
 
-- Development-directory gate: `python3 <package>/tools/activity_verifier.py <project-root>` and
+- Development-directory gate: `<project-python> <builder-root>/tools/activity_verifier.py <project-root>` and
   keep the complete stdout including `scanned N activities`.
 - Do not pipe the gate through `grep`; it can hide generic-runtime errors and
   replaces the verifier exit code with the filter's exit code.

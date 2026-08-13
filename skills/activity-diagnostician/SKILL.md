@@ -12,6 +12,9 @@ description: >-
 
 # Activity Diagnostician
 
+`<builder-root>` 指从本 `SKILL.md` 所在目录向上两级、包含根 `SKILL.md` 与
+`tools/` 的目录；不要假定它位于目标项目的 `packages/` 下。
+
 > **何时用**：活动跑出问题要 debug 时——给 `turn_id` / 错误日志 / 症状描述任一即可。`/activity-smoke` 判定失败后通常转到这里。
 
 Own the "turn failed — what went wrong" path. Each error class in

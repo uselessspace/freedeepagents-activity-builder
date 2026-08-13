@@ -1,6 +1,6 @@
 # manifest.json field reference
 
-Schema: `<package>/schemas/manifest.schema.json`. This doc explains each field with examples.
+Schema: `<builder-root>/schemas/manifest.schema.json`. This doc explains each field with examples.
 
 ## Contents
 

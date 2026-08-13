@@ -1,5 +1,22 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.35 (2026-08-13)
+
+修正独立 GitHub 仓库与 FreeDeepAgents monorepo 两种 Builder 布局混用导致的安装路径错误。
+
+- 统一用 `<builder-root>` 表示包含 `SKILL.md`、`skills/` 与 `tools/` 的插件根目录；
+  独立 clone 直接使用仓库根，monorepo 才使用 `packages/` 下的 Builder 目录。
+- README、INSTALL、schemas、testkit、frontend 与 workflow 不再把 monorepo 子目录当作
+  独立仓库的固定路径；VS Code 与 Python 示例改用可替换的绝对 Builder 根目录。
+- INSTALL 新增 Windows PowerShell 的 directory junction、复制和项目 venv verifier 示例，
+  同时保留 macOS/Linux 的软链接与复制方式。
+- 新增项目级 Python preflight：优先复用 `<project-root>/.venv`，不存在时按目标
+  runtime Python 版本在当前项目创建；禁止写入全局、非项目插件 cache 或活动上传目录。
+- 区分 stdlib verifier、offline testkit 与必须使用完整 FDA runtime venv 的 strict
+  schema 检查，并记录解释器路径、版本及 reused/created 证据。
+- verifier 同时阻断新旧 Builder 占位符，以及 POSIX/Windows、standalone/monorepo
+  形式的 Builder-only 地址，避免开发期路径进入最终活动目录。
+
 ## 0.4.34 (2026-08-12)
 
 交付模型统一为 FDA Dev Client / `fda-dev --folder` 直接同步的

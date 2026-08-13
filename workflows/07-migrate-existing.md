@@ -13,7 +13,7 @@ Use this **instead of** the brief→classify→build chain (workflows 02-06) whe
 ## Branch path
 
 ```bash
-bash <package>/tools/branch-activity.sh <source-id> <new-id> "<New Display Name>"
+bash <builder-root>/tools/branch-activity.sh <source-id> <new-id> "<New Display Name>"
 ```
 
 The script:
@@ -28,7 +28,7 @@ After branching:
 1. **Edit `description`** in `activities/<new-id>/manifest.json` — don't leave duplicate descriptions.
 2. **Customize host skill workflows** (`activities/<new-id>/skills/<new-id>-host/workflows/*.md`) — the source semantics are still embedded.
 3. **Edit card_templates content** — file names are renamed, but text inside still mentions the source domain (e.g. the source activity's wording leaking into your new branch).
-4. **Static Preview only**: `bash <package>/tools/derive-frontend.sh <new-id>` — gives the branch a fresh frontend at `activities/<new-id>/site/` (don't share the source's `activities/<source-id>/site/`).
+4. **Static Preview only**: `bash <builder-root>/tools/derive-frontend.sh <new-id>` — gives the branch a fresh frontend at `activities/<new-id>/site/` (don't share the source's `activities/<source-id>/site/`).
 5. Run [06-verify-directory.md](06-verify-directory.md).
 
 ## In-place path

@@ -40,7 +40,7 @@
 
 > **`x-auto-inject: false` 是数据隔离的硬合约**：runtime 在构建系统提示时绝不会带这些 key 的值。如果你的活动有"谜底"、"评分细则"、"系统配方"等不该让 LLM 在每轮都看到的字段，把它们标 `x-auto-inject: false` 是唯一受支持的做法（不要靠在 prompt 里"叮嘱别看"）。
 
-> **SSE debug-view 联动**：活动只要在 `data.schema.json` 里有任何 `x-auto-inject: false` 字段，runtime verifier 就会要求 `runtime.json` 显式声明 `sse_debug_view`（即便是空 `{}`）—— 让作者明确决定 trace 工具调用是否能桥到 chat SSE。要走安全默认就写 `"sse_debug_view": {"enabled": false}`；要打开 debug 又不想暴露隐藏字段，把 `data_get` 等读访问加进 `redact_tools`。schema 见 `<package>/schemas/runtime.schema.json`，行为见 `app/models.py:SseDebugViewConfig`。
+> **SSE debug-view 联动**：活动只要在 `data.schema.json` 里有任何 `x-auto-inject: false` 字段，runtime verifier 就会要求 `runtime.json` 显式声明 `sse_debug_view`（即便是空 `{}`）—— 让作者明确决定 trace 工具调用是否能桥到 chat SSE。要走安全默认就写 `"sse_debug_view": {"enabled": false}`；要打开 debug 又不想暴露隐藏字段，把 `data_get` 等读访问加进 `redact_tools`。schema 见 `<builder-root>/schemas/runtime.schema.json`，行为见 `app/models.py:SseDebugViewConfig`。
 
 ## 工具列表（5 个）
 

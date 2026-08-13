@@ -6,13 +6,13 @@ Skip for Card-only activities. Start from the `## Frontend Decision` block from
 ## Step 1: derive
 
 ```bash
-bash <package>/tools/derive-frontend.sh <activity-id> --name "<English Short Name>" --accent "#7c4dff"
+bash <builder-root>/tools/derive-frontend.sh <activity-id> --name "<English Short Name>" --accent "#7c4dff"
 ```
 
 The script:
 1. Validates id matches `^[a-z][a-z0-9-]{1,30}$`
-2. `cp -r <package>/frontend-base/` → `activities/<id>/site/`
-3. Drops `<package>/frontend-base/README.md` (developer-only doc); promotes `PROJECT-README.md.tpl` to `README.md`
+2. `cp -r <builder-root>/frontend-base/` → `activities/<id>/site/`
+3. Drops `<builder-root>/frontend-base/README.md` (developer-only doc); promotes `PROJECT-README.md.tpl` to `README.md`
 4. For every `*.tpl` file: substitutes `{{ACTIVITY_ID}}`, `{{ACTIVITY_NAME}}`, `{{ACTIVITY_TITLE}}`, `{{ACCENT_COLOR}}`, then drops the `.tpl` suffix
 5. Renames any file/dir whose name contains `{{ACTIVITY_ID}}` to the resolved id
 6. Verifies no token residue remains
@@ -108,7 +108,7 @@ If developing against a local FDA platform repo instead, prepare its Linux
 runtime cache after authoring or any `package.json` bump:
 
 ```bash
-bash <package>/tools/setup-runtime.sh <id>
+bash <builder-root>/tools/setup-runtime.sh <id>
 ```
 
 It's idempotent and pre-warms `runtime/sandbox_cache/node_modules/<id>/` if

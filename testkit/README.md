@@ -29,8 +29,11 @@ The verifier checks files; the testkit **runs your code**. Use both.
 
 ## CLI smoke
 
-```bash
-python3 testkit/fda_testkit.py path/to/activities/<id>
+Run from `<project-root>` after resolving the environment described in
+[`../references/python-environment.md`](../references/python-environment.md):
+
+```text
+<project-python> <builder-root>/testkit/fda_testkit.py activities/<id>
 ```
 
 ```
@@ -46,7 +49,11 @@ strict-mode-illegal `items:{}` schema, or `build` returns non-JSON.
 ## In your own pytest
 
 ```python
-import sys; sys.path.insert(0, "packages/freedeepagents-activity-builder/testkit")
+import sys
+from pathlib import Path
+
+builder_root = Path("/absolute/path/to/freedeepagents-activity-builder")
+sys.path.insert(0, str(builder_root / "testkit"))
 from fda_testkit import load_make_tools, activity_harness
 
 def test_tools_build():
@@ -59,6 +66,9 @@ def test_tool_writes_validate():
         out = tools["save_thing"].invoke({"title": "x"})
         assert out["ok"] is True
 ```
+
+For Windows, initialize `builder_root` with a raw path such as
+`Path(r"C:\src\freedeepagents-activity-builder")`.
 
 `activity_harness` installs the stubs, seeds a temp instance from
 `data.schema.json`'s top-level `default`, and yields a `FakeCtx`

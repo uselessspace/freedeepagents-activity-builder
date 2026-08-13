@@ -53,6 +53,11 @@ FDA Dev Client / `fda-dev` 同步。本文件是 Codex + Claude 插件的总入�
 > **单一包根原则**：一次构建只使用当前已加载插件包里的 Skill、脚本、模板和
 > schema。开始实现前读取该包 `.codex-plugin/plugin.json` 或
 > `.claude-plugin/plugin.json` 的版本；不要混用 repo checkout 与旧插件缓存。
+> 本 Skill 与子文档中的 `<builder-root>` 就是包含本文件的目录；独立 clone 使用
+> 仓库根，只有 monorepo checkout 才使用其 `packages/` 下的 Builder 目录。
+> 首次运行 Python 工具前按 [`references/python-environment.md`](references/python-environment.md)
+> 检查环境；没有兼容环境时在 `<project-root>/.venv` 新建，不写全局环境、非项目的
+> 插件 cache 或最终活动目录。
 
 ## 两条铁律（动手前必读）
 

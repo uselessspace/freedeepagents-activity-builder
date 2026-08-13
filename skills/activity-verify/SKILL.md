@@ -10,18 +10,26 @@ description: >-
 
 # Activity Verify
 
+`<builder-root>` 指从本 `SKILL.md` 所在目录向上两级、包含根 `SKILL.md` 与
+`tools/` 的目录；不要假定它位于目标项目的 `packages/` 下。
+
 > **何时用**：review 已清零 CONFLICT，要验收开发目录时。默认主链路到这里完成。
 
 完整终态流程和证据格式由
 [`../../workflows/06-verify-directory.md`](../../workflows/06-verify-directory.md)
 唯一维护；按其顺序执行，不另造一套门禁。
 
+先按 [`../../references/python-environment.md`](../../references/python-environment.md)
+解析兼容的项目 Python；没有时在 `<project-root>/.venv` 创建。下列
+`<project-python>` 指该环境；仅 strict check 的 `<runtime-python>` 指完整 FDA
+runtime 环境。两者都必须替换为实际解释器路径。
+
 ## Required deterministic checks
 
 1. **Bundled verifier**（Python ≥3.10、stdlib only）：
 
    ```bash
-   python3 <package>/tools/activity_verifier.py <project-root>
+   <project-python> <builder-root>/tools/activity_verifier.py <project-root>
    ```
 
    必须保留完整输出与 `scanned N activities`；不得管给 `grep`。任意 ERROR 阻断。
@@ -29,7 +37,7 @@ description: >-
 2. **Strict-tool schema**（仅 manifest 声明 `tools_module` 时）：
 
    ```bash
-   .venv/bin/python <package>/skills/activity-verify/scripts/strict-tool-schema-check.py \
+   <runtime-python> <builder-root>/skills/activity-verify/scripts/strict-tool-schema-check.py \
      --activity <activity_type_id>
    ```
 
@@ -39,7 +47,7 @@ description: >-
 3. **Offline testkit**：
 
    ```bash
-   python3 <package>/testkit/fda_testkit.py activities/<activity_type_id>
+   <project-python> <builder-root>/testkit/fda_testkit.py activities/<activity_type_id>
    ```
 
    它运行 `make_tools(ctx)` / `dsl_builder.build()`、校验 typed-KV 写入，并检查
@@ -51,8 +59,8 @@ Static Preview 还必须在 `site/` 运行 `npm run lint` + `npm run build`，�
 ## Development Verification
 
 按 workflow 06 输出 `## Development Verification`：至少包含活动目录、Builder
-路径/版本、Semantic review、Verifier、Strict-tool schema、Testkit、前端 build、
-warnings 和 changed files。
+路径/版本、项目 Python 路径/版本与 reused/created 状态、Semantic review、
+Verifier、Strict-tool schema、Testkit、前端 build、warnings 和 changed files。
 
 `development-ready: yes` 要求本地确定性检查全部通过。若已安装并登录 FDA Dev
 Client，再转 `../activity-dev-cli/SKILL.md` 用活动目录做 `doctor` / `status` /

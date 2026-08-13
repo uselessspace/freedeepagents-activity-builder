@@ -8,11 +8,15 @@ deterministic verification, and optional live FDA Dev Client smoke testing.
 The deliverable is `activities/<activity_type_id>/`. FDA Dev Client and
 `fda-dev --folder` sync this development directory directly.
 
-> **Two placeholders used throughout the docs:** `<package>` = the directory
-> where this plugin is installed/unpacked (the one holding this README);
-> `<project-root>` / `<repo-root>` = *your* working repo, the directory that
-> holds (or will hold) `activities/`. Scaffold and verifier commands run from
-> `<project-root>`, not from `<package>`.
+> **Path placeholders used throughout the docs:** `<builder-root>` is the
+> directory holding this README, `SKILL.md`, `skills/`, and `tools/`.
+> In the standalone GitHub repository it is the repository root; inside the
+> FreeDeepAgents monorepo it is
+> `packages/freedeepagents-activity-builder/`. `<project-root>` / `<repo-root>`
+> is your working repository, the directory that holds (or will hold)
+> `activities/`. Replace placeholders with real absolute paths before running
+> commands. Scaffold and verifier commands run from `<project-root>`, not from
+> `<builder-root>`.
 
 ## What It Does
 
@@ -34,7 +38,7 @@ The deliverable is `activities/<activity_type_id>/`. FDA Dev Client and
 ## Package Layout
 
 ```text
-packages/freedeepagents-activity-builder/
+<builder-root>/
 |-- SKILL.md                         # router entry
 |-- .codex-plugin/plugin.json        # Codex plugin manifest
 |-- .claude-plugin/plugin.json       # Claude plugin manifest
@@ -127,7 +131,11 @@ and rationale: [policies/runtime-boundary.md](policies/runtime-boundary.md).
 ## Install
 
 See [INSTALL.md](INSTALL.md) for Codex plugin installation, Claude plugin
-installation, and repo-local symlink fallback.
+installation, repo-local link/copy fallback, and the project-local Python
+environment preflight. A Coding Agent reuses a compatible
+`<project-root>/.venv` or creates it there before running Python tools; it does
+not install globally, into a separate plugin cache, or into the uploaded
+activity directory.
 
 ## Verification Authority
 

@@ -2,7 +2,7 @@
 
 ## Rule
 
-In a derived `activities/<id>/site/` project, the following files came from `<package>/frontend-base/` and are kept in sync across all derived activities:
+In a derived `activities/<id>/site/` project, the following files came from `<builder-root>/frontend-base/` and are kept in sync across all derived activities:
 
 ```
 src/lib/{http, api-base, asset-url}.ts
@@ -14,7 +14,7 @@ src/styles/index.css
 **Don't edit these in your derived project.** If you need to:
 
 - **Add a feature only your activity needs** → put it in a NEW file under `src/lib/<your-helper>.ts`, don't extend the shared one
-- **Change something that all activities should benefit from** → edit `<package>/frontend-base/<the-file>` and re-derive (or cherry-pick the change into already-derived projects)
+- **Change something that all activities should benefit from** → edit `<builder-root>/frontend-base/<the-file>` and re-derive (or cherry-pick the change into already-derived projects)
 
 ## Why
 

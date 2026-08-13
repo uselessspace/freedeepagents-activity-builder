@@ -32,7 +32,7 @@ change: update `app/models.py`, the Builder schema/verifier, and
 
 ## Validation
 
-Use `<package>/schemas/manifest.schema.json` (`$id: https://freedeepagents.dev/schemas/manifest.schema.json`) in your editor or CI to catch this before the verifier does.
+Use `<builder-root>/schemas/manifest.schema.json` (`$id: https://freedeepagents.dev/schemas/manifest.schema.json`) in your editor or CI to catch this before the verifier does.
 
 ## Authority
 

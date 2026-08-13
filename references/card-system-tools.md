@@ -12,7 +12,7 @@
 
 ## 心智模型
 
-Card-system 模式是新活动的运行模式（`runtime.json` 的合法字段见 `<package>/schemas/runtime.schema.json`）。LLM 通过下列工具表达副作用，runtime 在 turn 结束时从工具调用历史汇编最终 `ActivityAgentOutput`（包括从 emit 的卡片 / artifact 派生出 phase / counts / last_*_id）。完成时直接停，不返回任何最终 JSON。
+Card-system 模式是新活动的运行模式（`runtime.json` 的合法字段见 `<builder-root>/schemas/runtime.schema.json`）。LLM 通过下列工具表达副作用，runtime 在 turn 结束时从工具调用历史汇编最终 `ActivityAgentOutput`（包括从 emit 的卡片 / artifact 派生出 phase / counts / last_*_id）。完成时直接停，不返回任何最终 JSON。
 
 **工具列表（11 个）**：
 
