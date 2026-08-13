@@ -1,5 +1,21 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.37 (2026-08-13)
+
+为 Coding Agent 增加可重复执行的项目本地 Python / Node 国内镜像引导脚本。
+
+- 新增 macOS/Linux `tools/bootstrap-authoring-env.sh` 与 Windows PowerShell
+  `tools/bootstrap-authoring-env.ps1`，优先复用兼容运行时，不改系统环境。
+- Python 缺失时从 npmmirror 安装固定 CPython 3.12.13 到 `.fda-tools/`，校验发布方
+  SHA-256 后创建项目 `.venv`；pip 默认使用清华 PyPI 镜像。
+- Static Preview 显式传参后才处理 Node；缺失时从 npmmirror 安装固定 Node 20.20.2
+  + npm 10 到 `.fda-tools/` 并校验 SHA-256，Card-only 不安装 Node。
+- 默认下载链路不回退境外源；四个 `FDA_*` 环境变量允许切换企业内网镜像。
+- 自动维护项目 `.gitignore` 中的 `.venv/` / `.fda-tools/`，并生成可重复加载的
+  `authoring-env.sh` / `authoring-env.ps1`，避免运行时或环境配置进入活动目录。
+- README、INSTALL、根 router 与环境参考统一改为脚本优先，清除“缺环境只能停下
+  等用户手工安装”及“Node 不可放项目工具目录”等冲突引导。
+
 ## 0.4.36 (2026-08-13)
 
 为 Static Preview 开发链路补齐与 FDA runtime 对齐的 Node 环境前置检查。

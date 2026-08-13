@@ -14,16 +14,20 @@ SMELL/NOTE items in Development Verification.
 
 Follow [`../references/python-environment.md`](../references/python-environment.md).
 Reuse a compatible `<project-root>/.venv`; if none exists, create it there with
-the target runtime's Python minor version. Do not write into the activity
-directory or a separate plugin cache. Replace `<project-python>` with that
-environment's interpreter. `<runtime-python>` is the target FDA repository's
-fully provisioned interpreter and is only needed by the strict check.
+the target runtime's Python minor version. For the current FDA target, use the
+bundled domestic-mirror bootstrap when a compatible interpreter is missing.
+Do not write into the activity directory or a separate plugin cache. Replace
+`<project-python>` with that environment's interpreter. `<runtime-python>` is
+the target FDA repository's fully provisioned interpreter and is only needed
+by the strict check.
 
 ## Step 0.6: Resolve Node for Static Preview only
 
 Card-only activities skip this step. When `site/package.json` exists, follow
 [`../references/node-environment.md`](../references/node-environment.md): reuse
 Node 20 or 22 with npm 10, preferring Node 20 to mirror the current runtime.
+When it is missing, announce and run the bootstrap's explicit Node option; it
+uses a configured domestic mirror and a project-local `.fda-tools/` runtime.
 Record executable paths, versions, and reused/selected state. Do not silently
 install or replace a global Node runtime.
 

@@ -22,7 +22,9 @@ package.
 Before deriving or building `site/`, follow
 [`../../references/node-environment.md`](../../references/node-environment.md).
 Reuse Node 20 or 22 with npm 10; prefer Node 20 to mirror the runtime. Do not
-install Node for a Card-only activity.
+install Node for a Card-only activity. When Static Preview lacks a compatible
+Node, announce the download and use the bundled domestic-mirror bootstrap from
+that reference instead of asking the user to discover a platform installer.
 
 ## UI Type Decision
 
@@ -110,11 +112,8 @@ The per-archetype polish budget, optional dependency commands, motion example,
 and mobile/desktop screenshot check live in
 [../../workflows/05-frontend-polish.md](../../workflows/05-frontend-polish.md).
 
-## Optional Enhancers
-
-Optional shadcn MCP examples or local UI skills may inspire patterns — they are
+Optional shadcn MCP examples or local UI skills may inspire patterns; they are
 not hard dependencies and their source must not be copied into this package.
 
 Route back to `../activity-builder/SKILL.md` for file integration, then run
-`../activity-review/SKILL.md`; a CONFLICT-free result enters
-`../activity-verify/SKILL.md`.
+`../activity-review/SKILL.md`; a CONFLICT-free result enters `../activity-verify/SKILL.md`.

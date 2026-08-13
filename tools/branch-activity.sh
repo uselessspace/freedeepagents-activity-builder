@@ -48,6 +48,7 @@ elif command -v python >/dev/null 2>&1; then
 else
   echo "ERROR: no Python interpreter found; create $REPO_ROOT/.venv first." >&2
   echo "See $PACKAGE_ROOT/references/python-environment.md" >&2
+  echo "Then run: bash $PACKAGE_ROOT/tools/bootstrap-authoring-env.sh --project-root $REPO_ROOT" >&2
   exit 2
 fi
 
@@ -105,6 +106,8 @@ cat <<EOF
 
   5) Resolve or create $REPO_ROOT/.venv using:
        $PACKAGE_ROOT/references/python-environment.md
+     If Python 3.12 is missing, announce the domestic-mirror download, then run:
+       bash $PACKAGE_ROOT/tools/bootstrap-authoring-env.sh --project-root $REPO_ROOT
 
   6) Verify with that environment:
        <project-python> $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT

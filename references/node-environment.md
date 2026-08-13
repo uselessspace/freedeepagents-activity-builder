@@ -7,14 +7,16 @@ Card-only activities skip Node setup entirely.
 ## Supported baseline
 
 - The current FDA runtime builds Static Preview projects in `node:20-slim`.
-- Builder 0.4.36 supports Node 20 or 22 with npm 10.x for local authoring.
+- Builder 0.4.37 supports Node 20 or 22 with npm 10.x for local authoring.
 - Prefer Node 20 for the closest match to the runtime. An existing compatible
   Node 22 environment may be reused; do not downgrade it merely for parity.
 - For another target runtime, its Docker image and the activity's
   `package.json.engines` are authoritative.
 
-Node does not use a Python-style project `.venv`. Do not copy a Node binary or
-global npm packages into the project. The activity owns only:
+Node does not use a Python-style project `.venv`. A compatible system or
+version-manager Node may be reused; otherwise the bundled bootstrap keeps a
+pinned runtime under `<project-root>/.fda-tools/`, never in the activity
+directory. The activity owns only:
 
 - `site/.nvmrc`, which recommends Node 20 to version managers;
 - `site/package.json.engines`, which accepts the supported compatibility range;
@@ -33,14 +35,12 @@ the development directory as evidence, but FDA source sync excludes generated
 2. From `site/`, inspect `node --version` and `npm --version` without changing
    the machine. Continue when Node major is 20 or 22 and npm major is 10.
 3. Reuse a compatible environment. Record its executable paths and versions.
-4. If Node is missing or incompatible and an existing version manager is
-   available, use it to install/select Node 20 for this project.
-5. If no supported version manager or base Node is available, report the
-   detected state and ask the user to install or authorize Node 20 LTS. Do not
-   silently run a remote installer, use administrator privileges, alter a
-   global Node installation, or select an unbounded `latest` version.
-6. Never delete or overwrite an existing lockfile or version-manager config
-   without reviewing it. Resolve conflicting project constraints explicitly.
+4. If Node is missing or incompatible, tell the user the bundled bootstrap will
+   download pinned Node 20 from the configured domestic mirror, then run it
+   with the explicit Static Preview flag. It installs only under
+   `<project-root>/.fda-tools/`, verifies SHA-256, and changes no global runtime.
+5. Never select an unbounded `latest` version. Review existing lockfiles and
+   version-manager config instead of overwriting them.
 
 Portable version checks:
 
@@ -52,24 +52,35 @@ npm --version
 The npm major printed by the second command must be 10. On PowerShell, the same
 `node -e` and `npm --version` commands work unchanged.
 
-## Select Node 20 when setup is needed
+## Recommended bootstrap for Static Preview
 
-Use only a version manager that is already installed and understood by the
-project. Examples:
+The same bootstrap creates/reuses Python first and adds Node only when explicitly
+requested. It pins Node 20.20.2 + npm 10, downloads from npmmirror, verifies the
+published checksum, and configures npm to use npmmirror. Card-only activities
+must omit the Node flag.
+
+macOS / Linux:
 
 ```bash
-# nvm on macOS/Linux, when already available
-nvm install 20
-nvm use 20
-
-# fnm on macOS/Linux/Windows, when already available
-fnm install 20
-fnm use 20
+bash <builder-root>/tools/bootstrap-authoring-env.sh \
+  --project-root <project-root> \
+  --with-node
 ```
 
-Do not use `curl | sh`, `sudo npm`, `npm install -g`, or an OS package-manager
-mutation without the user's authorization. Installing a runtime is a visible
-machine setup action, not an implicit build step.
+Windows PowerShell:
+
+```powershell
+& "<builder-root>\tools\bootstrap-authoring-env.ps1" `
+  -ProjectRoot "<project-root>" `
+  -WithNode
+```
+
+Replace placeholders with actual absolute paths. The scripts write a project
+environment loader under `.fda-tools/`; source it before later `npm` commands
+when a local Node was installed. Override `FDA_NODE_MIRROR` and
+`FDA_NPM_REGISTRY` to use an enterprise mirror. No overseas source is a default
+fallback, and the scripts never use `curl | sh`, `sudo`, global npm installs,
+or an OS package-manager mutation.
 
 ## Install and verify dependencies
 

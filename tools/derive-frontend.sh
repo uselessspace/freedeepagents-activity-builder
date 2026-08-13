@@ -132,6 +132,8 @@ cat <<EOF
 
      Reuse Node 20 or 22 with npm 10; prefer Node 20 to mirror the runtime.
      Card-only activities never run this frontend derivation.
+     If missing, announce the domestic-mirror download, then run:
+       bash $PACKAGE_ROOT/tools/bootstrap-authoring-env.sh --project-root $REPO_ROOT --with-node
 
   3) Install dependencies and build:
        cd activities/$ACTIVITY_ID/site
@@ -153,6 +155,8 @@ cat <<EOF
 
   6) Resolve or create $REPO_ROOT/.venv using:
        $PACKAGE_ROOT/references/python-environment.md
+     If Python 3.12 is missing, announce the domestic-mirror download, then run:
+       bash $PACKAGE_ROOT/tools/bootstrap-authoring-env.sh --project-root $REPO_ROOT --with-node
 
   7) Verify with that environment:
        <project-python> $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT

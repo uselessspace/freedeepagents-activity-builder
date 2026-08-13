@@ -12,9 +12,10 @@ Static Preview sync rebuilds the frontend server-side.
 
 **Local dev outside the runtime** (faster inner loop while authoring):
 
-This project supports Node 20 or 22 with npm 10. `.nvmrc` selects the preferred
-Node 20 runtime when your existing version manager supports it; a compatible
-Node 22 installation may be reused.
+This project supports Node 20 or 22 with npm 10. A compatible installation may
+be reused; otherwise the parent activity project may provide a project-local
+Node 20 runtime under `.fda-tools/`. `.nvmrc` remains available to version
+managers and does not trigger a global install.
 
 ```bash
 node --version

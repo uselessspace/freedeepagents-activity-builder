@@ -87,6 +87,8 @@ Next steps (in order):
      (see $PACKAGE_ROOT/references/python-dependencies.md).
   4) Resolve or create the project-local Python environment first:
        $REPO_ROOT/.venv  (see $PACKAGE_ROOT/references/python-environment.md)
+     If Python 3.12 is missing, announce the domestic-mirror download, then run:
+       bash $PACKAGE_ROOT/tools/bootstrap-authoring-env.sh --project-root $REPO_ROOT
   5) Run verifier (Python >= 3.10, no platform repo needed):
        <project-python> $PACKAGE_ROOT/tools/activity_verifier.py $REPO_ROOT
   6) Run the offline testkit smoke (no platform repo needed):

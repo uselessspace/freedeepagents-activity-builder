@@ -12,6 +12,8 @@ placing environment files in the uploaded activity.
 - `<builder-root>` and `<project-root>` may be the same writable standalone
   checkout; in that case its root `.venv` is still the project environment.
 - Ensure `<project-root>/.gitignore` contains `.venv/`.
+- Managed runtime downloads, when needed, live in `<project-root>/.fda-tools/`;
+  keep that directory ignored as well.
 - Invoke the environment's Python by explicit path; activation is optional.
 - Current FDA targets Python 3.12. If another runtime is the deployment target,
   its `pyproject.toml`, `.python-version`, and pinned requirements win.
@@ -31,39 +33,52 @@ checks that import runtime `app.*`.
    matching interpreter.
 4. If `.venv` exists but is incompatible, do not overwrite or delete it. Report
    the detected version and ask before replacing or choosing another directory.
-5. If the matching base interpreter is absent, stop and ask the user to install
-   or authorize installation of it. Do not silently use an older Python, install
-   system-wide packages, or let a tool download an interpreter without notice.
+5. If the matching base interpreter is absent, use the bundled bootstrap script
+   after telling the user it will download a checksum-verified runtime from the
+   configured domestic mirror into `<project-root>/.fda-tools/`. Running that
+   command is the visible authorization boundary; it never needs administrator
+   privileges or changes the system Python.
 6. Install only dependencies needed by the next check, using target-runtime
    pins. Never run an unbounded `pip install -U`.
 
-## Create or verify the environment
+## Recommended bootstrap
 
-macOS / Linux, from `<project-root>`:
+The scripts reuse a compatible `.venv` first. If Python 3.12 is unavailable,
+they install pinned CPython 3.12.13 from npmmirror into the project-local
+`.fda-tools/` directory, verify the published SHA-256 checksum, create `.venv`,
+and configure pip to use the Tsinghua mirror. No overseas source is used by
+default and there is no `curl | sh`, global package install, or administrator
+mutation.
+
+macOS / Linux:
 
 ```bash
-if [ -x .venv/bin/python ]; then
-  .venv/bin/python -c 'import sys; print(sys.executable, sys.version)'
-else
-  python3.12 -m venv .venv
-  .venv/bin/python -c 'import sys; assert sys.version_info[:2] == (3, 12); print(sys.executable)'
-fi
+bash <builder-root>/tools/bootstrap-authoring-env.sh \
+  --project-root <project-root>
 ```
 
-Windows PowerShell, from `<project-root>`:
+Windows PowerShell:
 
 ```powershell
-if (Test-Path ".venv\Scripts\python.exe") {
-  & ".venv\Scripts\python.exe" -c "import sys; print(sys.executable, sys.version)"
-} else {
-  py -3.12 -m venv .venv
-  & ".venv\Scripts\python.exe" -c "import sys; assert sys.version_info[:2] == (3, 12); print(sys.executable)"
-}
+& "<builder-root>\tools\bootstrap-authoring-env.ps1" `
+  -ProjectRoot "<project-root>"
 ```
 
-These snippets inspect an existing environment but deliberately do not
-overwrite an incompatible one. Check the printed version before continuing.
-For a non-current FDA target, substitute its required Python minor version.
+Replace both placeholders with real absolute paths. The scripts refuse to
+overwrite an incompatible or incomplete `.venv` / managed runtime. They also
+write `.fda-tools/authoring-env.sh` or `authoring-env.ps1`; source that file in
+a new shell to restore the project-local PATH and domestic pip/npm indexes.
+
+Defaults can be replaced by an enterprise mirror without editing the script:
+
+```text
+FDA_PYTHON_MIRROR  Python standalone release root
+FDA_PIP_INDEX      Python package index URL
+```
+
+For a non-current FDA target whose runtime does not use Python 3.12, do not run
+this pinned bootstrap unchanged. Follow that runtime repository's own version
+and environment setup instead.
 
 ## Install only the needed layer
 
@@ -75,7 +90,7 @@ The bundled verifier is stdlib-only. A compatible interpreter is enough:
 
 The offline testkit has no dependencies of its own, but importing an
 activity's `tools.py` may need target-baseline modules such as
-`langchain_core`, plus packages declared by that activity. For Builder 0.4.36
+`langchain_core`, plus packages declared by that activity. For Builder 0.4.37
 and the current FDA baseline, use the validated pins rather than an old
 LangChain major:
 

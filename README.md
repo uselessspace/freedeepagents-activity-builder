@@ -61,7 +61,7 @@ The deliverable is `activities/<activity_type_id>/`. FDA Dev Client and
 |-- schemas/                         # JSON schemas mirrored by verifier rules
 |-- templates/activity-template/     # backend scaffold
 |-- testkit/                         # offline pytest/CLI harness (zero deps, no platform repo)
-`-- tools/                           # scaffold, derive, setup, verifier scripts
+`-- tools/                           # bootstrap, scaffold, derive, setup, verifier scripts
 ```
 
 ## Workflow Skills
@@ -132,17 +132,18 @@ and rationale: [policies/runtime-boundary.md](policies/runtime-boundary.md).
 ## Install
 
 See [INSTALL.md](INSTALL.md) for Codex plugin installation, Claude plugin
-installation, repo-local link/copy fallback, and the project-local Python
-environment preflight. A Coding Agent reuses a compatible
-`<project-root>/.venv` or creates it there before running Python tools; it does
-not install globally, into a separate plugin cache, or into the uploaded
-activity directory.
+installation, repo-local link/copy fallback, and the project-local authoring
+bootstrap. A Coding Agent reuses a compatible `<project-root>/.venv`; when the
+runtime is missing, the bundled POSIX or PowerShell script installs pinned,
+checksum-verified Python from a domestic mirror into the project. It does not
+install globally, into a separate plugin cache, or into the uploaded activity
+directory.
 
-Static Preview activities additionally use the conditional
-[Node environment preflight](references/node-environment.md): Node 20 or 22
-with npm 10 is supported, Node 20 is recommended to mirror the runtime, and a
-compatible existing Node 22 installation may be reused. Card-only activities
-skip Node setup entirely.
+Static Preview activities pass the bootstrap's Node flag: Node 20 or 22 with
+npm 10 is supported, a compatible environment is reused, and otherwise pinned
+Node 20 is installed from a domestic mirror under `.fda-tools/`. Card-only
+activities skip Node setup entirely. See the
+[Node environment preflight](references/node-environment.md).
 
 ## Verification Authority
 

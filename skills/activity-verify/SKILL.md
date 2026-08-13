@@ -20,7 +20,8 @@ description: >-
 唯一维护；按其顺序执行，不另造一套门禁。
 
 先按 [`../../references/python-environment.md`](../../references/python-environment.md)
-解析兼容的项目 Python；没有时在 `<project-root>/.venv` 创建。下列
+解析兼容的项目 Python；没有时用其中的国内镜像 bootstrap 在
+`<project-root>/.fda-tools/` + `.venv/` 创建。下列
 `<project-python>` 指该环境；仅 strict check 的 `<runtime-python>` 指完整 FDA
 runtime 环境。两者都必须替换为实际解释器路径。
 

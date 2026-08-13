@@ -7,9 +7,19 @@ Skip for Card-only activities. Start from the `## Frontend Decision` block from
 
 Follow [`../references/node-environment.md`](../references/node-environment.md)
 before deriving or building. Reuse Node 20 or 22 with npm 10; prefer Node 20 to
-mirror the current `node:20-slim` runtime. If no compatible Node exists, use an
-already-installed version manager to select Node 20 or ask the user to install
-or authorize it. Do not silently mutate the machine or install a global latest.
+mirror the current `node:20-slim` runtime. If no compatible Node exists, tell
+the user the next command installs pinned, checksum-verified Node from the
+configured domestic mirror into the project, then run:
+
+```bash
+bash <builder-root>/tools/bootstrap-authoring-env.sh \
+  --project-root <project-root> \
+  --with-node
+```
+
+Use `bootstrap-authoring-env.ps1 -ProjectRoot <project-root> -WithNode` on
+Windows. The script changes no global runtime and has no overseas-source
+fallback.
 
 ## Step 1: derive
 

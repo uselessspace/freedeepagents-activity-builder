@@ -24,7 +24,7 @@ to a standalone clone.
 
 Use one Builder bundle per run. Read its plugin manifest version and do not mix
 scripts/templates from a repo checkout with Skills loaded from a different
-plugin cache. Builder 0.4.36 targets the current FDA contract based on Python
+plugin cache. Builder 0.4.37 targets the current FDA contract based on Python
 3.12, DeepAgents 0.7.x, and LangChain Core 1.x. For another target runtime,
 its `app/models.py` and pinned requirements are authoritative; run
 `tools/check_schema_sync.py` in that runtime or install the Builder release
@@ -41,28 +41,52 @@ writable standalone Builder clone is also the activity project, its root
 `.venv` is valid because `<builder-root>` and `<project-root>` are the same.
 
 Do not overwrite an incompatible `.venv`, silently downgrade Python, or install
-into the system interpreter. If Python 3.12 itself is unavailable, report that
-fact and ask the user to install or authorize installation of it. Full
-cross-platform commands, dependency layers, and evidence requirements are in
+into the system interpreter. If Python 3.12 itself is unavailable, tell the
+user the next command downloads a pinned, checksum-verified runtime from a
+domestic mirror, then run the bundled POSIX or PowerShell bootstrap. It installs
+only in `<project-root>/.fda-tools/` and `.venv/`. Full cross-platform commands,
+mirror overrides, dependency layers, and evidence requirements are in
 [`references/python-environment.md`](references/python-environment.md).
 
 ### Coding Agent Node-environment preflight (Static Preview only)
 
 Card-only activities do not need Node. When the activity contains
-`site/package.json`, check Node before deriving or building: Builder 0.4.36
+`site/package.json`, check Node before deriving or building: Builder 0.4.37
 supports Node 20 or 22 with npm 10, and recommends Node 20 because the current
 FDA frontend build runtime uses `node:20-slim`. A compatible existing Node 22
 installation is valid and does not need to be downgraded.
 
-If no compatible Node exists, use an already-installed version manager to
-select Node 20. If none is available, report the situation and ask the user to
-install or authorize Node 20 LTS; do not silently run remote installers, use
-administrator privileges, or change the global runtime. The activity project
-pins the preference with `site/.nvmrc`, constrains compatibility through
+If no compatible Node exists, tell the user the bootstrap will download a
+pinned Node 20 from a domestic mirror and run it with the Static Preview flag.
+The runtime stays under `<project-root>/.fda-tools/`; the script verifies its
+published checksum and does not use administrator privileges or change the
+global runtime. The activity project pins the preference with `site/.nvmrc`, constrains compatibility through
 `site/package.json.engines`, installs dependencies locally in
 `site/node_modules/`, and keeps `site/package-lock.json`. Full cross-platform
 logic and evidence requirements are in
 [`references/node-environment.md`](references/node-environment.md).
+
+Recommended commands after replacing both placeholders with absolute paths:
+
+```bash
+# macOS / Linux; omit --with-node for Card-only
+bash <builder-root>/tools/bootstrap-authoring-env.sh \
+  --project-root <project-root> \
+  --with-node
+```
+
+```powershell
+# Windows PowerShell; omit -WithNode for Card-only
+& "<builder-root>\tools\bootstrap-authoring-env.ps1" `
+  -ProjectRoot "<project-root>" `
+  -WithNode
+```
+
+The defaults use npmmirror for Python/Node distributions, Tsinghua PyPI for
+Python packages, and npmmirror for npm packages. They do not silently fall back
+to an overseas source. Enterprise mirrors can be supplied through the
+`FDA_PYTHON_MIRROR`, `FDA_NODE_MIRROR`, `FDA_PIP_INDEX`, and
+`FDA_NPM_REGISTRY` environment variables.
 
 > **Install the whole package, not individual skills.** The skills cross-link
 > each other and the shared `policies/` / `references/` / `workflows/` /
@@ -200,7 +224,8 @@ Copy-Item -Recurse `
 The destination must not already contain a stale partial copy. If you copy
 instead of linking, replace that copy after every Builder update.
 
-The link/copy commands above are native PowerShell. Builder authoring helpers
+The link/copy commands above are native PowerShell, and environment bootstrap
+has the native `tools/bootstrap-authoring-env.ps1` entry. Other Builder helpers
 under `tools/*.sh` still require Git Bash or WSL on Windows; run them from the
 activity project's mounted path. The Python verifier and testkit can run
 directly in PowerShell through `<project-root>/.venv\Scripts\python.exe`.

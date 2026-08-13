@@ -56,10 +56,13 @@ FDA Dev Client / `fda-dev` 同步。本文件是 Codex + Claude 插件的总入�
 > 本 Skill 与子文档中的 `<builder-root>` 就是包含本文件的目录；独立 clone 使用
 > 仓库根，只有 monorepo checkout 才使用其 `packages/` 下的 Builder 目录。
 > 首次运行 Python 工具前按 [`references/python-environment.md`](references/python-environment.md)
-> 检查环境；没有兼容环境时在 `<project-root>/.venv` 新建，不写全局环境、非项目的
-> 插件 cache 或最终活动目录。只有 Static Preview 在前端派生/构建前按
+> 检查环境；没有兼容环境时先说明会下载项目本地运行时，再执行
+> `tools/bootstrap-authoring-env.sh`（Windows 用同名 `.ps1`）在
+> `<project-root>/.fda-tools/` + `.venv/` 新建。默认 Python/Node 分发与包索引均走
+> 国内源并校验下载，不写全局环境、非项目插件 cache 或最终活动目录。只有
+> Static Preview 在前端派生/构建前按
 > [`references/node-environment.md`](references/node-environment.md) 检查 Node；
-> Card-only 跳过，兼容 Node 20/22 + npm 10，优先 Node 20 对齐 runtime。
+> 调 bootstrap 的 Node 开关；Card-only 跳过，兼容 Node 20/22 + npm 10。
 
 ## 两条铁律（动手前必读）
 

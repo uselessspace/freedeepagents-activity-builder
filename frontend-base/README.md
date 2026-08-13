@@ -6,7 +6,8 @@
 
 仅 Static Preview 需要 Node。派生/构建前按
 [`references/node-environment.md`](../references/node-environment.md) 检查环境：
-支持 Node 20/22 + npm 10，推荐 Node 20 以对齐 runtime；Card-only 跳过。
+支持 Node 20/22 + npm 10，推荐 Node 20 以对齐 runtime；缺失时运行其中的国内
+镜像项目本地 bootstrap，Card-only 跳过。
 
 ```bash
 bash <builder-root>/tools/derive-frontend.sh <activity-id> --name "<English Name>" --accent "#7c4dff"
