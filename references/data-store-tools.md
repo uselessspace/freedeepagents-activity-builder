@@ -2,7 +2,7 @@
 
 > **定位**：本文件是 LLM 在 `data_schema_enabled=true` 下能调的 5 个 data store 工具的**随包分发权威**。终极源头是平台仓库的 `app/card_system/data_tools.py` 与 `app/card_system/data_store.py`（外部不可达，路径仅供维护者对照）；发现本文与真实运行时行为不一致，按 bug 反馈而不是自行猜测。
 
-> **typed-KV 是 card-system 模式的默认业务存储**。每个新活动都要在 `runtime.json` 开 `data_schema_enabled: true` 并提供 `data.schema.json`。所有写入受 schema 即时校验，所有读出由 runtime 自动注入到 system prompt（除非声明 `x-auto-inject: false`）。
+> **typed-KV 是小型 Prompt-aware 状态，不再是新活动的无条件默认存储**。新活动默认优先 SQLite；只有状态有限且确实需要自动进入多数 Agent turn 时，才在 `runtime.json` 开 `data_schema_enabled: true` 并提供 `data.schema.json`。SQLite/typed-KV/hybrid 的选择见 [data-mode-selection.md](data-mode-selection.md)。
 
 ## Contents
 

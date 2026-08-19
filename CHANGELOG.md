@@ -1,5 +1,16 @@
 # Changelog — freedeepagents-activity-builder
 
+## 0.4.41 (2026-08-19)
+
+新增受控 SQLite 数据模式，并把新活动的默认存储决策从“无条件 typed-KV”调整为
+“SQLite 优先、Prompt-aware 小状态按需 typed-KV、强检索使用 hybrid”。
+
+- Classification 新增 data mode、数据库作用域、Agent/用户接口权限与检索模式。
+- 新 scaffold 默认声明实例级 managed SQLite，并提供版本化 SQL migration 目录。
+- 新增 SQLite 与数据模式选择参考；明确 Agent 无数据库文件和 raw SQL 工具访问。
+- runtime schema/verifier/testkit 支持 `database` 配置、迁移和离线 `ctx.database`。
+- 未声明 `database` 的现有活动保持原工具、Prompt、挂载和数据路径不变。
+
 ## 0.4.40 (2026-08-13)
 
 修复 Windows PowerShell 5.1 生成 UTF-8 BOM 导致项目配置不可用的问题。

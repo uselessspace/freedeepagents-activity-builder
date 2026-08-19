@@ -1,5 +1,14 @@
 {
   "llm_timeout_seconds": 300,
   "docker_timeout_seconds": 300,
-  "data_schema_enabled": true
+  "data_schema_enabled": false,
+  "database": {
+    "enabled": true,
+    "engine": "sqlite",
+    "scope": "instance",
+    "access": {
+      "agent": "read_write",
+      "user": "none"
+    }
+  }
 }

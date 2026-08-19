@@ -10,8 +10,9 @@ persistent inspectable surface.
 ```text
 activities/project-map/
 |-- manifest.json          # includes dsl_builder_module, optional tools_module
-|-- runtime.json           # data_schema_enabled: true (card-system mode is implicit)
-|-- data.schema.json       # typed-KV business data
+|-- runtime.json           # classified SQLite / typed-KV / hybrid mode
+|-- database/migrations/   # default SQLite schema (when enabled)
+|-- data.schema.json       # optional Prompt-aware state (typed-KV / hybrid)
 |-- preview_actions.json   # optional SPA -> standard Agent turn allowlist
 |-- AGENTS.md              # thin entrypoint
 |-- dsl_builder.py         # build(instance_dir) -> SPA DSL dict
@@ -42,11 +43,12 @@ activities/project-map/
 
 ## Flow
 
-1. The agent emits cards for turn feedback and uses typed-KV for durable data.
+1. The agent emits cards for turn feedback and uses the classified data mode.
 2. Activity tools update user-semantic state, such as `add_task` or
    `link_dependency`.
-3. `dsl_builder.py` reads `data.json` and returns the private DSL consumed by
-   `site/`.
+3. `dsl_builder.py` reads an Activity-maintained projection from instance files;
+   direct database reads/writes go through Activity handlers/tools with
+   `ctx.database`.
 4. The SPA fetches `/preview/project-map/<instance_id>/api/dsl.json` and renders
    the dashboard, graph, canvas, timeline, or form workflow.
 5. Optionally, after a successful activity operation, the backend calls
@@ -79,7 +81,8 @@ provider credentials. Detailed request examples:
 ## Boundary
 
 - Frontend code stays inside `activities/<id>/site/`; the activity ships only static assets — no backend services of its own.
-- Activity-private state lives in `data.schema.json` and is read through the activity's `dsl_builder.py` output by that activity's own `site/` SPA.
+- Activity-private data lives in the classified store. The SPA reads private DSL
+  projections and calls domain handlers; it never receives SQL or a database path.
 - Activity decisions stay in the activity's host SKILL.md + tools.py; generic runtime code remains activity-neutral.
 - Agent navigation payload semantics stay in the activity; durable selection or
-  workflow state still belongs in typed-KV and the DSL.
+  workflow state still belongs in the Activity store and DSL.

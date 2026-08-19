@@ -35,6 +35,7 @@ import hashlib
 import importlib.util
 import json
 import re
+import sqlite3
 import sys
 import tempfile
 import threading
@@ -297,10 +298,49 @@ def list_keys(instance_dir: Path, schema: dict[str, Any]) -> dict[str, Any]:
 
 
 # ── stub installation + fake ctx ─────────────────────────────────────────────
+class OfflineSQLiteDatabase:
+    """Small testkit mirror of the runtime's trusted ``ctx.database`` API."""
+
+    def __init__(self, path: Path, access: str, migrations_dir: Path) -> None:
+        self.path = Path(path)
+        self.access = access
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        connection = sqlite3.connect(self.path)
+        try:
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS _fda_schema_migrations "
+                "(name TEXT PRIMARY KEY, applied_at TEXT DEFAULT CURRENT_TIMESTAMP)"
+            )
+            applied = {str(row[0]) for row in connection.execute("SELECT name FROM _fda_schema_migrations")}
+            for migration in sorted(migrations_dir.glob("*.sql")) if migrations_dir.is_dir() else []:
+                if migration.name in applied:
+                    continue
+                sql = migration.read_text(encoding="utf-8")
+                quoted = migration.name.replace("'", "''")
+                connection.executescript(
+                    f"BEGIN IMMEDIATE;\n{sql}\nINSERT INTO _fda_schema_migrations(name) VALUES ('{quoted}');\nCOMMIT;"
+                )
+            connection.commit()
+        finally:
+            connection.close()
+
+    def connect(self) -> sqlite3.Connection:
+        if self.access == "read":
+            connection = sqlite3.connect(f"file:{self.path.as_posix()}?mode=ro", uri=True)
+            connection.execute("PRAGMA query_only=ON")
+        else:
+            connection = sqlite3.connect(self.path)
+            connection.execute("PRAGMA journal_mode=WAL")
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys=ON")
+        connection.execute("PRAGMA busy_timeout=5000")
+        return connection
+
+
 class FakeCtx:
     """The subset of the runtime ctx that activity tools.py / dsl_builder use."""
 
-    def __init__(self, activity_dir: Path, instance_dir: Path) -> None:
+    def __init__(self, activity_dir: Path, instance_dir: Path, database: OfflineSQLiteDatabase | None = None) -> None:
         self.activity_dir = Path(activity_dir)
         self.instance_dir = Path(instance_dir)
         self.activity_type_id = self.activity_dir.name
@@ -319,6 +359,7 @@ class FakeCtx:
         # assign a duck-typed fake (chat / chat_json / vision) in your test.
         # See references/ctx-llm.md.
         self.llm = None
+        self.database = database
 
     def notify_dsl_update(self) -> None:
         self.dsl_updates += 1
@@ -427,10 +468,56 @@ class FakeCtx:
 
 def _install_stub_modules() -> None:
     """Register stub app.* modules in sys.modules so activity imports resolve."""
-    if "app.card_system.data_store" in sys.modules:
-        return
     app_mod = sys.modules.setdefault("app", types.ModuleType("app"))
     app_mod.__path__ = []  # mark as package
+
+    if "app.resource_policy" not in sys.modules:
+        resource_policy_mod = types.ModuleType("app.resource_policy")
+        resource_mime_for_ext = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+            ".gif": "image/gif",
+            ".wav": "audio/wav",
+            ".weba": "audio/webm",
+            ".m4a": "audio/mp4",
+            ".mp3": "audio/mpeg",
+            ".oga": "audio/ogg",
+            ".pdf": "application/pdf",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".doc": "application/msword",
+            ".xls": "application/vnd.ms-excel",
+            ".ppt": "application/vnd.ms-powerpoint",
+            ".md": "text/markdown",
+            ".txt": "text/plain",
+        }
+        resource_ext_for_mime = {mime: extension for extension, mime in reversed(tuple(resource_mime_for_ext.items()))}
+        resource_ext_for_mime.update(
+            {
+                "audio/x-wav": ".wav",
+                "audio/wave": ".wav",
+            }
+        )
+
+        def normalize_resource_mime(content_type: str | None) -> str:
+            return (content_type or "").split(";", 1)[0].strip().lower()
+
+        def extension_for_resource_mime(content_type: str) -> str:
+            return resource_ext_for_mime.get(normalize_resource_mime(content_type), "")
+
+        resource_policy_mod.MANAGED_RESOURCE_MIMES = frozenset(resource_ext_for_mime)
+        resource_policy_mod.RESOURCE_EXT_FOR_MIME = resource_ext_for_mime
+        resource_policy_mod.RESOURCE_MIME_FOR_EXT = resource_mime_for_ext
+        resource_policy_mod.normalize_resource_mime = normalize_resource_mime
+        resource_policy_mod.extension_for_resource_mime = extension_for_resource_mime
+        sys.modules["app.resource_policy"] = resource_policy_mod
+        app_mod.resource_policy = resource_policy_mod
+
+    if "app.card_system.data_store" in sys.modules:
+        return
 
     errors_mod = types.ModuleType("app.errors")
     errors_mod.AppError = AppError
@@ -474,7 +561,20 @@ def activity_harness(activity_dir: str | Path):
         instance_dir.mkdir(parents=True)
         schema = load_data_schema(activity_dir)
         initialize_data_store(instance_dir, schema)
-        yield FakeCtx(activity_dir, instance_dir)
+        database = None
+        runtime_path = activity_dir / "runtime.json"
+        runtime = json.loads(runtime_path.read_text(encoding="utf-8")) if runtime_path.exists() else {}
+        database_config = runtime.get("database") if isinstance(runtime, dict) else None
+        if isinstance(database_config, dict) and database_config.get("enabled") is True:
+            access_config = database_config.get("access") or {}
+            agent_access = access_config.get("agent", "none") if isinstance(access_config, dict) else "none"
+            if agent_access != "none":
+                database = OfflineSQLiteDatabase(
+                    Path(tmp) / "managed" / "activity.sqlite3",
+                    str(agent_access),
+                    activity_dir / "database" / "migrations",
+                )
+        yield FakeCtx(activity_dir, instance_dir, database)
 
 
 def _load_module(path: Path, mod_name: str):

@@ -7,7 +7,16 @@ All runtime modes pass through here. Stop before any frontend / image / verifica
 > the current directory if not in a git repo — so don't run it from inside
 > `<builder-root>`.
 
-Activities run in **card-system mode** with **typed-KV business data** (`runtime.json.data_schema_enabled: true`). The scaffolded template, host SKILL.md, and policies all reference the card-system tool surface (`card_emit_template`, `artifact_emit`, `memory_add`, plus retract variants). Business state lives in typed-KV `/instance/data.json` (declared via `data.schema.json`) and is mutated through activity @tools or the generic `data_*` tools. Runtime-derived state (`phase` / counts / `last_*_id`) is computed at turn end from emitted cards and injected via `current_instance_state`. When done, just stop; the runtime assembles the final output from your tool calls. 工具的权威签名与调用范例见 [../references/card-system-tools.md](../references/card-system-tools.md)；活动 @tool 参数 schema（DeepSeek strict 模式）与其他输出纪律见 [../policies/llm-output-discipline.md](../policies/llm-output-discipline.md)。
+Activities run in **card-system mode** with the classified data mode. New
+activities default to managed SQLite; enable typed-KV only for small bounded
+state that benefits from prompt projection, or combine both as hybrid. The
+scaffolded template, host SKILL.md, and policies reference the card-system tool
+surface (`card_emit_template`, `artifact_emit`, `memory_add`, plus retract
+variants). SQLite is reached only through Activity-owned domain tools using
+`ctx.database`; typed-KV uses `/instance/data.json` and `data_*`. Runtime-derived
+state (`phase` / counts / `last_*_id`) remains independent. 工具的权威签名与调用范例见
+[../references/card-system-tools.md](../references/card-system-tools.md)；存储选择见
+[../references/data-mode-selection.md](../references/data-mode-selection.md)。
 
 ## Step 1: Scaffold from template
 
@@ -29,7 +38,7 @@ standalone clone and the Builder package directory in a monorepo. The script:
 | # | Artifact | Path | Reference |
 |---|---|---|---|
 | 1 | manifest | `activities/<id>/manifest.json` | [../references/manifest-fields.md](../references/manifest-fields.md) + `<builder-root>/schemas/manifest.schema.json` |
-| 2 | runtime config | `activities/<id>/runtime.json` | [../references/runtime-config.md](../references/runtime-config.md) + `<builder-root>/schemas/runtime.schema.json` (set `data_schema_enabled: true`) |
+| 2 | runtime config | `activities/<id>/runtime.json` | [../references/runtime-config.md](../references/runtime-config.md) + `<builder-root>/schemas/runtime.schema.json` (set classified database/typed-KV mode) |
 | 3 | data schema | `activities/<id>/data.schema.json` | [../references/data-store-tools.md](../references/data-store-tools.md) — declares the activity's typed-KV business shape with `default`, `properties`, optional per-key `x-auto-inject` |
 | 4 | activity entrypoint | `activities/<id>/AGENTS.md` (≤80 lines) | [../policies/agents-md-thin.md](../policies/agents-md-thin.md) |
 | 5 | host skill | `activities/<id>/skills/<id>-host/SKILL.md` (≤120 lines) | [../references/host-skill-template.md](../references/host-skill-template.md) |
@@ -53,7 +62,7 @@ Every Static Preview activity declares the DSL builder:
 
 Then add only the interaction modules the Classification requires:
 
-- `tools_module: "tools"` + `tools.py::make_tools(ctx)` when the Agent needs user-semantic activity tools. Wrap typed-KV writes (for example `add_note(content, tags)`) instead of making the LLM compose low-level store calls. Multi-store fan-out follows [multi-store-tool-design.md](../policies/multi-store-tool-design.md).
+- `tools_module: "tools"` + `tools.py::make_tools(ctx)` when the Agent needs user-semantic activity tools. Wrap SQLite/typed-KV writes (for example `add_note(content, tags)`) instead of exposing SQL or making the LLM compose low-level store calls. Multi-store fan-out follows [multi-store-tool-design.md](../policies/multi-store-tool-design.md).
 - `handlers_module: "handlers"` + `handlers.py::make_handlers(ctx)` when the SPA needs deterministic reads/writes or direct capability helpers without an Agent. If both Agent and SPA perform the same business operation, put the implementation in a shared plain function and expose thin tool/handler adapters so validation and state transitions stay identical.
 - `preview_actions.json` when `spa_interaction_axis` is `agent-turns` or `mixed`; route its structured action in the activity Skill and submit through `POST api/agent/turns`. See [preview-agent-turns.md](../references/preview-agent-turns.md).
 - `activities/<id>/dsl_builder.py` exporting `build(instance_dir) -> dict` — pure function reading `data.json` and returning the DSL shape your SPA consumes.
@@ -102,9 +111,10 @@ or a runtime capability before adding a dependency. Full rules:
 
 - [ ] No activity-specific code in `app/` / `schemas/` ([policy](../policies/runtime-boundary.md))
 - [ ] manifest.json validates against `<builder-root>/schemas/manifest.schema.json`
-- [ ] runtime.json validates against `<builder-root>/schemas/runtime.schema.json` with `data_schema_enabled: true` set
+- [ ] runtime.json validates against `<builder-root>/schemas/runtime.schema.json` with the classified data mode explicitly set
+- [ ] SQLite/hybrid: migrations contain no TODO marker; every Agent/user database action is wrapped by a domain tool/handler
 - [ ] Every activity @tool in `tools.py` passes the DeepSeek strict-mode schema self-check (no bare `list`/`dict` params; parameterized containers like `list[str]` / `list[dict]` are legal, JSON-encoded `str` remains the most cross-model-compatible fallback for complex/optional-field payloads — see [../policies/llm-output-discipline.md](../policies/llm-output-discipline.md) §8d; run `skills/activity-verify/scripts/strict-tool-schema-check.py` to confirm)
-- [ ] data.schema.json exists with `type: object`, a top-level `default` block, `properties` covering every business field, and `x-auto-inject` set per key (true for fields the LLM should see in the prompt; false for secrets / large sets)
+- [ ] typed-KV/hybrid only: data.schema.json exists with `type: object`, a top-level `default` block, `properties` covering every Prompt-aware field, and `x-auto-inject` set per key
 - [ ] Every third-party Python package imported by `tools.py` / `dsl_builder.py` / `handlers.py` (or their helpers) is declared, pinned with `==`, in `activities/<id>/requirements.txt`; stdlib / platform-baseline / `app.*` are NOT declared ([reference](../references/python-dependencies.md))
 - [ ] No tool/handler starts detached work that can outlive the call; every thread/task/future is joined or awaited, pending jobs persist plain data only, and every resume call uses its fresh `ctx` ([reference](../references/handler-context-lifecycle.md))
 - [ ] If Static Preview: manifest has `dsl_builder_module`; `dsl_builder.py` and `site/` exist. `tools_module`, `handlers_module`, and `preview_actions.json` appear only when their classified interaction path needs them
@@ -112,7 +122,7 @@ or a runtime capability before adding a dependency. Full rules:
       payload is JSON-safe, contains no user-routing field or low-level browser
       operation; SPA handles the event on the existing DSL stream;
       missing/duplicate delivery is harmless
-- [ ] Activity @tools (in `tools.py`) wrap typed-KV writes with user-semantic names; tool names do not collide with built-ins
+- [ ] Activity @tools wrap SQLite/typed-KV writes with user-semantic names; tool names do not collide with built-ins and no raw SQL tool exists
 - [ ] AGENTS.md ≤80 lines; routes to `skills/<id>-host/SKILL.md`
 - [ ] `skills/<id>-cards/SKILL.md` exists and is the presentation-only card catalog referenced by AGENTS/host
 - [ ] no `TODO_ACTIVITY_AUTHOR`, Builder/project path placeholder, `<id>`, or `<activity_type_id>` residue remains in completed activity instructions

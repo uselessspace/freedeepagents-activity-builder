@@ -24,7 +24,7 @@ to a standalone clone.
 
 Use one Builder bundle per run. Read its plugin manifest version and do not mix
 scripts/templates from a repo checkout with Skills loaded from a different
-plugin cache. Builder 0.4.40 targets the current FDA contract based on Python
+plugin cache. Builder 0.4.41 targets the current FDA contract based on Python
 3.12, DeepAgents 0.7.x, and LangChain Core 1.x. For another target runtime,
 its `app/models.py` and pinned requirements are authoritative; run
 `tools/check_schema_sync.py` in that runtime or install the Builder release
@@ -51,7 +51,7 @@ mirror overrides, dependency layers, and evidence requirements are in
 ### Coding Agent Node-environment preflight (Static Preview only)
 
 Card-only activities do not need Node. When the activity contains
-`site/package.json`, check Node before deriving or building: Builder 0.4.40
+`site/package.json`, check Node before deriving or building: Builder 0.4.41
 supports Node 20 or 22 with npm 10, and recommends Node 20 because the current
 FDA frontend build runtime uses `node:20-slim`. A compatible existing Node 22
 installation is valid and does not need to be downgraded.

@@ -59,10 +59,22 @@ An empty list means no opt-in runtime tool.
 `runtime_mode` is derived from `frontend_axis`, not chosen independently:
 `card-only` → `Card-only`, `static-preview` → `Static Preview`.
 
+`data_mode`:
+
+- `none` when the activity has no durable business state.
+- `sqlite` (default) for growing/queryable/transactional records.
+- `typed-kv` for small bounded Prompt-aware state.
+- `hybrid` for a typed-KV digest plus SQLite/sidecar corpus or index.
+
+For SQLite/hybrid classify scope (`instance|activity_type`), Agent/user access
+(`none|read|read_write`), and retrieval (`none|structured-query|indexed-evidence`).
+Use [../../references/data-mode-selection.md](../../references/data-mode-selection.md)
+for the decision tree; typed-KV alone is not a search engine.
+
 ## Rules
 
-- Card-only activities generate card templates, typed-KV schema, host skill, and
-  optional activity-owned tools.
+- Card-only activities generate card templates, the classified data store,
+  host skill, and optional activity-owned tools.
 - Static Preview activities must generate `site/`, `dsl_builder.py`, and
   optional `tools.py`, then build to `site/dist/`.
 - `agent-to-preview` requires `frontend_axis: static-preview`. It uses the
@@ -75,6 +87,9 @@ An empty list means no opt-in runtime tool.
 - External services and business decisions live in activity-owned tools and
   skills. Do not move activity policy into `app/` or
   `schemas/`.
+- `activity_type` database scope can cross user boundaries. The Activity's
+  domain tools/handlers must enforce row-level ownership with trusted
+  `ctx.user_id` unless the data is intentionally communal.
 - The classification fixes **which files the activity directory must contain** — it does not
   constrain the design. Do not pattern-match the new activity onto an existing
   one; design from the Brief, bounded only by the platform contract (cards
@@ -93,6 +108,11 @@ End this stage with a block named exactly:
 - navigation_axis:
 - spa_interaction_axis:
 - runtime_mode:
+- data_mode:
+- database_scope:
+- agent_database_access:
+- user_database_access:
+- retrieval_mode:
 - implementation_notes:
 ```
 

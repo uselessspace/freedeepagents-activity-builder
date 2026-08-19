@@ -20,7 +20,7 @@ FDA Dev Client / `fda-dev` 同步。本文件是 Codex + Claude 插件的总入�
 
 | 你的活动需要… | 加什么 | 形态长什么样 |
 |---|---|---|
-| 聊天 / 卡片 / 表单就够了 | card-only 起步（新活动已含 typed-KV） | [examples/card-only.md](examples/card-only.md) |
+| 聊天 / 卡片 / 表单就够了 | card-only 起步（新活动默认 SQLite，按需改 typed-KV / hybrid） | [examples/card-only.md](examples/card-only.md) |
 | 读取文档、语音转写、生成语音 | + `read_document` / `asr` / `tts_generate` | [policies/capabilities.md](policies/capabilities.md) |
 | 生成 / 编辑图片 | + image 能力 | [examples/card-image.md](examples/card-image.md) |
 | 一块持久、可检视的可视化界面 | → static-preview | [examples/static-preview.md](examples/static-preview.md) |
@@ -30,7 +30,7 @@ FDA Dev Client / `fda-dev` 同步。本文件是 Codex + Claude 插件的总入�
 | 上传、会话附件、模型/系统生成文件，并在零引用时回收 | + resource lifecycle | [references/asset-lifecycle.md](references/asset-lifecycle.md) |
 | 重试、待处理任务或可能跨请求执行的工作 | call-scoped ctx + durable job data | [references/handler-context-lifecycle.md](references/handler-context-lifecycle.md) |
 
-> **名词速查**：**card-system** = 用工具发卡片的输出模式（新活动默认）· **typed-KV** = 活动的结构化业务存储（`data.schema.json` + `data_*` 工具）· **static-preview** = 活动自带的一块 React 前端页面（`site/` + `dsl_builder.py`）。
+> **名词速查**：**card-system** = 用工具发卡片的输出模式（新活动默认）· **SQLite** = 默认的受控内置数据库，只经活动领域接口访问 · **typed-KV** = 小型、可自动注入 Prompt 的结构化状态（`data.schema.json` + `data_*` 工具）· **static-preview** = 活动自带的一块 React 前端页面（`site/` + `dsl_builder.py`）。
 
 **设计完全自由。** 核心交付契约是：**卡片可验证**、**工具可调用**、
 **业务数据符合 typed-KV schema**、**Static Preview 的 DSL 与交互接口对齐**。

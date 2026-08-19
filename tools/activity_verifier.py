@@ -53,6 +53,7 @@ ALLOWED_RUNTIME_FIELDS = {
     "max_distinct_support_reads",
     "skill_egress_similarity_threshold",
     "data_schema_enabled",
+    "database",
     # SSE debug view config — see app/models.py SseDebugViewConfig.
     # THIS package module is the canonical whitelist; the repo-root
     # tools/activity_verifier.py re-exports it (not a copy). Keep this set in
@@ -329,6 +330,55 @@ def _verify_runtime_configs(root: Path, issues: list[VerificationIssue]) -> None
                         "data.schema.json is missing in the activity directory.",
                     )
                 )
+        database = payload.get("database")
+        if database is not None:
+            if not isinstance(database, dict):
+                issues.append(_issue("error", root, runtime_path, "runtime.database must be an object"))
+            else:
+                allowed_database_fields = {"enabled", "engine", "scope", "access"}
+                unknown = sorted(set(database) - allowed_database_fields)
+                for field in unknown:
+                    issues.append(
+                        _issue("error", root, runtime_path, f"runtime.database has disallowed field: {field}")
+                    )
+                if database.get("enabled") is True:
+                    missing = sorted(allowed_database_fields - set(database))
+                    if missing:
+                        issues.append(
+                            _issue(
+                                "error",
+                                root,
+                                runtime_path,
+                                f"enabled runtime.database must explicitly declare: {missing}",
+                            )
+                        )
+                    if database.get("engine") != "sqlite":
+                        issues.append(_issue("error", root, runtime_path, "runtime.database.engine must be 'sqlite'"))
+                    if database.get("scope") not in {"instance", "activity_type"}:
+                        issues.append(
+                            _issue(
+                                "error",
+                                root,
+                                runtime_path,
+                                "runtime.database.scope must be instance or activity_type",
+                            )
+                        )
+                    access = database.get("access")
+                    if not isinstance(access, dict):
+                        issues.append(
+                            _issue("error", root, runtime_path, "enabled runtime.database.access must be an object")
+                        )
+                    else:
+                        for principal in ("agent", "user"):
+                            if access.get(principal) not in {"none", "read", "read_write"}:
+                                issues.append(
+                                    _issue(
+                                        "error",
+                                        root,
+                                        runtime_path,
+                                        f"runtime.database.access.{principal} must be none, read, or read_write",
+                                    )
+                                )
         # SSE debug-view gate: activities with hidden state must declare
         # sse_debug_view explicitly in runtime.json (the value may be
         # the empty default {} — what matters is that the author made

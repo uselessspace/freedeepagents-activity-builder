@@ -69,7 +69,8 @@ Next steps (in order):
   1) Open and finish authoring:
        activities/$ACTIVITY_ID/manifest.json
        activities/$ACTIVITY_ID/runtime.json
-       activities/$ACTIVITY_ID/data.schema.json   (typed-KV business data shape — properties + default + x-auto-inject)
+       activities/$ACTIVITY_ID/database/migrations/0001_initial.sql  (default SQLite schema)
+       activities/$ACTIVITY_ID/data.schema.json   (only for typed-KV / hybrid)
        activities/$ACTIVITY_ID/AGENTS.md
        activities/$ACTIVITY_ID/skills/$ACTIVITY_ID-host/SKILL.md
        activities/$ACTIVITY_ID/skills/$ACTIVITY_ID-cards/SKILL.md
@@ -77,6 +78,8 @@ Next steps (in order):
        activities/$ACTIVITY_ID/card_templates/$ACTIVITY_ID.intake.json
      Replace every TODO_ACTIVITY_AUTHOR marker. The verifier intentionally
      rejects unfinished markers and Builder-only path placeholders.
+     For SQLite-only activities delete the unused data.schema.json. For
+     typed-KV-only activities disable database and delete database/migrations/.
   2) Static Preview only — add dsl_builder_module; add tools_module,
      handlers_module, and preview_actions.json only for the classified
      interaction surfaces

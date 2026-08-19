@@ -7,7 +7,7 @@
 ## What it should contain
 
 1. One-sentence activity description
-2. Runtime Contract block：声明本活动跑在 **card-system 模式**（`runtime.json` 用 `data_schema_enabled = true` 启用 typed-KV），LLM 通过 `card_emit_template` / `artifact_emit` / `memory_add` 等工具表达副作用，业务字段通过活动 @tools 或 `data_*` 通用工具写入 `/instance/data.json`，完成时直接停
+2. Runtime Contract block：声明本活动跑在 **card-system 模式**并使用 Classification 选定的 SQLite / typed-KV / hybrid；LLM 通过 `card_emit_template` / `artifact_emit` / `memory_add` 和活动领域工具表达副作用，完成时直接停。SQLite 不暴露 SQL，typed-KV 才使用 `data_*`。
 3. Pointer to `skills/<id>-host/SKILL.md` (where business logic lives) + 若有 cards skill 也指过去
 4. Optional: input_modes reminder, completion definition pointer
 
@@ -32,11 +32,11 @@ Keep deeper content out of AGENTS.md by routing each concern to its proper home:
 
 ## Runtime Contract
 
-This activity runs in **card-system mode** with **typed-KV business data** (`runtime.json.data_schema_enabled = true`).
+This activity runs in **card-system mode** with the data mode declared in `runtime.json`.
 
 - Treat `current_instance_state.data` as activity-private state owned by the skills.
 - Express all turn output by CALLING TOOLS — do NOT return any final JSON; anything outside a tool call is discarded.
-- Emit cards via `card_emit_template(template_id, variables, assignment_id)`; persist business state through activity @tools (or generic `data_*` tools) into `/instance/data.json`; persist artifacts via `artifact_emit({...})`; persist memory via `memory_add(text)`.
+- Emit cards via `card_emit_template(template_id, variables, assignment_id)`; persist business state through Activity-owned domain tools (`ctx.database` for SQLite, `data_*` only for typed-KV); persist artifacts via `artifact_emit({...})`; persist memory via `memory_add(text)`.
 - 图片产物由 runtime live-artifact pipeline 自动 surface——直接把 `image_generate` 返回的 `file_url` 填进卡片 ImageBlock 即可（无需 `artifact_emit`）。
 - When done, just stop; the runtime assembles cards/state/artifacts/memory.
 

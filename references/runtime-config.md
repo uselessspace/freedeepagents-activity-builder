@@ -21,6 +21,7 @@ All fields are optional; omit `runtime.json` entirely if you need no overrides.
 | `max_distinct_support_reads` | int ≥0 | 3 (`0` = unlimited) | Cap distinct workflow/policy/reference reads per turn. `skill_sources` files are exempt. |
 | `skill_egress_similarity_threshold` | number 0.0–1.0 | 0.60 | Reject output windows whose character n-gram containment against one protected non-card Skill reaches this threshold. Dedicated `cards` / `*-cards` skills are excluded. |
 | `data_schema_enabled` | bool | `false` | Opt into the typed-KV data store. Requires `data.schema.json`. See [data-store-tools.md](data-store-tools.md). |
+| `database` | object | disabled | Opt into managed SQLite with explicit scope and Agent/user interface access. See [sqlite-storage.md](sqlite-storage.md). |
 | `write_todos` | bool | `false` | Opt into the DeepAgents `write_todos` planner. Activity code only declares this flag; FDA automatically installs/configures Todo on DeepAgents 0.7+. See [subagents.md](subagents.md). |
 | `auto_memory_enabled` | bool \| null | `null` (follow global `AUTO_MEMORY_ENABLED`) | Set `false` to disable the one-line `[auto]` gist for activities whose canonical card sequences look duplicated when echoed. See `app/auto_memory.py`. |
 | `sse_debug_view` | object | secure-off | Bridge trace tool/llm events onto the chat SSE stream. **Required** (declare it explicitly, even as `{}`) when `data.schema.json` has any `x-auto-inject:false` field. Fields below. |
@@ -46,9 +47,15 @@ All fields are optional; omit `runtime.json` entirely if you need no overrides.
 ```
 
 ```jsonc
-// Typed-KV data store + hidden-field SSE decision
+// Hybrid data store + hidden-field SSE decision
 {
   "data_schema_enabled": true,
+  "database": {
+    "enabled": true,
+    "engine": "sqlite",
+    "scope": "instance",
+    "access": {"agent": "read_write", "user": "read_write"}
+  },
   "sse_debug_view": { "enabled": true, "redact_tools": ["data_get"] }
 }
 ```

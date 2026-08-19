@@ -29,9 +29,7 @@ Use the package assets relative to this skill:
 - `../../policies/capabilities.md` plus the capability-specific reference for
   every value in Classification `runtime_capabilities`.
 - `../../references/asset-lifecycle.md` for replace/delete/durability semantics.
-- `../../references/preview-navigation.md` when `navigation_axis` is
-  `agent-to-preview`; it defines the ctx helper, SSE, isolation, and transient
-  delivery contract.
+- `../../references/preview-navigation.md` for `agent-to-preview`.
 - `../../references/handler-context-lifecycle.md` before work may outlive a tool/handler call.
 - `../../workflows/06-verify-directory.md` for verification expectations.
 - `../../workflows/07-migrate-existing.md` when the user wants to fork an
@@ -45,8 +43,9 @@ Use the package assets relative to this skill:
 - `../../policies/manifest-allowed-fields.md` for manifest field whitelist.
 - `../../policies/runtime-boundary.md` and
   `../../policies/skill-layering.md` for hard boundaries.
-- `../../references/store-mode-table.md` when image generation or editing
-  needs persistent URLs.
+- `../../references/store-mode-table.md` for persistent image URLs.
+- `../../references/data-mode-selection.md` for SQLite/typed-KV/hybrid/none.
+- `../../references/sqlite-storage.md` whenever Classification enables SQLite.
 
 ## Card-Only Build
 
@@ -54,7 +53,8 @@ Create or update only the activity folder:
 
 - `activities/<activity_type_id>/manifest.json`
 - `activities/<activity_type_id>/runtime.json`
-- `activities/<activity_type_id>/data.schema.json`
+- optional `activities/<activity_type_id>/data.schema.json` (typed-KV/hybrid only)
+- `activities/<activity_type_id>/database/migrations/*.sql` (SQLite/hybrid only)
 - `activities/<activity_type_id>/output.schema.json` (scaffolded `$ref` placeholder — leave as-is)
 - `activities/<activity_type_id>/AGENTS.md`
 - `activities/<activity_type_id>/skills/<activity_type_id>-host/SKILL.md`
@@ -69,7 +69,7 @@ it must be fully static: no `{{...}}` placeholders anywhere. Its paired
 `.welcome.vars.json` must declare zero variables (`properties: {}` and
 `additionalProperties: false`).
 
-Use card-system output, typed-KV state, and a thin `AGENTS.md`. Put business
+Use card-system output, the classified data mode, and a thin `AGENTS.md`. Put business
 policy in activity skills and supporting files. The scaffolded host and cards
 Skills contain `TODO_ACTIVITY_AUTHOR` markers; replace every marker before
 review or verification. A completed activity must not contain Builder/project
@@ -89,16 +89,17 @@ the frontend into `site/dist/`. The SPA consumes only its activity DSL from
 
 Route Static Preview UI decisions to `../activity-frontend/SKILL.md`.
 
-When `navigation_axis` is `agent-to-preview`, emit activity-private navigation
-payloads from successful activity tools/handlers with
-`ctx.emit_preview_navigation(...)`; never encode that policy in generic runtime
-or manifest fields.
+For `agent-to-preview`, emit private navigation only after successful tools or
+handlers; never encode its semantics in generic runtime or manifest fields.
 
 ## Tool Boundaries
 
 When a third-party API, index, model, or private operation is needed, expose an
 activity-owned tool whose name matches the user intent. Keep generic runtime
 code activity-neutral.
+
+SQLite exists only as ``ctx.database`` inside trusted Activity Python. Never
+expose SQL/path tools or copy it into `/instance`; use parameterized domain operations.
 
 Treat `ctx` as call-scoped. Finish every `ctx`-dependent operation before the
 tool/handler returns. Persist only plain job data for later work; a resume

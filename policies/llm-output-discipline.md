@@ -2,11 +2,11 @@
 
 适用：**所有活动 host SKILL.md** 都应在显眼位置引用本文档（如 `Always Apply` 段）。
 
-> **Business state 通过 typed-KV `/instance/data.json`**：用活动 @tools（`tools.py::make_tools` 暴露的那些）或通用 `data_*` 工具读写。这两类不在下面的 card-system 工具列表里。
+> **Business state 使用 Classification 选定的数据模式**：SQLite 只能通过活动领域 @tools/handlers 间接访问；typed-KV `/instance/data.json` 才使用通用 `data_*`。两类活动工具都不在下面的 card-system 工具列表里。
 
 ## Card-system mode（新活动默认）
 
-活动 `runtime.json` 设 `data_schema_enabled = true` 启用 typed-KV。**LLM 不直接构造 `ActivityAgentOutput`**——通过工具调用表达副作用，完成时直接停（transport 汇编契约权威：[output-protocol.md](output-protocol.md)）。11 个 card-system 工具 + 5 个 `data_*` 工具的完整签名权威：[references/card-system-tools.md](../references/card-system-tools.md)。
+card-system 与数据模式独立。新活动默认 SQLite；按需设 `data_schema_enabled = true` 增加 typed-KV。**LLM 不直接构造 `ActivityAgentOutput`**——通过工具调用表达副作用，完成时直接停（transport 汇编契约权威：[output-protocol.md](output-protocol.md)）。card-system 工具与可选 `data_*` 的完整签名权威：[references/card-system-tools.md](../references/card-system-tools.md)。
 
 本文只管 **LLM 侧调用纪律**——下面每条都来自真实事故汇总，是 LLM 默认输出最容易偏差的位置。两条全局语义先记住：工具入参校验失败立刻返 `ToolMessage(error=...)`，修单条调用 retry；撤销同 turn 内任意撤、跨 turn 一律拒（typed-KV 写入幂等，重调覆盖即可）。
 
@@ -45,7 +45,11 @@
 
 ---
 
-## 5. 写业务数据的纪律（typed-KV）
+## 5. 写业务数据的纪律
+
+SQLite：Agent 只调用活动语义工具，例如 `add_note` / `search_memory`；绝不生成 SQL、接收 SQL 参数或索取数据库路径。活动代码使用参数化 SQL，规则见 [sqlite-storage.md](../references/sqlite-storage.md)。
+
+typed-KV：
 
 完整编辑规则（首选活动 @tool / 兜底 `data_*` / 校验回滚语义 / runtime-derived 7 字段禁写 / 两个 phase 命名空间）的**权威是 [output-protocol.md](output-protocol.md) §state 编辑规则**。本节只留 LLM 高频踩坑三条：
 

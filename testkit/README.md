@@ -24,6 +24,7 @@ for the testkit. The bundled verifier has a higher floor (≥ 3.10), see
 | Each tool's arg schema strict-safe? | — (separate strict-check script) | ✅ flags empty `items:{}` |
 | `dsl_builder.build()` runs + returns JSON? | — | ✅ against a seeded temp instance |
 | Data-store writes pass `data.schema.json`? | — | ✅ validated on every write |
+| Managed SQLite migrations + `ctx.database` construct? | declaration | ✅ temp database, Agent access mode |
 
 The verifier checks files; the testkit **runs your code**. Use both.
 
@@ -73,7 +74,8 @@ For Windows, initialize `builder_root` with a raw path such as
 `activity_harness` installs the stubs, seeds a temp instance from
 `data.schema.json`'s top-level `default`, and yields a `FakeCtx`
 (`instance_dir` / `activity_dir` / `notify_dsl_update` / `turn_files` /
-`emit_preview_navigation` + recorded `preview_navigation_events` / `llm` —
+`emit_preview_navigation` + recorded `preview_navigation_events` / `database` /
+`llm` —
 always `None` offline; assign a duck-typed fake to test
 LLM-dependent paths, see [references/ctx-llm.md](../references/ctx-llm.md)).
 
@@ -85,6 +87,10 @@ rejects a `resource_ref` owned by another activity instance.
 The navigation fake records the activity payload before the production runtime
 adds `event_id` / `turn_id`. It also JSON-round-trips the payload so non-JSON
 values fail during an offline test.
+
+When `runtime.json.database.enabled` and Agent access are enabled, the harness
+applies `database/migrations/*.sql` to a temporary SQLite file and exposes the
+same `ctx.database.connect()` shape. It never touches a real activity instance.
 
 The `update_data` stub mirrors the platform contract exactly: the mutator
 may return a plain `dict` **or** a `(dict, side_info)` tuple — both are

@@ -9,7 +9,7 @@ forms, and artifacts.
 activities/riddle-host/
 |-- manifest.json
 |-- runtime.json
-|-- data.schema.json
+|-- database/migrations/0001_initial.sql  # default SQLite; typed-KV uses data.schema.json instead
 |-- AGENTS.md
 |-- output.schema.json
 |-- card_templates/
@@ -30,5 +30,6 @@ Manifest has no frontend modules:
 }
 ```
 
-The host skill emits cards through `card_emit_template`, writes business state
-through typed-KV tools, and stops when the turn is complete.
+The host skill emits cards through `card_emit_template`, calls Activity-owned
+domain tools backed by managed SQLite, and stops when the turn is complete.
+Small Prompt-aware state may additionally use typed-KV.

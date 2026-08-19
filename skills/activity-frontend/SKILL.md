@@ -65,8 +65,9 @@ Choose one primary UI type:
 - Agent business actions call activity-owned tools, handlers, or backend APIs;
   `preview_navigate` never substitutes for the business operation. Persist
   state first, then let DSL fetch/SSE refresh the SPA.
-- `dsl_builder.py` owns the DSL shape by reading typed-KV data declared in
-  `data.schema.json`.
+- `dsl_builder.py` owns the DSL shape and may read typed-KV or activity-maintained
+  sidecar projections from `instance_dir`. It receives no database handle; a
+  SQLite-backed SPA loads and mutates queryable records through domain handlers.
 - `handlers.py` exposes deterministic SPA reads/writes; `tools.py` exposes only
   the business operations the Agent must call. Shared operations use one plain
   implementation with thin adapters.
@@ -82,7 +83,7 @@ Before coding, write:
 - ui_type:
 - primary_view:
 - dsl_shape:
-- data_sources: data.schema.json keys and artifacts used
+- data_sources: SQLite handler reads, data.schema.json keys, sidecar projections, and artifacts used
 - interaction_tools: tools.py functions, or none
 - recording_asr: none / direct transcript / Agent owns uploaded recording
 - refresh_model: initial fetch only / SSE / manual reload

@@ -39,6 +39,29 @@
       "type": "boolean",
       "description": "Opt-in: enable the typed KV data store. When true, activities/<id>/data.schema.json must exist; the runtime exposes data_get / data_set / data_append / data_delete / data_list_keys tools and seeds /instance/data.json from the schema's default. See references/data-store-tools.md."
     },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional managed SQLite resource for Activity-owned tools and handlers. It is never mounted into the Agent command sandbox and never creates a generic SQL tool.",
+      "required": ["enabled", "engine", "scope", "access"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "engine": {"const": "sqlite"},
+        "scope": {
+          "enum": ["instance", "activity_type"],
+          "description": "instance isolates each activity instance; activity_type shares one database across every instance of this Activity Type in the same runtime plane."
+        },
+        "access": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["agent", "user"],
+          "properties": {
+            "agent": {"enum": ["none", "read", "read_write"]},
+            "user": {"enum": ["none", "read", "read_write"]}
+          }
+        }
+      }
+    },
     "write_todos": {
       "type": "boolean",
       "description": "Opt-in: expose the DeepAgents write_todos planner tool to the main agent. Default false (the tool, Todo prompt, and todos state channel are absent). Activity code only declares this flag; on DeepAgents 0.7+ FDA automatically installs TodoListMiddleware plus its platform policy. Activity code must not register middleware itself. See app/deepagents_runtime.py."

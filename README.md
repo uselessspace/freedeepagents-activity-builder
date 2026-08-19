@@ -25,8 +25,8 @@ The deliverable is `activities/<activity_type_id>/`. FDA Dev Client and
 - Separates runtime-provided capabilities from activity-owned tools and
   Static Preview interaction surfaces.
 - Keeps activity business logic inside `activities/<activity_type_id>/skills/`.
-- Builds card templates, typed-KV data schemas, host skills, and optional
-  activity-owned tools.
+- Selects SQLite, typed-KV, hybrid, or stateless persistence; builds migrations
+  or typed schemas plus domain tools without exposing raw SQL to the Agent.
 - Builds Static Preview activities with `site/`, `dsl_builder.py`, optional
   tools/handlers/Preview Actions, and `site/dist/`.
 - Wires optional Agent-driven semantic route, view, or business-object
@@ -74,7 +74,8 @@ the same stages:
    UI and tool capabilities are needed, and what success looks like.
 2. `activity-classifier` writes the fixed Activity Classification:
    `frontend_axis`, `tool_axis`, additive `runtime_capabilities`, `image_axis`,
-   `navigation_axis`, `spa_interaction_axis`, and `runtime_mode`
+   `navigation_axis`, `spa_interaction_axis`, `runtime_mode`, `data_mode`,
+   database scope/access, and retrieval mode
    (+ free-form `implementation_notes`).
 3. `activity-builder` scaffolds and implements activity-owned files.
 4. `activity-frontend` guides Static Preview UI choices without vendoring

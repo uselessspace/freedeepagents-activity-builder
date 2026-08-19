@@ -1,0 +1,3 @@
+-- TODO_ACTIVITY_AUTHOR: replace this marker with the Activity's initial schema.
+-- This SQL runs once before ctx.database is exposed to Activity Python.
+-- Do not add BEGIN/COMMIT; the runtime wraps each migration atomically.

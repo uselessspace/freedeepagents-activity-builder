@@ -22,8 +22,9 @@ cards Skill 只负责卡片呈现，不重复业务路由。
 
 - 本活动使用 card-system；所有用户可见输出通过 `card_emit_template`、
   `card_emit` 或 `artifact_emit` 产生。不要返回最终 JSON，工具调用完成后停止。
-- 业务数据由 `data.schema.json` 声明，通过活动 @tools（优先）或 `data_*`
-  工具修改；不要直接读写 `/instance/data.json`。
+- 业务数据使用 Classification 选定的 SQLite / typed-KV / hybrid 模式。
+  SQLite 只能由活动 @tools/handlers 通过 `ctx.database` 访问；typed-KV 才使用
+  `data.schema.json` 和 `data_*`。Agent 不接触 SQL 或数据库文件。
 - 固定业务卡使用模板中声明的字面 `assignment_id`，同一逻辑卡跨 turn 复用。
 - 图片工具返回的 artifact 由 runtime 自动登记，只把返回的 `file_url` 放入卡片，
   不再手动调用 `artifact_emit`。

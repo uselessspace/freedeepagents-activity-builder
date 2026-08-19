@@ -42,7 +42,8 @@ Capture the smallest useful brief:
   Skills, planning, or multiple tools.
 - `external_capabilities`: APIs, databases, browser/search, files, payments,
   models, or other services.
-- `persistence`: typed-KV fields, larger artifacts, secrets, indexes, or none.
+- `persistence`: growing/queryable records (SQLite by default), small Prompt-aware
+  typed-KV state, hybrid storage, larger artifacts, secrets, or none.
 
 ## Conversation Style
 
